@@ -1,4 +1,4 @@
-name: Black / Automaticly Triggered Python Autoformatter
+name: BRM / Automaticly Triggered BRM Generation
 
 on:
   push:
