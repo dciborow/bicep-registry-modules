@@ -79,6 +79,6 @@ jobs:
         git add $SAMPLEFOLDER_PATH
 
         if ! git diff-index --quiet HEAD --; then
-          git commit -m "Autoformat with BRM" --no-edit
-          git push --force-with-lease
+          git commit -m "Autoformat with BRM"
+          git push
         fi
