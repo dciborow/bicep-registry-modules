@@ -1,6 +1,6 @@
 # Azure Game Developer VMSS
 
-Bicep Module to simplify deployment of the Azure Game Developer VMSS
+Bicep Module to simplify deployment of the Azure Game Developer Image on VMSS
 
 ## Description
 
