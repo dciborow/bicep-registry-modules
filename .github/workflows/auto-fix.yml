@@ -53,12 +53,14 @@ jobs:
         echo "MAINBICEP_PATH=$MAINBICEP_PATH" >> $GITHUB_ENV
         echo "AZDEPLOYJSON_PATH=$AZDEPLOYJSON_PATH" >> $GITHUB_ENV
 
-    - name: Build main.bicep -> azuredeploy.json
+    # Adding a step to explicitly install the latest Bicep CLI because there is
+    # always a delay in updating Bicep CLI in the job runner environments.
+    - name: Install the latest Bicep CLI
       run: |
-        if [ -f $MAINBICEP_PATH ]; then          
-          echo Running: bicep build $MAINBICEP_PATH --outfile $AZDEPLOYJSON_PATH
-          $BICEP_PATH build $MAINBICEP_PATH --outfile $AZDEPLOYJSON_PATH
-        fi
+        curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+        chmod +x ./bicep
+        sudo mv ./bicep /usr/local/bin/bicep
+        bicep --version
 
     - name: Build main.bicep -> azuredeploy.json
       run: |
