@@ -1,6 +1,6 @@
 # Azure Game Developer VMSS
 
-Bicep Module to simplify deployment of the Azure Game Developer Image on VMSS
+Bicep Module to simplify deployment of the Azure Game Developer VMSS
 
 ## Description
 
@@ -19,7 +19,6 @@ See our [documentation](https://docs.microsoft.com/en-us/gaming/azure/game-dev-v
 | `vmssName`                   | `string`       | Yes      | Name of VMSS Cluster                  |
 | `vmssSku`                    | `string`       | No       | GameDev Sku                           |
 | `vmssImgPublisher`           | `string`       | No       | GameDev Image Publisher               |
-| `vmssImgProduct`             | `string`       | No       | GameDev Image Product Id              |
 | `vmssImgSku`                 | `string`       | No       | GameDev Image Sku                     |
 | `vmssImgVersion`             | `string`       | No       | GameDev Image Product Id              |
 | `vmssOsDiskType`             | `string`       | No       | GameDev Disk Type                     |

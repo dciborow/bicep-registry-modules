@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.8.9.13224",
-      "templateHash": "15361273760969364477"
+      "version": "0.9.1.41621",
+      "templateHash": "6964462330266104017"
     }
   },
   "parameters": {
@@ -39,16 +39,6 @@
       ],
       "metadata": {
         "description": "GameDev Image Publisher"
-      }
-    },
-    "vmssImgProduct": {
-      "type": "string",
-      "defaultValue": "game-dev-vm",
-      "allowedValues": [
-        "game-dev-vm"
-      ],
-      "metadata": {
-        "description": "GameDev Image Product Id"
       }
     },
     "vmssImgSku": {
@@ -173,7 +163,13 @@
     },
     "gdkVersion": {
       "type": "string",
-      "defaultValue": "June_2021_Update_4",
+      "defaultValue": "June_2022_Update_1",
+      "allowedValues": [
+        "June_2022_Update_1",
+        "March_2022_Update_1",
+        "October_2021_Update_5",
+        "June_2021_Update_9"
+      ],
       "metadata": {
         "description": "GDK Version"
       }
@@ -276,7 +272,8 @@
     }
   },
   "variables": {
-    "customData": "[format('fileShareStorageAccount={0}\nfileShareStorageAccountKey={1}\nfileShareName={2}\np4Port={3}\np4Username={4}\np4Password={5}\np4Workspace={6}\np4Stream={7}\np4ClientViews={8}\nibLicenseKey={9}\ngdkVersion={10}\nuseVmToSysprepCustomImage={11}\nremoteAccessTechnology={12}\nteradiciRegKey={13}\nparsecTeamId={14}\nparsecTeamKey={15}\nparsecHost={16}\nparsecUserEmail={17}\nparsecIsGuestAccess={18}\ndeployedFromSolutionTemplate={19}\n', parameters('fileShareStorageAccount'), parameters('fileShareStorageAccountKey'), parameters('fileShareName'), parameters('p4Port'), parameters('p4Username'), parameters('p4Password'), parameters('p4Workspace'), parameters('p4Stream'), parameters('p4ClientViews'), parameters('ibLicenseKey'), parameters('gdkVersion'), parameters('useVmToSysprepCustomImage'), parameters('remoteAccessTechnology'), parameters('teradiciRegKey'), parameters('parsecTeamId'), parameters('parsecTeamKey'), parameters('parsecHost'), parameters('parsecUserEmail'), parameters('parsecIsGuestAccess'), false())]"
+    "customData": "[format('fileShareStorageAccount={0}\nfileShareStorageAccountKey={1}\nfileShareName={2}\np4Port={3}\np4Username={4}\np4Password={5}\np4Workspace={6}\np4Stream={7}\np4ClientViews={8}\nibLicenseKey={9}\ngdkVersion={10}\nuseVmToSysprepCustomImage={11}\nremoteAccessTechnology={12}\nteradiciRegKey={13}\nparsecTeamId={14}\nparsecTeamKey={15}\nparsecHost={16}\nparsecUserEmail={17}\nparsecIsGuestAccess={18}\ndeployedFromSolutionTemplate={19}\n', parameters('fileShareStorageAccount'), parameters('fileShareStorageAccountKey'), parameters('fileShareName'), parameters('p4Port'), parameters('p4Username'), parameters('p4Password'), parameters('p4Workspace'), parameters('p4Stream'), parameters('p4ClientViews'), parameters('ibLicenseKey'), parameters('gdkVersion'), parameters('useVmToSysprepCustomImage'), parameters('remoteAccessTechnology'), parameters('teradiciRegKey'), parameters('parsecTeamId'), parameters('parsecTeamKey'), parameters('parsecHost'), parameters('parsecUserEmail'), parameters('parsecIsGuestAccess'), false())]",
+    "vmssImgProduct": "game-dev-vm"
   },
   "resources": [
     {
@@ -292,7 +289,7 @@
       "plan": {
         "name": "[parameters('vmssImgSku')]",
         "publisher": "[parameters('vmssImgPublisher')]",
-        "product": "[parameters('vmssImgProduct')]"
+        "product": "[variables('vmssImgProduct')]"
       },
       "properties": {
         "singlePlacementGroup": false,
@@ -310,7 +307,7 @@
             },
             "imageReference": {
               "publisher": "[parameters('vmssImgPublisher')]",
-              "offer": "[parameters('vmssImgProduct')]",
+              "offer": "[variables('vmssImgProduct')]",
               "sku": "[parameters('vmssImgSku')]",
               "version": "[parameters('vmssImgVersion')]"
             }
@@ -390,8 +387,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.8.9.13224",
-              "templateHash": "3327732133636508866"
+              "version": "0.9.1.41621",
+              "templateHash": "9039606729005057666"
             }
           },
           "parameters": {
