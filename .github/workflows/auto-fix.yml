@@ -4,6 +4,8 @@ on:
   push:
     branches-ignore:
       - main
+    paths: 
+      - modules/*
 
 jobs:
   deploy:
@@ -62,7 +64,7 @@ jobs:
         sudo mv ./bicep /usr/local/bin/bicep
         bicep --version
 
-    - name: Build main.bicep -> azuredeploy.json
+    - name: Run brm generate
       run: |
         dotnet tool install --global Azure.Bicep.RegistryModuleTool
 
@@ -71,12 +73,12 @@ jobs:
 
     - name: Commit Changes
       run: |
-        git config --global user.email "auto-bicep@noreply.github.com"
-        git config --global user.name "Auto Bicep"
+        git config --global user.email "auto-brm@noreply.github.com"
+        git config --global user.name "Auto brm"
 
         git add $SAMPLEFOLDER_PATH
 
         if ! git diff-index --quiet HEAD --; then
-          git commit -m "Autoformat with Black" --no-edit
+          git commit -m "Autoformat with BRM" --no-edit
           git push --force-with-lease
         fi
