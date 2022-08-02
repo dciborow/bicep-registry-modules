@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: mcr.microsoft.com/vscode/devcontainers/base:0-focal
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.3.4
       with:
