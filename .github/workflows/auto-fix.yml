@@ -9,10 +9,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Sync master
+    - name: Sync main
       uses: actions/checkout@v2.3.4
       with:
-        ref: master
+        ref: main
         fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
     
     - uses: actions/checkout@v2.3.4
