@@ -65,7 +65,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - shell: pwsh
+
+      - name: Run ARM-TTK over Test Files
+        shell: pwsh
         run: |        
             $bicepFiles = Get-ChildItem ${{ needs.get-module-to-validate.outputs.module_dir }}\tests -include "*.bicep" -Recurse
             
