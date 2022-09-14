@@ -66,8 +66,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - shell: pwsh
-        run: |
+        run: |        
+            $bicepFiles = Get-ChildItem ${{ needs.get-module-to-validate.outputs.module_dir }}\tests -include "*.bicep" -Recurse
+            
+            if ((Get-Command "bicep.exe" -ErrorAction SilentlyContinue) -eq $null -and (Get-Command "$PSScriptRoot\bicep.exe" -ErrorAction SilentlyContinue) -eq $null) {
+              write-Host "Bicep Not Found, Downloading..."
+              (New-Object Net.WebClient).DownloadFile("https://github.com/Azure/bicep/releases/latest/download/bicep-win-x64.exe", "$PSScriptRoot\bicep.exe")
+            }
+
+            if($bicepFiles.count -gt 0){
+                foreach($bicepFile in $bicepFiles){
+                    & "$PSScriptRoot\bicep.exe" build $bicepFile
+                }
+            }
+
             Invoke-WebRequest -Uri aka.ms/arm-ttk-marketplace -OutFile arm-template-toolkit.zip
             Expand-Archive -LiteralPath arm-template-toolkit.zip -DestinationPath arm-ttk
             Import-Module .\arm-ttk\arm-ttk\arm-ttk.psd1
-            Test-AzTemplate -TemplatePath ${{ needs.get-module-to-validate.outputs.module_dir }}
+            Test-AzTemplate -TemplatePath ${{ needs.get-module-to-validate.outputs.module_dir }}\tests
