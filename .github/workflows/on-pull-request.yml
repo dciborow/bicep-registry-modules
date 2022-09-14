@@ -57,3 +57,17 @@ jobs:
 
       - name: Check formatting
         run: npm run prettier:check
+
+  validate-module-files-with-armttk:
+    runs-on: windows-latest
+    needs: get-module-to-validate
+    if: needs.get-module-to-validate.outputs.module_dir
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - shell: pwsh
+        run: |
+            Invoke-WebRequest -Uri aka.ms/arm-ttk-marketplace -OutFile arm-template-toolkit.zip
+            Expand-Archive -LiteralPath arm-template-toolkit.zip -DestinationPath arm-ttk
+            Import-Module .\arm-ttk\arm-ttk\arm-ttk.psd1
+            Test-AzTemplate -TemplatePath ${{ needs.get-module-to-validate.outputs.module_dir }}
