@@ -69,7 +69,7 @@ jobs:
       - name: Run ARM-TTK over Test Files
         shell: pwsh
         run: |
-          $bicepFiles = Get-ChildItem ${{ needs.get-module-to-validate.outputs.module_dir }}\tests -include "*.bicep" -Recurse
+          $bicepFiles = Get-ChildItem ${{ needs.get-module-to-validate.outputs.module_dir }}\test -include "*.bicep" -Recurse
 
           if ((Get-Command "bicep.exe" -ErrorAction SilentlyContinue) -eq $null -and (Get-Command "$PSScriptRoot\bicep.exe" -ErrorAction SilentlyContinue) -eq $null) {
             write-Host "Bicep Not Found, Downloading..."
@@ -85,4 +85,4 @@ jobs:
           Invoke-WebRequest -Uri aka.ms/arm-ttk-marketplace -OutFile arm-template-toolkit.zip
           Expand-Archive -LiteralPath arm-template-toolkit.zip -DestinationPath arm-ttk
           Import-Module .\arm-ttk\arm-ttk\arm-ttk.psd1
-          Test-AzTemplate -TemplatePath ${{ needs.get-module-to-validate.outputs.module_dir }}\tests
+          Test-AzTemplate -TemplatePath ${{ needs.get-module-to-validate.outputs.module_dir }}\test
