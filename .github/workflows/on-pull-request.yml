@@ -79,7 +79,7 @@ jobs:
         uses: aliencube/arm-ttk-actions@v0.3
         id: armtest
         with:
-          path: ${{ needs.get-module-to-validate.outputs.module_dir }}/test/main.test.bicep
+          path: ${{ needs.get-module-to-validate.outputs.module_dir }}/test/mainTemplate.json
 
       - name: Show ARM TTK test result
         shell: bash
