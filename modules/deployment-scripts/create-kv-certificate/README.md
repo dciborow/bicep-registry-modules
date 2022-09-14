@@ -4,6 +4,7 @@ Create Key Vault self-signed certificates. Requires Key Vaults to be using RBAC 
 
 ## Parameters
 
+
 | Name                                       | Type     | Required | Description                                                                                                   |
 | :----------------------------------------- | :------: | :------: | :------------------------------------------------------------------------------------------------------------ |
 | `akvName`                                  | `string` | Yes      | The name of the Azure Key Vault                                                                               |
