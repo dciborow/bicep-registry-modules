@@ -58,25 +58,11 @@ jobs:
       - name: Check formatting
         run: npm run prettier:check
 
+
   validate-module-files-with-armttk:
-    runs-on: ubuntu-latest
+    uses: microsoft/action-armttk/.github/workflows/arm-ttk@0.0.5
     needs: get-module-to-validate
     if: needs.get-module-to-validate.outputs.module_dir
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Run Bicep build
-        uses: aliencube/bicep-build-actions@v0.1
-        with:
-          files: "${{ needs.get-module-to-validate.outputs.module_dir }}/test/main.test.bicep"
-
-      - name: Rename file for ARM TTK
-        run: |
-          cp "${{ needs.get-module-to-validate.outputs.module_dir }}/test/main.test.json" "${{ needs.get-module-to-validate.outputs.module_dir }}/test/mainTemplate.json"
-
-      - name: Run ARM-TTK
-        uses: microsoft/action-armttk@0.0.2
-        with:
-          workdir: ${{ needs.get-module-to-validate.outputs.module_dir }}/test/
-
+    with:
+      bicepFile: main.test.bicep
+      workingPath: ${{ needs.get-module-to-validate.outputs.module_dir }}
