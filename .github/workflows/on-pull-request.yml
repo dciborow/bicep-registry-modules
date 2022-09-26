@@ -83,5 +83,6 @@ jobs:
 
       - name: Show ARM TTK test result
         shell: bash
+        if: always()
         run: |
           echo 'Results: ${{ toJSON(fromJSON(steps.armtest.outputs.results)) }}'
