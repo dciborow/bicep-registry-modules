@@ -71,18 +71,12 @@ jobs:
         with:
           files: "${{ needs.get-module-to-validate.outputs.module_dir }}/test/main.test.bicep"
 
-      - name: Install the latest Bicep CLI
+      - name: Rename file for ARM TTK
         run: |
           cp "${{ needs.get-module-to-validate.outputs.module_dir }}/test/main.test.json" "${{ needs.get-module-to-validate.outputs.module_dir }}/test/mainTemplate.json"
 
-      - name: Rename file for ARM TTK
-        uses: aliencube/arm-ttk-actions@v0.3
-        id: armtest
+      - name: Run ARM-TTK
+        uses: microsoft/action-armttk@0.0.2
         with:
-          path: ${{ needs.get-module-to-validate.outputs.module_dir }}/test/mainTemplate.json
+          workdir: ${{ needs.get-module-to-validate.outputs.module_dir }}/test/
 
-      - name: Show ARM TTK test result
-        shell: bash
-        if: always()
-        run: |
-          echo 'Results: ${{ toJSON(fromJSON(steps.armtest.outputs.results)) }}'
