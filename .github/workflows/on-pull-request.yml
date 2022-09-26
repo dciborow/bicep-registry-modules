@@ -75,7 +75,7 @@ jobs:
         run: |
           cp "${{ needs.get-module-to-validate.outputs.module_dir }}/test/main.test.json" "${{ needs.get-module-to-validate.outputs.module_dir }}/test/mainTemplate.json"
 
-      - name: Run ARM TTK
+      - name: Rename file for ARM TTK
         uses: aliencube/arm-ttk-actions@v0.3
         id: armtest
         with:
