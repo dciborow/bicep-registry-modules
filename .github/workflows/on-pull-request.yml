@@ -58,7 +58,6 @@ jobs:
       - name: Check formatting
         run: npm run prettier:check
 
-
   validate-module-files-with-armttk:
     uses: microsoft/action-armttk/.github/workflows/arm-ttk@0.0.5
     needs: get-module-to-validate
