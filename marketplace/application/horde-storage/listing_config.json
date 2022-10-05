@@ -1,0 +1,147 @@
+{
+  "offer_setup"            : {
+    "alias"    : "Unreal Cloud DDC",
+    "testDrive": false,
+    "crm"      : ""
+  },
+  "property_settings"      : {
+    "leveledCategories"  : {
+      "developer-tools-azure-apps": [
+        "tools-developer-tools"
+      ]
+    }
+  },
+  "offer_listing"          : {
+    "title"              : "Unreal Cloud DDC",
+    "publisher_name"     : "Microsoft Corp.",
+    "summary"            : "A storage offer for Unreal Engine Game Developers",
+    "short_description"  : "Unreal Cloud DDC for Unreal Engine game development.",
+    "description"        : "<p>Unreal Cloud DDC is a centralized cloud-based cache designed to be used in conjunction with Epic Game's Unreal Cloud DDC to reduce build times and improve overall build performance. Unreal Cloud DDC enables you and your entire development team to connect and use Epic Game's Unreal Cloud DDC service.</p><p>The horde technology implements horizontally scalable, cloud-ready services to provide distributed compute and storage functionality for medium size and larger teams (>10 devs). The compute service manages agents and schedules work to execute on them. The storage service provides content-addressable storage backed by cloud object stores. Integrating storage and compute services allows caching, de-duplication, and locating data close to agents.</p> <p>In Unreal Engine 5 (UE5), ‘Unreal Cloud DDC’ is an optional service which users can enable and connect to cloud storage. Simplify provide the Unreal Cloud DDC URL and complete the authentication prompts to connect to your Unreal Cloud DDC deployment. By leveraging the ability to store smaller pre-computed elements, Unreal Cloud DDC makes it more efficient for sharing assets between developers.</p>",
+    "keywords"           : [
+                "horde",
+                "unreal engine",
+                "gaming"
+    ],
+    "listing_contacts"   : [
+                {
+                    "type": "CustomerSupport",
+                    "email": "Azure-Gaming@microsoft.com",
+                    "name": "Azure Gaming Team",
+                    "phone": "+1 (800) 642-7676",
+                    "uri": ""
+                },
+                {
+                    "type": "Engineering",
+                    "email": "Azure-Gaming@microsoft.com",
+                    "name": "Azure Gaming Team",
+                    "phone": "+1 (800) 642-7676",
+                    "uri": ""
+                },
+                {
+                    "type": "ChannelManager",
+                    "email": "Azure-Gaming@microsoft.com",
+                    "name": "Azure Gaming Team",
+                    "phone": "+1 (800) 642-7676",
+                    "uri": "https://docs.microsoft.com/gaming/azure/horde-storage"
+                }
+  ],
+    "listing_uris"       : [
+                {
+                    "type": "PrivacyUri",
+                    "uri": "https://privacy.microsoft.com/privacystatement"
+                },
+                {
+                    "type": "PublicCloudSupport",
+                    "uri": "https://docs.microsoft.com/azure/azure-portal/supportability/how-to-create-azure-support-request"
+                },
+                {
+                    "type": "General",
+                    "displayText": "Documentation",
+                    "uri": "https://docs.microsoft.com/gaming/azure/horde-storage"
+                },
+                {
+                    "type": "GtmMaterialsUri",
+                    "uri": "https://azure.microsoft.com/en-gb/solutions/gaming/"
+                }
+  ],
+    "listing_logos"      : {
+      "logo_large": "gamedev_216_216.png",
+      "logo_small": "gamedev_48_48.png",
+      "logo_medium": "gamedev_90_90.png",
+      "logo_wide": "gamedev_255_115.png"
+    },
+    "listing_screenshots": {},
+    "listing_videos"     : {}
+  },
+  "preview_audience"       : {
+    "subscriptions": [
+      "fdc4bb25-4f8d-4349-b760-911e1d61b3c2",
+      "edf507a2-6235-46c5-b560-fd463ba2e771",
+      "69c75911-7439-4362-855d-c8f3ecbbf3de",
+      "0ca618d2-22a8-413a-96d0-0f1b531129c3",
+      "3ce675b8-fcea-4732-a965-393bbe02d7ad"
+    ]
+  },
+  "technical_configuration": {
+    "_note"         : "Only required for emitting metering events",
+    "tenant_id"     : "<AAD_Tenant_Id>",
+    "application_id": "<AAD_Application_ID>"
+  },
+  "plan_overview"          : {
+    "preview": {
+      "plan_listing"            : {
+        "title": "Unreal Cloud DDC",
+        "shortDescription": "Unreal Cloud DDC for Unreal Engine game development.",
+        "description": "Unreal Cloud DDC is a centralized cloud-based cache designed to be used in conjunction with Epic Game's Unreal Cloud DDC to reduce build times and improve overall build performance. Unreal Cloud DDC enables you and your entire development team to connect and use Epic Game's Unreal Cloud DDC service."
+      },
+      "pricing_and_availability": {
+        "visibility"                 : "Private",
+        "azure_private_subscriptions": [
+          {
+            "ID":  "fdc4bb25-4f8d-4349-b760-911e1d61b3c2"
+          },
+          {
+            "ID":  "edf507a2-6235-46c5-b560-fd463ba2e771"
+          },
+          {
+            "ID":  "69c75911-7439-4362-855d-c8f3ecbbf3de"
+          },
+          {
+            "ID":  "0ca618d2-22a8-413a-96d0-0f1b531129c3"
+          },          
+          {
+            "ID":  "11d3d3a9-33fe-42d9-9914-650a937780ca"
+          },
+          {
+            "ID":  "b1838202-0929-45e3-9e8e-d83c96d0e550"
+          },
+          {
+            "ID":  "8fee7450-a739-4529-8a51-f58a6617c27d"
+          },
+          {
+            "ID":  "3ce675b8-fcea-4732-a965-393bbe02d7ad"
+          }      
+        ]
+      },
+      "technical_configuration" : {
+        "version"               : "0.0.0",
+        "allowedCustomerActions": [
+          "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*"
+        ],
+        "allowedDataActions"    : [
+          "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*"
+        ],
+        "deploymentMode"        : "Complete",
+        "tenant_id"             : "72f988bf-86f1-41af-91ab-2d7cd011db47",
+        "authorizations"        : [
+          {
+            "id"  : "7db86ff4-1fb6-448c-8d91-7eec3be39d10",
+            "role": "Owner"
+          }
+        ],
+        "policy_settings"       : [],
+        "allow_jit_access"      : false
+      }
+    }
+  }
+}
