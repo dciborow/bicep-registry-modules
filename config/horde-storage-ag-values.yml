@@ -1,0 +1,103 @@
+x-jupiter-env:
+  # as yaml doesnt support merging sequences we just define a standard env for all services even though the extra urls are only needed for horde-storage
+  env: &jupiter-env
+  - name: DD_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+  - name: DD_ENV
+    value: dev
+  - name: DD_SERVICE
+    value: "{{ .Chart.Name }}"
+  - name: DD_VERSION
+    value: "{{ .Values.global.OverrideAppVersion }}"
+  - name: ASPNETCORE_URLS
+    value: "http://0.0.0.0:80;http://0.0.0.0:8080"
+  - name: AZURE_CLIENT_ID
+    # tc-unreal-horde-app
+    value: 799926db-87bf-44e2-9eac-66fb84915841
+  - name: AZURE_TENANT_ID
+    # microsoft.onmicrosoft.com
+    value: 72f988bf-86f1-41af-91ab-2d7cd011db47
+  - name: AZURE_FEDERATED_TOKEN_FILE
+    value: /var/run/secrets/tokens/azure-identity-token
+
+horde-storage:
+  config:
+    Azure:
+      ConnectionString: "akv!keyVault-bfuumdgowbdl6|horde-storage-westus-connection-string"
+    Scylla:
+      ConnectionString: akv!keyVault-bfuumdgowbdl6|horde-db-connection-string
+      LocalDatacenterName: "West US"
+      LocalKeyspaceSuffix: "westus"
+  ingress:
+    hostname: deploy1.horde-storage.gaming.azure.com
+    tlsCertName: horde-storage-cert
+  secretStore:
+    enabled: true
+    clientID: "799926db-87bf-44e2-9eac-66fb84915841"
+    keyvaultName: "keyVault-bfuumdgowbdl6"
+    resourceGroup: "ag-Unreal-Horde"
+    subscriptionId: "edf507a2-6235-46c5-b560-fd463ba2e771"
+    tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47"
+  serviceAccount:
+    name: workload-identity-sa
+    annotations:
+      azure.workload.identity/client-id: 799926db-87bf-44e2-9eac-66fb84915841
+  env: *jupiter-env
+
+  worker:
+    env: &jupiter-env
+    - name: DD_AGENT_HOST
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: DD_ENV
+      value: dev
+    - name: DD_SERVICE
+      value: "horde-storage-worker"
+    - name: DD_VERSION
+      value: "{{ .Values.global.OverrideAppVersion }}"
+    - name: AZURE_CLIENT_ID
+      # tc-unreal-horde-app
+      value: 799926db-87bf-44e2-9eac-66fb84915841
+    - name: AZURE_TENANT_ID
+      # microsoft.onmicrosoft.com
+      value: 72f988bf-86f1-41af-91ab-2d7cd011db47
+    - name: AZURE_FEDERATED_TOKEN_FILE
+      value: /var/run/secrets/tokens/azure-identity-token
+
+global:
+  siteName: hordegamingstore
+  jwtAuthority: https://login.microsoftonline.com/microsoft.onmicrosoft.com
+  jwtAudience: api://799926db-87bf-44e2-9eac-66fb84915841 # azure-gaming-horde-internal
+  OverrideAppVersion: 0.35.0
+
+  serviceAccountOAuthClientId: 799926db-87bf-44e2-9eac-66fb84915841 # azure-gaming-horde-internal
+  serviceAccountOAuthClientSecret: akv!keyVault-bfuumdgowbdl6|build-app-secret
+  serviceAccountOAuthLoginUrl: https://login.microsoftonline.com/microsoft.onmicrosoft.com/oauth2/v2.0/token
+  serviceAccountOAuthScope: api://799926db-87bf-44e2-9eac-66fb84915841/.default
+
+  TheCoalition:
+    TCAuth:
+      GroupClient: 
+        TenantId: microsoft.onmicrosoft.com
+        ClientId: 799926db-87bf-44e2-9eac-66fb84915841
+        ClientSecretName: horde-client-app-secret
+        KeyVaultName: keyVault-bfuumdgowbdl6
+        CacheRefreshIntervalHours: 1.0
+      Roles:
+        Entries:
+          - Roles:
+              - Cache.full
+              - Storage.full
+            GroupIds:
+              - af49a91e-a306-401e-b44f-a403a376898b # NORTHAMERICA\tc-all
+            UserIds:
+              - 5d738b2f-e899-4eff-b4b1-1c00ac9ad8a6 # tc-unreal-horde-app TODO: Remove, probably not needed here.
+          - Roles:
+              - Cache.full
+              - Storage.full
+              - transactionLog.full
+            UserIds:
+              - 85f1d9cf-39b1-46e6-810a-48ca470065ac # tc-unreal-horde-build-app

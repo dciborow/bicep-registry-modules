@@ -1,0 +1,36 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "_artifactsLocation": {
+            "value": "https://dciborowmmlsparkstore.blob.core.windows.net/mmlspark/"
+        },
+        "_artifactsLocationSasToken": {
+            "value": ""
+        },
+        "agentPoolCount": {
+            "value": 3
+        },
+        "agentPoolName": {
+            "value": "k8agent"
+        },
+        "servicePrincipalObjectID": {
+            "value": "9427e5fe-13f8-475b-aeca-945561bd91bd"
+        },
+        "servicePrincipalClientID": {
+            "value": "799926db-87bf-44e2-9eac-66fb84915841"
+        },
+        "hostname":{
+            "value": "deploy1.horde-storage.gaming.azure.com"
+        },
+        "certificateIssuer": {
+            "value": "Azure-Gaming"
+        },
+        "epicEULA": {
+            "value": true
+        },
+        "issuerProvider": {
+            "value": "OneCertV2-PublicCA"
+        }
+    }
+}

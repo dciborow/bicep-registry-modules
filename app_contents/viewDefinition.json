@@ -1,0 +1,22 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/viewdefinition/0.0.1-preview/ViewDefinition.json#",
+    "contentVersion": "0.0.0.1",
+    "views": [ 
+        {
+            "kind": "Overview",
+            "properties": {
+                "header": "Unreal Cloud DDC",
+                "description": "<p><a href=\"https://aka.ms/unreal-cloud-ddc-config\">Follow these steps to complete setup.</a></p>"
+            } 
+        },
+        {
+            "kind": "Associations",
+            "properties": {
+                "displayName": "Test association resource type",
+                "version": "1.0.0",
+                "targetResourceType": "Microsoft.ContainerService/managedClusters",
+                "createUIDefinition": {}
+            }
+        }
+    ]
+}
