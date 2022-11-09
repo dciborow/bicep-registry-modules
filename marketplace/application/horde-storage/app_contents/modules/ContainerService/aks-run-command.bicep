@@ -53,7 +53,7 @@ resource existingDepScriptId 'Microsoft.ManagedIdentity/userAssignedIdentities@2
   scope: resourceGroup(existingManagedIdentitySubId, existingManagedIdentityResourceGroupName)
 }
 
-resource rbac 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = [for roleDefId in rbacRolesNeeded: {
+resource rbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleDefId in rbacRolesNeeded: {
   name: guid(aks.id, roleDefId, useExistingManagedIdentity ? existingDepScriptId.id : newDepScriptId.id)
   scope: aks
   properties: {
@@ -106,7 +106,7 @@ resource runAksCommand 'Microsoft.Resources/deploymentScripts@2020-10-01' = [for
     ]
     scriptContent: '''
       #!/bin/bash
-      set -e
+      set +H
 
       if [ "$loopIndex" == "0" ] && [ "$initialDelay" != "0" ]
       then
