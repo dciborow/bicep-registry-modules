@@ -61,7 +61,7 @@ resource existingDepScriptId 'Microsoft.ManagedIdentity/userAssignedIdentities@2
   scope: resourceGroup(existingManagedIdentitySubId, existingManagedIdentityResourceGroupName)
 }
 
-resource rbacKv 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
+resource rbacKv 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(akv.id, rbacRolesNeededOnKV, useExistingManagedIdentity ? existingDepScriptId.id : newDepScriptId.id)
   scope: akv
   properties: {
