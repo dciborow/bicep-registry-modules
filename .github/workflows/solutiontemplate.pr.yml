@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 env:
-  APPLICATION_DIRECTORY: marketplace/application/pixel-streaming
+  APPLICATION_DIRECTORY: marketplace/application/horde-storage
 
 jobs:
   ValidateARMTemplates:
