@@ -9,19 +9,38 @@ param resourceGroupName string = resourceGroup().name
 param publicIpName string
 param keyVaultName string
 param servicePrincipalClientID string
+param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string
 param setup bool = true
+
+@description('For an existing Managed Identity, the Subscription Id it is located in')
+param existingManagedIdentitySubId string = subscription().subscriptionId
+
+@description('For an existing Managed Identity, the Resource Group it is located in')
+param existingManagedIdentityResourceGroupName string = resourceGroup().name
+
+param azureTenantID string = subscription().tenantId
+param keyVaultTenantID string = subscription().tenantId
+param loginTenantID string = subscription().tenantId
+
+param namespace string = ''
 
 var locations = union([ location ], secondaryLocations)
 
 module hordeSetup 'horde-umbrella.bicep' = [for (location, index) in locations: {
   name: 'helmInstallHorde-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
+    aksName: aksName
     location: location
     resourceGroupName: resourceGroupName
     keyVaultName: take('${location}-${keyVaultName}', 24)
     servicePrincipalClientID: servicePrincipalClientID
+    workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: hostname
+    keyVaultTenantID: keyVaultTenantID
+    loginTenantID: loginTenantID
+    enableWorker: contains(secondaryLocations, location)
+    namespace: namespace
   }
 }]
 
@@ -32,6 +51,7 @@ module configAKS '../../../bicep-templates/ContainerService/configure-aks.bicep'
     aksName: '${aksName}-${take(location, 8)}'
     additionalCharts: [ hordeSetup[index].outputs.helmChart ]
     staticIP: '${publicIpName}-${location}'
+    azureTenantID: azureTenantID
   }
 }]
 
@@ -42,5 +62,9 @@ module combo '../../../bicep-templates/ContainerService/helmChartInstall.bicep' 
     aksName: '${aksName}-${take(location, 8)}'
     location: location
     helmCharts: [hordeSetup[index].outputs.helmChart]
+    useExistingManagedIdentity: true
+    managedIdentityName: 'id-${aksName}-${location}'
+    existingManagedIdentitySubId: existingManagedIdentitySubId
+    existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
   }
 }]
