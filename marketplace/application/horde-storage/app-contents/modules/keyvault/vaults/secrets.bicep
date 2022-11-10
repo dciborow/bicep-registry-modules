@@ -8,11 +8,11 @@ param secretName string
 @secure()
 param secretValue string
 
-resource vault 'Microsoft.KeyVault/vaults@2021-11-01-preview' existing = {
+resource vault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
 }
 
-resource secret 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource secret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: vault
   name: secretName
   properties: {
