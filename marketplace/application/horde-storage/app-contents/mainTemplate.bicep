@@ -97,7 +97,7 @@ resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
   }
 }
 
-module deployResources '../../bicep-templates/resources.bicep' = if(epicEULA) {
+module deployResources 'modules/resources.bicep' = if(epicEULA) {
   name: guid(keyVaultName, publicIpName, cosmosDBName, storageAccountName)
   params: {
     location: location
@@ -127,7 +127,7 @@ module deployResources '../../bicep-templates/resources.bicep' = if(epicEULA) {
   }
 }
 
-module secondaryResources '../../bicep-templates/resources.bicep' = [for hordeLocation in secondaryLocations: if(epicEULA) {
+module secondaryResources 'modules/resources.bicep' = [for hordeLocation in secondaryLocations: if(epicEULA) {
   name: guid(keyVaultName, publicIpName, storageAccountName, hordeLocation)
   params: {
     location: hordeLocation
@@ -150,7 +150,7 @@ module secondaryResources '../../bicep-templates/resources.bicep' = [for hordeLo
   }
 }]
 
-module kvCert '../../bicep-templates/keyvault/create-kv-certificate.bicep' = [for hordeLocation in union([ location ], secondaryLocations): if (assignRole) {
+module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for hordeLocation in union([ location ], secondaryLocations): if (assignRole) {
   name: 'akvCert-${hordeLocation}'
   dependsOn: [
     deployResources
@@ -166,7 +166,7 @@ module kvCert '../../bicep-templates/keyvault/create-kv-certificate.bicep' = [fo
   }
 }]
 
-module hordeClientApp '../..//bicep-templates/keyvault/vaults/secrets.bicep' = [for hordeLocation in union([ location ], secondaryLocations): if (assignRole && epicEULA && servicePrincipalSecret != '') {
+module hordeClientApp 'modules/keyvault/vaults/secrets.bicep' = [for hordeLocation in union([ location ], secondaryLocations): if (assignRole && epicEULA && servicePrincipalSecret != '') {
   name: 'sp-secrets-${hordeLocation}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     deployResources
@@ -179,7 +179,7 @@ module hordeClientApp '../..//bicep-templates/keyvault/vaults/secrets.bicep' = [
   }
 }]
 
-module buildApp '../..//bicep-templates/keyvault/vaults/secrets.bicep' = [for hordeLocation in union([ location ], secondaryLocations): if (assignRole && epicEULA && servicePrincipalSecret != '') {
+module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for hordeLocation in union([ location ], secondaryLocations): if (assignRole && epicEULA && servicePrincipalSecret != '') {
   name: 'build-app-${hordeLocation}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     deployResources
