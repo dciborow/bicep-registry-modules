@@ -19,8 +19,8 @@ jobs:
       - run: az bicep build --file "$bicepFilePath" --outfile "$outputFilePath" > bicep.txt
         shell: bash
         env:
-          bicepFilePath: "${{ inputs.workingPath }}/${{ inputs.bicepFile }}"
-          outputFilePath: "${{ inputs.workingPath }}/mainTemplate.json"
+          bicepFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.bicep"
+          outputFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.json"
       - name: Publish Bicep Compile Results
         uses: actions/upload-artifact@v3
         with:
