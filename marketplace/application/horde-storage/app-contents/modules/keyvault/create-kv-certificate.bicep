@@ -45,7 +45,7 @@ param issuerName string = 'Self'
 @description('Certificate Issuer Provider')
 param issuerProvider string = ''
 
-resource akv 'Microsoft.KeyVault/vaults@2021-11-01-preview' existing = {
+resource akv 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: akvName
 }
 
