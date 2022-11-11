@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.12.40.16777",
-      "templateHash": "7974634626536788343"
+      "templateHash": "774559304204483758"
     }
   },
   "parameters": {
@@ -66,7 +66,7 @@
     },
     "vmssInstanceCount": {
       "type": "int",
-      "defaultValue": 2,
+      "defaultValue": 3,
       "minValue": 1,
       "maxValue": 100,
       "metadata": {
