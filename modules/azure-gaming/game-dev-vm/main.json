@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.12.40.16777",
-      "templateHash": "13511866116983514824"
+      "templateHash": "17995087159106556983"
     }
   },
   "parameters": {
@@ -75,7 +75,7 @@
     },
     "gdkVersion": {
       "type": "string",
-      "defaultValue": "March_2022_Update_1",
+      "defaultValue": "June_2021_Update_9",
       "allowedValues": [
         "June_2022_Update_1",
         "March_2022_Update_1",
