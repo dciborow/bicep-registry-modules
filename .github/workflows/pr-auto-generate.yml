@@ -85,7 +85,7 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag_prefix:  ${{ steps.changed_folders.outputs.OLD_TAG }}
+          tag_prefix: "${{ steps.changed_folders.outputs.OLD_TAG }}/"
           dry_run: true
           default_bump: false
 
@@ -106,16 +106,4 @@ jobs:
           message: Update Version to ${{ steps.tag_version.outputs.new_version }}
           committer_name: GitHub Actions
           committer_email: actions@github.com
-          add: setup.py
-
-      - name: Commit Changes
-        run: |
-          git config --global user.email "auto-brm@noreply.github.com"
-          git config --global user.name "Auto brm"
-
-          git add modules
-
-          if ! git diff-index --quiet HEAD --; then
-            git commit -m "Autoformat with BRM"
-            git push
-          fi
+          add: modules
