@@ -47,10 +47,10 @@ jobs:
     - id: deploy_arm
       uses: azure/CLI@v1
       env:
-        WORKING_DIR: arm
+        WORKING_DIR: marketplace/application/horde-storage/
         resourceGroup: devops-resources
         location: eastus
-        storageAccount: unrealpsdevopsstorage2
+        storageAccount: unrealddcdevopsstorage
         artifactContainer: artifacts
       with:
         azcliversion: 2.30.0
