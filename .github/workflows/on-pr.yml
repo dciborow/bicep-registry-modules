@@ -47,7 +47,7 @@ jobs:
     - id: deploy_arm
       uses: azure/CLI@v1
       env:
-        WORKING_DIR: marketplace/application/horde-storage/
+        WORKING_DIR: marketplace/application/horde-storage/app-contents
         resourceGroup: devops-resources
         location: eastus
         storageAccount: unrealddcdevopsstorage
