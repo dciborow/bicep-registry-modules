@@ -29,6 +29,9 @@
         "epicEULA": {
             "value": true
         },
+        "isZoneRedundant": {
+            "value": false
+        },
         "issuerProvider": {
             "value": "OneCertV2-PublicCA"
         }
