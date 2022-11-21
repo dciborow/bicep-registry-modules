@@ -27,7 +27,6 @@ az deployment group create \
     --resource-group devops-test-$suffix \
     --template-file mainTemplate.bicep \
     --parameters mainTemplate.parameters.json \
-    --parameters basics_adminPass="$ADMIN_PASS" \
     --parameters _artifactsLocation="$outputUrl" \
     --parameters _artifactsLocationSasToken="$outputSas" \
     --parameters location="$location"
