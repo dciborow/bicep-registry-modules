@@ -31,7 +31,7 @@ jobs:
           az storage account show \
             --name "$storageAccount" \
             --resource-group "$resourceGroup" 2>/dev/null \
-          || ${PWD}/package/prepareStorage.sh $resourceGroup $storageAccount $artifactContainer
+          || ${PWD}/scripts/prepareStorage.sh $resourceGroup $storageAccount $artifactContainer
 
     - id: upload_artifacts
       uses: azure/CLI@v1
@@ -42,7 +42,7 @@ jobs:
       with:
         azcliversion: 2.30.0
         inlineScript: |
-          ${PWD}/package/package.sh $resourceGroup $storageAccount $artifactContainer
+          ${PWD}/scripts/package.sh $resourceGroup $storageAccount $artifactContainer
 
     - id: deploy_arm
       uses: azure/CLI@v1
@@ -55,7 +55,7 @@ jobs:
       with:
         azcliversion: 2.30.0
         inlineScript: |
-          ${PWD}/package/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR
+          ${PWD}/scripts/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR
           
           echo Clean Up: devops-test-$suffix
           az deployment group delete \
