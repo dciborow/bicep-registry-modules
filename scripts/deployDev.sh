@@ -31,6 +31,4 @@ az deployment group create \
     --parameters basics_adminPass="$ADMIN_PASS" \
     --parameters _artifactsLocation="$outputUrl" \
     --parameters _artifactsLocationSasToken="$outputSas" \
-    --parameters basics_adminPass=Fake:$RANDOM \
-    --parameters location="$location" \
-    --parameters basics_pixelStreamZip="$PIXEL_STREAMING_SAS"
+    --parameters location="$location"
