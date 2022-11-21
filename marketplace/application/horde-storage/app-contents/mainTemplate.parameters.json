@@ -34,7 +34,7 @@
         },
         "issuerProvider": {
             "value": "OneCertV2-PublicCA"
-        }
+        },
         "vmSize": {
             "value": "Standard_L8s_v3"
         }
