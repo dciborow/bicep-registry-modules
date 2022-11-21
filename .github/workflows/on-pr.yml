@@ -1,0 +1,64 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+name: Deploy ARM
+
+concurrency: 
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  DeployTemplate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - id: create_storage
+      uses: azure/CLI@v1
+      env:
+        resourceGroup: devops-resources
+        location: eastus
+        storageAccount: unrealddcdevopsstorage
+        artifactContainer: artifacts
+      with:
+        azcliversion: 2.30.0
+        inlineScript: |
+          az storage account show \
+            --name "$storageAccount" \
+            --resource-group "$resourceGroup" 2>/dev/null \
+          || ${PWD}/package/prepareStorage.sh $resourceGroup $storageAccount $artifactContainer
+
+    - id: upload_artifacts
+      uses: azure/CLI@v1
+      env:
+        resourceGroup: devops-resources
+        storageAccount: unrealddcdevopsstorage
+        artifactContainer: artifacts
+      with:
+        azcliversion: 2.30.0
+        inlineScript: |
+          ${PWD}/package/package.sh $resourceGroup $storageAccount $artifactContainer
+
+    - id: deploy_arm
+      uses: azure/CLI@v1
+      env:
+        WORKING_DIR: arm
+        resourceGroup: devops-resources
+        location: eastus
+        storageAccount: unrealpsdevopsstorage2
+        artifactContainer: artifacts
+      with:
+        azcliversion: 2.30.0
+        inlineScript: |
+          ${PWD}/package/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR
+          
+          echo Clean Up: devops-test-$suffix
+          az deployment group delete \
+            --no-wait \
+            --yes \
+            --resource-group devops-test-$suffix
