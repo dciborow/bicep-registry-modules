@@ -5,7 +5,6 @@ if [ -z "$resourceGroup" ]; then
     artifactContainer=$2
     location=$4
     WORKING_DIR=$5
-    PIXEL_STREAMING_SAS=$6
 fi
 
 suffix=$RANDOM
