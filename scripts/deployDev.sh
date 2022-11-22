@@ -5,9 +5,12 @@ if [ -z "$resourceGroup" ]; then
     artifactContainer=$2
     location=$4
     WORKING_DIR=$5
+    suffix=$6
 fi
 
-suffix=$RANDOM
+if [ -z "$suffix" ]; then
+    suffix=$RANDOM
+fi
 echo "::set-output name=suffix::$suffix"
 
 cd "$WORKING_DIR" || exit
