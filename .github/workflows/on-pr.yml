@@ -55,7 +55,8 @@ jobs:
       with:
         azcliversion: 2.30.0
         inlineScript: |
-          ${PWD}/scripts/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR
+          suffix=$RANDOM
+          ${PWD}/scripts/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR $suffix
           
           echo Clean Up: devops-test-$suffix
           az deployment group delete \
