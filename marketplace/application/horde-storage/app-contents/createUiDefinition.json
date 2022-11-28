@@ -286,6 +286,30 @@
           "required": true
         },
         "visible": true
+      },
+      {
+        "name": "WorkerServicePrincipal",
+        "type": "Microsoft.Common.ServicePrincipalSelector",
+        "label": {
+          "password": "Password",
+          "certificateThumbprint": "Certificate thumbprint",
+          "authenticationType": "Authentication Type",
+          "sectionHeader": "Service Principal"
+        },
+        "toolTip": {
+          "password": "Password"
+        },
+        "defaultValue": {
+          "principalId": "<default guid>",
+          "name": "(New) default App Id"
+        },
+        "options": {
+          "hideCertificate": false
+        },
+        "constraints": {
+          "required": true
+        },
+        "visible": true
       }
     ],
     "steps": [
@@ -298,196 +322,224 @@
         },
         "bladeTitle": "Advanced",
         "elements": [
-          {
-            "name": "deployStorage",
-            "type": "Microsoft.Common.CheckBox",
-            "label": "Use existing storage account",
-            "toolTip": "This storage account is used as the primary location for cached content.",
-            "visible": true
-          },
-          {
-            "name": "storageSelector",
-            "type": "Microsoft.Solutions.ResourceSelector",
-            "label": "Select storage account",
-            "resourceType": "Microsoft.Storage/storageAccounts",
-            "toolTip": "Select an existing Storage Account.",
-            "options": {
-              "filter": {
-                "subscription": "onBasics",
-                "location": "onBasics"
-              }
-            },
-            "visible": "[steps('Advanced').deployStorage]"
-          },
-          {
-            "name": "storageName",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Storage Account Name",
-            "toolTip": "Storage Account Name.",
-            "defaultValue": "[concat('hordestore', take(replace(guid(), '-', ''), 5))]",
-            "constraints": {
-              "required": "[steps('Advanced').deployStorage]",
-              "validations": [
-                {
-                  "regex": "^[a-zA-Z0-9-]{3,24}[a-zA-Z0-9]$",
-                  "message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
-                }
-              ]
-            },
-            "visible": "[not(steps('Advanced').deployStorage)]"
-          },
-          {
-            "name": "deployKeyVault",
-            "type": "Microsoft.Common.CheckBox",
-            "label": "Use existing Key Vault",
-            "toolTip": "Key Vault is used to secure connection information between AKS and Azure Storage, and to manage the HTTPs certificate.",
-            "visible": true
-          },
-          {
-            "name": "keyValutSelector",
-            "type": "Microsoft.Solutions.ResourceSelector",
-            "label": "Select Key Vault",
-            "resourceType": "Microsoft.KeyVault/vaults",
-            "toolTip": "Select an existing key vault.",
-            "options": {
-              "filter": {
-                "subscription": "onBasics",
-                "location": "all"
-              }
-            },
-            "visible": "[steps('Advanced').deployKeyVault]"
-          },
-          {
-            "name": "keyVaultName",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Key Vault Name",
-            "toolTip": "Key Vault Name.",
-            "defaultValue": "[concat('hordevault', take(replace(guid(), '-', ''), 5))]",
-            "constraints": {
-              "required": "[steps('Advanced').deployKeyVault]",
-              "validations": [
-                {
-                  "regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
-                  "message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
-                }
-              ]
-            },
-            "visible": "[not(steps('Advanced').deployKeyVault)]"
-          },
-          {
-            "name": "deployCosmosDB",
-            "type": "Microsoft.Common.CheckBox",
-            "label": "Use existing Cosmos DB",
-            "toolTip": "Cassandra is used to store the index of the cached content. Additional Cassandra implementations will be supported in the future.",
-            "visible": true
-          },
-          {
-            "name": "cosmosDBSelector",
-            "type": "Microsoft.Solutions.ResourceSelector",
-            "label": "Select Cosmos DB account",
-            "resourceType": "Microsoft.documentDB/databaseAccounts",
-            "toolTip": "Select an existing Cosmos DB account",
-            "options": {
-              "filter": {
-                "subscription": "onBasics",
-                "location": "all"
-              }
-            },
-            "visible": "[steps('Advanced').deployCosmosDB]"
-          },
-          {
-            "name": "cosmosDBName",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Cosmos DB Name",
-            "toolTip": "Name of new Cosmos DB resource.",
-            "defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
-            "constraints": {
-              "required": "[steps('Advanced').deployCosmosDB]",
-              "validations": [
-                {
-                  "regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
-                  "message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
-                }
-              ]
-            },
-            "visible": "[not(steps('Advanced').deployCosmosDB)]"
-          },
-          {
-            "name": "deployPublicIP",
-            "type": "Microsoft.Common.CheckBox",
-            "label": "Use existing Public IP",
-            "toolTip": "The public IP addresses are used to connect AKS to the Azure Traffic Manager Profile.",
-            "visible": true
-          },
-          {
-            "name": "publicIPSelector",
-            "type": "Microsoft.Solutions.ResourceSelector",
-            "label": "Select Public IP account",
-            "resourceType": "Microsoft.Network/publicIPAddresses",
-            "toolTip": "Select an existing storage account.",
-            "options": {
-              "filter": {
-                "subscription": "onBasics",
-                "location": "all"
-              }
-            },
-            "visible": "[steps('Advanced').deployPublicIP]"
-          },
-          {
-            "name": "publicIPName",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Public IP Name",
-            "toolTip": "Name of new Public IP Resource",
-            "defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
-            "constraints": {
-              "required": "[steps('Advanced').deployPublicIP]",
-              "validations": [
-                {
-                  "regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]$",
-                  "message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
-                }
-              ]
-            },
-            "visible": "[not(steps('Advanced').deployPublicIP)]"
-          },
-          {
-                "name": "deployTrafficManager",
-                "type": "Microsoft.Common.CheckBox",
-                "label": "Use existing Traffic Manager",
-                "toolTip": "Select to use an existing Traffic Manager, otherwise a new Traffic Manager will be created.",
-                "visible": true
-          },
-          {
-            "name": "trafficManagerSelector",
-            "type": "Microsoft.Solutions.ResourceSelector",
-            "label": "Select Traffic Manager Profile",
-            "resourceType": "Microsoft.Network/TrafficManagerProfiles",
-            "toolTip": "Select an existing traffic manager profile.",
-            "options": {
-              "filter": {
-                "subscription": "onBasics",
-                "location": "all"
-              }
-            },
-            "visible": "[steps('Advanced').deployTrafficManager]"
-          },
-          {
-            "name": "trafficManagerName",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Traffic Manager Name",
-            "toolTip": "Name of new Traffic Manager Resource",
-            "defaultValue": "[concat('horde-tm-', take(replace(guid(), '-', ''), 6))]",
-            "constraints": {
-              "required": "[steps('Advanced').deployTrafficManager]",
-              "validations": [
-                {
-                  "regex": "^[a-z][a-z0-9-.]{1,61}[a-z0-9]$",
-                  "message": "The traffic manager name can only contain alphanumeric values, periods, and hyphens, but may not end with a hyphen."
-                }
-              ]
-            },
-            "visible": "[not(steps('Advanced').deployTrafficManager)]"
-          }
+		  {
+			"name": "GarbageCollection",
+			"type": "Microsoft.Common.Section",
+			"label": "Garbage Colleciton",
+			"elements": [
+				{
+					"name": "CleanOldRefRecords",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Clean Old Ref Records.",
+					"toolTip": "Delete old ref records no longer in use across the entire system"
+				},
+				{
+					"name": "CleanOldBlobs",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Clean Old Blobs",
+					"toolTip": "Delete old blobs that are no longer referenced by any ref"
+				}
+			],
+			"visible": true
+		  },
+		  {
+			"name": "Resources",
+			"type": "Microsoft.Common.Section",
+			"label": "Resources",
+			"elements": [
+				{
+					"name": "deployStorage",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing storage account",
+					"toolTip": "This storage account is used as the primary location for cached content.",
+					"visible": true
+				},
+				{
+					"name": "storageSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select storage account",
+					"resourceType": "Microsoft.Storage/storageAccounts",
+					"toolTip": "Select an existing Storage Account.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "onBasics"
+					}
+					},
+					"visible": "[steps('Advanced').deployStorage]"
+				},
+				{
+					"name": "storageName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Storage Account Name",
+					"toolTip": "Storage Account Name.",
+					"defaultValue": "[concat('hordestore', take(replace(guid(), '-', ''), 5))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployStorage]",
+					"validations": [
+						{
+						"regex": "^[a-zA-Z0-9-]{3,24}[a-zA-Z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployStorage)]"
+				},
+				{
+					"name": "deployKeyVault",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing Key Vault",
+					"toolTip": "Key Vault is used to secure connection information between AKS and Azure Storage, and to manage the HTTPs certificate.",
+					"visible": true
+				},
+				{
+					"name": "keyVaultSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Key Vault",
+					"resourceType": "Microsoft.KeyVault/vaults",
+					"toolTip": "Select an existing key vault.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployKeyVault]"
+				},
+				{
+					"name": "keyVaultName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Key Vault Name",
+					"toolTip": "Key Vault Name.",
+					"defaultValue": "[concat('hordevault', take(replace(guid(), '-', ''), 5))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployKeyVault]",
+					"validations": [
+						{
+						"regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployKeyVault)]"
+				},
+				{
+					"name": "deployCosmosDB",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing Cosmos DB",
+					"toolTip": "Cassandra is used to store the index of the cached content. Additional Cassandra implementations will be supported in the future.",
+					"visible": true
+				},
+				{
+					"name": "cosmosDBSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Cosmos DB account",
+					"resourceType": "Microsoft.documentDB/databaseAccounts",
+					"toolTip": "Select an existing Cosmos DB account",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployCosmosDB]"
+				},
+				{
+					"name": "cosmosDBName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Cosmos DB Name",
+					"toolTip": "Name of new Cosmos DB resource.",
+					"defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployCosmosDB]",
+					"validations": [
+						{
+						"regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployCosmosDB)]"
+				},
+				{
+					"name": "deployPublicIP",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing Public IP",
+					"toolTip": "The public IP addresses are used to connect AKS to the Azure Traffic Manager Profile.",
+					"visible": true
+				},
+				{
+					"name": "publicIPSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Public IP account",
+					"resourceType": "Microsoft.Network/publicIPAddresses",
+					"toolTip": "Select an existing storage account.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployPublicIP]"
+				},
+				{
+					"name": "publicIPName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Public IP Name",
+					"toolTip": "Name of new Public IP Resource",
+					"defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployPublicIP]",
+					"validations": [
+						{
+						"regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployPublicIP)]"
+				},
+				{
+						"name": "deployTrafficManager",
+						"type": "Microsoft.Common.CheckBox",
+						"label": "Use existing Traffic Manager",
+						"toolTip": "Select to use an existing Traffic Manager, otherwise a new Traffic Manager will be created.",
+						"visible": true
+				},
+				{
+					"name": "trafficManagerSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Traffic Manager Profile",
+					"resourceType": "Microsoft.Network/TrafficManagerProfiles",
+					"toolTip": "Select an existing traffic manager profile.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployTrafficManager]"
+				},
+				{
+					"name": "trafficManagerName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Traffic Manager Name",
+					"toolTip": "Name of new Traffic Manager Resource",
+					"defaultValue": "[concat('horde-tm-', take(replace(guid(), '-', ''), 6))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployTrafficManager]",
+					"validations": [
+						{
+						"regex": "^[a-z][a-z0-9-.]{1,61}[a-z0-9]$",
+						"message": "The traffic manager name can only contain alphanumeric values, periods, and hyphens, but may not end with a hyphen."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployTrafficManager)]"
+				}
+			],
+		  "visible": true
+		  }
         ]
       },
       {
@@ -584,21 +636,27 @@
       "agentPoolCount": "[basics('agentPoolCount')]",
       "isZoneRedundant": "[basics('isZoneRedundant')]",      
       "vmSize": "[basics('vmSize')]",
-      "newOrExistingStorageAccount": "[if(steps('Advanced').deployStorage, 'existing', 'new')]",
-      "newOrExistingKeyVault": "[if(steps('Advanced').deployKeyVault, 'existing', 'new')]",
-      "newOrExistingCosmosDB": "[if(steps.Advanced('deployCosmosDB'), 'existing', 'new')]",
-      "newOrExistingTrafficManager": "[if(steps.Advanced('deployTrafficManager'), 'existing', 'new')]",
-      "storageAccountName": "[steps.Advanced('storageAccountName')]",
-      "keyVaultName": "[steps.Advanced('keyVaultName')]",
-      "publicIpName": "[steps.Advanced('publicIpName')]",
-      "trafficManagerName": "[steps.Advanced('trafficManagerName')]",
+      "newOrExistingStorageAccount": "[if(steps('Advanced').Resources.deployStorage,        'existing', 'new')]",
+      "newOrExistingKeyVault"      : "[if(steps('Advanced').Resources.deployKeyVault,       'existing', 'new')]",
+      "newOrExistingCosmosDB"      : "[if(steps.Advanced.Resources('deployCosmosDB'),       'existing', 'new')]",
+      "newOrExistingTrafficManager": "[if(steps.Advanced.Resources('deployTrafficManager'), 'existing', 'new')]",
+
+      "storageAccountName": "[ if(steps('Advanced').Resources.deployStorage,        steps.Advanced.Resources('storageSelector').name,        steps.Advanced.Resources('storageAccountName'))]",
+      "keyVaultName"      : "[ if(steps('Advanced').Resources.deployKeyVault,       steps.Advanced.Resources('keyVaultSelector').name,       steps.Advanced.Resources('keyVaultName')      )]",
+      "cosmosDBName"      : "[ if(steps('Advanced').Resources.deployCosmosDB,       steps.Advanced.Resources('cosmosDBSelector').name,       steps.Advanced.Resources('cosmosDBName')      )]",      
+      "trafficManagerName": "[ if(steps('Advanced').Resources.deployTrafficManager, steps.Advanced.Resources('trafficManagerSelector').name, steps.Advanced.Resources('trafficManagerName'))]",
+      "publicIpName"      : "[ if(steps('Advanced').Resources.deployTrafficManager, steps.Advanced.Resources('publicIPSelector').name,       steps.Advanced.Resources('publicIpName')      )]",
+
+      "cosmosDBRG": "[if(steps.Advanced('deployCosmosDB'), split(steps.Advanced('cosmosDBSelector').id, '/')[4], resourceGroup().name)]",
       "hostname": "[steps.Security('hostname')]",
       "certificateIssuer": "[steps.Security('certificateIssuer')]",
       "issuerProvider": "[if(equals(steps('Security').issuerProviderDropDown, 'Custom'), steps.Security('certificateIssuer'), steps.Security('issuerProviderDropDown')]",
-      "servicePrincipalObjectId": "[basics('ServicePrincipal').objectId[0]]",
       "servicePrincipalClientId": "[basics('ServicePrincipal').appId]",
+      "workerServicePrincipalClientId": "[basics('WorkerServicePrincipal').appId]",
       "epicEULA": "[basics('EpicEULAAccept')]",
-      "secondaryLocations": "[basics('regionsSelected')]"
+      "secondaryLocations": "[basics('regionsSelected')]",
+	  "CleanOldRefRecords": "[steps.Advanced('GarbageCollection').CleanOldRefRecords]",
+	  "CleanOldBlobs": "[steps.Advanced('GarbageCollection').CleanOldBlobs]"
     }
   }
 }
