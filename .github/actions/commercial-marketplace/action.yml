@@ -6,15 +6,6 @@ inputs:
   azureCredentials:
     description: Service prinpical Azure credentials
     required: true
-  client-id:
-    description: Service prinpical Azure credentials
-    required: true
-  tenant-id:
-    description: Service prinpical Azure credentials
-    required: true
-  subscription-id:
-    description: Service prinpical Azure credentials
-    required: true
   offerType:
     description: The offer type to run command on
     required: true
@@ -39,9 +30,7 @@ runs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        client-id: ${{ inputs.client-id }}
-        tenant-id: ${{ inputs.tenant-id }}
-        subscription-id: ${{ inputs.subscription-id }}
+        creds: ${{ inputs.azureCredentials }}
 
     - name: Package zip file
       shell: bash
