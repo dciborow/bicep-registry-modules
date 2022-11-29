@@ -69,7 +69,7 @@ jobs:
         azcliversion: 2.30.0
         inlineScript: |
           echo Clean Up: devops-test-$suffix
-          az deployment group delete \
+          az group delete \
             --no-wait \
             --yes \
             --resource-group devops-test-$suffix
