@@ -55,15 +55,16 @@ jobs:
       with:
         azcliversion: 2.30.0
         inlineScript: |
-          echo "suffix=$RANDOM" >> $GITHUB_OUTPUT
           suffix=$RANDOM
+          echo "SUFFIX=$suffix" >> $GITHUB_OUTPUT
+
           ${PWD}/scripts/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR $suffix
 
     - id: cleanup_arm
       uses: azure/CLI@v1
       if: always()
       env:
-        suffix: ${{ steps.deploy_arm.outputs.suffix }}
+        suffix: ${{ steps.deploy_arm.outputs.SUFFIX }}
       with:
         azcliversion: 2.30.0
         inlineScript: |
