@@ -65,10 +65,10 @@
                 }
   ],
     "listing_logos"      : {
-      "logo_large": "gamedev_216_216.png",
-      "logo_small": "gamedev_48_48.png",
-      "logo_medium": "gamedev_90_90.png",
-      "logo_wide": "gamedev_255_115.png"
+      "logo_large": "unreal_216_216.png",
+      "logo_small": "unreal_48_48.png",
+      "logo_medium": "unreal_90_90.png",
+      "logo_wide": "unreal_255_115.png"
     },
     "listing_screenshots": {},
     "listing_videos"     : {}
@@ -79,7 +79,14 @@
       "edf507a2-6235-46c5-b560-fd463ba2e771",
       "69c75911-7439-4362-855d-c8f3ecbbf3de",
       "0ca618d2-22a8-413a-96d0-0f1b531129c3",
-      "3ce675b8-fcea-4732-a965-393bbe02d7ad"
+      "3ce675b8-fcea-4732-a965-393bbe02d7ad",
+      "8fee7450-a739-4529-8a51-f58a6617c27d",
+      "ecfc2cfe-3121-4c2d-9cae-d52e2e13e55c",
+      "b1838202-0929-45e3-9e8e-d83c96d0e550",
+      "914c011a-aeb8-4b3e-970c-8521c2f46874",
+      "678a21c0-c38c-4777-bd69-a9bdb2a74d61",
+      "2316d4b3-e497-4c51-b46c-4616e1bda051",
+      "6a132d79-980a-4afe-9a9b-37bfd2f5a87e"
     ]
   },
   "technical_configuration": {
@@ -119,17 +126,32 @@
             "ID":  "8fee7450-a739-4529-8a51-f58a6617c27d"
           },
           {
+            "ID":  "ecfc2cfe-3121-4c2d-9cae-d52e2e13e55c"
+          },
+          {
             "ID":  "3ce675b8-fcea-4732-a965-393bbe02d7ad"
-          }      
+          },
+          {
+            "ID":  "914c011a-aeb8-4b3e-970c-8521c2f46874"
+          },
+          {
+            "ID": "678a21c0-c38c-4777-bd69-a9bdb2a74d61"
+          },
+          {
+            "ID": "2316d4b3-e497-4c51-b46c-4616e1bda051"
+          },
+          {
+            "ID": "6a132d79-980a-4afe-9a9b-37bfd2f5a87e"
+          }
         ]
       },
       "technical_configuration" : {
         "version"               : "0.0.0",
         "allowedCustomerActions": [
-          "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*"
+          "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*;Microsoft.Insights/*"
         ],
         "allowedDataActions"    : [
-          "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*"
+          "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*;Microsoft.Insights/*"
         ],
         "deploymentMode"        : "Complete",
         "tenant_id"             : "72f988bf-86f1-41af-91ab-2d7cd011db47",
