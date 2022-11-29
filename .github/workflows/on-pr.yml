@@ -63,7 +63,7 @@ jobs:
       uses: azure/CLI@v1
       if: always()
       env:
-        suffix: ${{ steps.my-key.outputs.suffix }}
+        suffix: ${{ steps.deploy_arm.outputs.suffix }}
       with:
         azcliversion: 2.30.0
         inlineScript: |
