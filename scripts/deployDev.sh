@@ -8,11 +8,6 @@ if [ -z "$resourceGroup" ]; then
     suffix=$6
 fi
 
-if [ -z "$suffix" ]; then
-    suffix=$RANDOM
-fi
-echo "::set-output name=suffix::$suffix"
-
 cd "$WORKING_DIR" || exit
 
 az group create \
