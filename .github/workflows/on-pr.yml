@@ -55,10 +55,7 @@ jobs:
       with:
         azcliversion: 2.30.0
         inlineScript: |
-          suffix=$RANDOM
-          echo "SUFFIX=$suffix" >> $GITHUB_OUTPUT
-
-          ${PWD}/scripts/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR $suffix
+          ${PWD}/scripts/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR
 
     - id: cleanup_arm
       uses: azure/CLI@v1
