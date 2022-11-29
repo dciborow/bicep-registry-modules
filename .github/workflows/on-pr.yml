@@ -40,15 +40,12 @@ jobs:
     - name: DeployARM
       id: deploy_arm
       run: |
-        suffix=$RANDOM
-        echo "SUFFIX=$suffix" >> $GITHUB_OUTPUT
-
         ${PWD}/scripts/deployDev.sh $resourceGroup $storageAccount $artifactContainer $location $WORKING_DIR $suffix
 
     - name: CleanupARM
       if: always()
       env:
-        suffix: ${{ steps.deploy_arm.outputs.SUFFIX }}
+        suffix: ${{ steps.deploy_arm.outputs.RAND_SUFFIX }}
       run: |
         echo Clean Up: devops-test-$suffix
         az group delete \

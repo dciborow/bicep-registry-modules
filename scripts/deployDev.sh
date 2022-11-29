@@ -5,13 +5,11 @@ if [ -z "$resourceGroup" ]; then
     artifactContainer=$2
     location=$4
     WORKING_DIR=$5
-    suffix=$6
 fi
 
-if [ -z "$suffix" ]; then
-    suffix=$RANDOM
-fi
-echo "::set-output name=suffix::$suffix"
+suffix=$RANDOM
+echo "RAND_SUFFIX=$suffix" >> $GITHUB_OUTPUT
+
 
 cd "$WORKING_DIR" || exit
 
