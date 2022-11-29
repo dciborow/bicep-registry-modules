@@ -11,6 +11,7 @@ env:
   APPLICATION_DIRECTORY: marketplace/application/horde-storage
   PLAN_NAME: preview
   APPLICATION_NAME: unreal-cloud-ddc
+  CLEANUP: false
 
 jobs:
   ValidateARMTemplates:
@@ -51,6 +52,7 @@ jobs:
           applicationDirectory: ${{ env.APPLICATION_DIRECTORY }}
         timeout-minutes: 5
       - name: Delete offer
+        if: env.CLEANUP == 'true'
         uses: ./.github/actions/commercial-marketplace
         with:
           azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
