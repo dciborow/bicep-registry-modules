@@ -9,6 +9,7 @@ concurrency:
 on:
   workflow_dispatch:
   pull_request:
+    branches: [main]
 
 jobs:
   DeployTemplate:
@@ -61,7 +62,7 @@ jobs:
       uses: azure/CLI@v1
       if: always()
       env:
-        suffix: ${{ steps.deploy_arm.outputs.SUFFIX }}
+        suffix: ${{ steps.deploy_arm.outputs.RAND_SUFFIX }}
       with:
         azcliversion: 2.30.0
         inlineScript: |
