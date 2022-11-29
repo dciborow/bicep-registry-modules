@@ -4,7 +4,7 @@ name: Deploy ARM
 
 description: Run ARM-TTK on all files in the folder
 inputs:
-  WORKING_DIR:
+  applicationDirectory:
     description: ARM templates folder
     required: true
   resourceGroup:
@@ -22,6 +22,12 @@ inputs:
 
 runs:
   using: composite
+  env:
+    WORKING_DIR: ${{ inputs.applicationDirectory }}
+    resourceGroup: ${{ inputs.resourceGroup }}
+    location: ${{ inputs.location }}
+    storageAccount: ${{ inputs.storageAccount }}
+    artifactContainer: ${{ inputs.artifactContainer }}
   steps:
   - uses: actions/checkout@v3
   - uses: azure/login@v1
