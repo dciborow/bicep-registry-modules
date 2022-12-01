@@ -52,7 +52,7 @@ module hordeSetup 'horde-umbrella.bicep' = [for (location, index) in locations: 
   }
 }]
 
-module configAKS '../../../bicep-templates/ContainerService/configure-aks.bicep' = [for (location, index) in locations: if(setup) {
+module configAKS 'ContainerService/configure-aks.bicep' = [for (location, index) in locations: if(setup) {
   name: 'configAKS-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     location: location
@@ -64,7 +64,7 @@ module configAKS '../../../bicep-templates/ContainerService/configure-aks.bicep'
 }]
 
 
-module combo '../../../bicep-templates/ContainerService/helmChartInstall.bicep' = [for (location, index) in locations: if(!setup) {
+module combo 'ContainerService/helmChartInstall.bicep' = [for (location, index) in locations: if(!setup) {
   name: 'helmInstall-UnrealCloud-${uniqueString(aksName, location, resourceGroup().name)}'
   params: {
     aksName: '${aksName}-${take(location, 8)}'
