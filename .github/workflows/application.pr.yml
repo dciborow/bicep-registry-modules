@@ -47,7 +47,7 @@ jobs:
           azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
           offerType: ma
           command: create
-          applicationName: ${{ env.APPLICATION_NAME }}
+          applicationName: "${{ env.APPLICATION_NAME }}-temp"
           planName: ${{ env.PLAN_NAME }}
           applicationDirectory: ${{ env.APPLICATION_DIRECTORY }}
         timeout-minutes: 5
@@ -58,5 +58,5 @@ jobs:
           azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
           offerType: app
           command: delete
-          applicationName: ${{ env.APPLICATION_NAME }}
+          applicationName: "${{ env.APPLICATION_NAME }}-temp"
         timeout-minutes: 5
