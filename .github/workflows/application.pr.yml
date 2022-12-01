@@ -1,0 +1,62 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+name: Solution Template PR
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+env:
+  APPLICATION_DIRECTORY: marketplace/application/horde-storage
+  PLAN_NAME: preview
+  APPLICATION_NAME: unreal-cloud-ddc
+  CLEANUP: false
+
+jobs:
+  ValidateARMTemplates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - run: az bicep build --file "$bicepFilePath" --outfile "$outputFilePath" > bicep.txt
+        shell: bash
+        env:
+          bicepFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.bicep"
+          outputFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.json"
+      - name: Publish Bicep Compile Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: BicepResults
+          path: ./bicep.txt
+        if: always()
+      - name: Run ARM-TTK
+        uses: ./.github/actions/run-armttk
+        with:
+          templatesFolderPath: "${{ env.APPLICATION_DIRECTORY }}/app-contents"
+          armttkVersion: aka.ms/arm-ttk-latest
+  VerifyOfferCreation:
+    runs-on: ubuntu-latest
+    # needs: ValidateARMTemplates
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build and create/update offer
+        uses: ./.github/actions/commercial-marketplace
+        with:
+          azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
+          offerType: ma
+          command: create
+          applicationName: "${{ env.APPLICATION_NAME }}-temp"
+          planName: ${{ env.PLAN_NAME }}
+          applicationDirectory: ${{ env.APPLICATION_DIRECTORY }}
+        timeout-minutes: 5
+      - name: Delete offer
+        if: env.CLEANUP == 'true'
+        uses: ./.github/actions/commercial-marketplace
+        with:
+          azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
+          offerType: app
+          command: delete
+          applicationName: "${{ env.APPLICATION_NAME }}-temp"
+        timeout-minutes: 5
