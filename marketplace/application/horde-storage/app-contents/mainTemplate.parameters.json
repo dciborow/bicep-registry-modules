@@ -14,11 +14,11 @@
         "agentPoolName": {
             "value": "k8agent"
         },
-        "servicePrincipalObjectID": {
-            "value": "9427e5fe-13f8-475b-aeca-945561bd91bd"
-        },
         "servicePrincipalClientID": {
             "value": "799926db-87bf-44e2-9eac-66fb84915841"
+        },
+        "workerServicePrincipalClientID": {
+            "value": "343ad76e-e613-4265-bd73-594662dc6223"
         },
         "hostname":{
             "value": "deploy1.horde-storage.gaming.azure.com"
@@ -29,14 +29,8 @@
         "epicEULA": {
             "value": true
         },
-        "isZoneRedundant": {
-            "value": false
-        },
         "issuerProvider": {
             "value": "OneCertV2-PublicCA"
-        },
-        "vmSize": {
-            "value": "Standard_L8s_v3"
         }
     }
 }
