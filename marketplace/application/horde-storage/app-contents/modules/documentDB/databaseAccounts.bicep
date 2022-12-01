@@ -44,6 +44,9 @@ param EnableServerless bool = false
 @description('Toggle to enable or disable zone redudance.')
 param isZoneRedundant bool = false
 
+@description('Cosmos DB Resource Group. Used if Cosmos DB is in a different resource group.')
+param cosmosDBRG string = resourceGroup().name
+
 var consistencyPolicy = {
   Eventual: {
     defaultConsistencyLevel: 'Eventual'
@@ -98,7 +101,10 @@ resource newAccount 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = if (new
     capabilities: union([ { name: 'EnableCassandra' } ], EnableServerless ? [ { name: 'EnableServerless' } ] : [])
   }
 }
-resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = { name: toLower(name) }
+resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = {
+  scope: resourceGroup(cosmosDBRG)
+  name: toLower(name)
+}
 
 @description('Key to connect with Cosmos DB')
 output connectionString string = connectionStrings.connectionStrings[0].connectionString
