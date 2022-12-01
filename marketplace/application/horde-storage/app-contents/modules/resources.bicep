@@ -47,7 +47,6 @@ param assignRole bool = true
 param subject string = ''
 
 param storageSecretName string = ''
-param cassandraSecretName string = ''
 
 var newOrExisting = {
   new: 'new'
