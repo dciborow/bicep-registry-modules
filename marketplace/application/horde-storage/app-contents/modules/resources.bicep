@@ -7,6 +7,7 @@ param isZoneRedundant bool = true
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingStorageAccount string = 'none'
 param storageAccountName string = 'store${uniqueString(resourceGroup().id, subscription().id)}'
+param storageResourceGroupName string = resourceGroup().name
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingKeyVault string = 'none'
@@ -19,6 +20,8 @@ param publicIpName string = 'pubip${uniqueString(resourceGroup().id, subscriptio
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingCosmosDB string = 'none'
 param cosmosDBName string = 'cosmos${uniqueString(resourceGroup().id, subscription().id)}'
+param cosmosDBRG string = resourceGroup().name
+
 @description('array of region objects or regions: [{locationName: string, failoverPriority: int, isZoneRedundant: bool}] or [region: string]')
 param secondaryLocations array = []
 
@@ -36,8 +39,12 @@ param kubernetesParams object = {
   agentPoolName: 'agentpool'
   vmSize: 'Standard_D2_v2'
   assignRole: true
+  clusterUserName: 'k8-${take(uniqueString(location, resourceGroup().id), 15)}'
 }
 param assignRole bool = true
+
+@description('Subject for AKS Federated Credential')
+param subject string = ''
 
 param storageSecretName string = ''
 param cassandraSecretName string = ''
@@ -53,7 +60,6 @@ var enableComosDB = newOrExistingCosmosDB != 'none'
 var enableStorage = newOrExistingStorageAccount != 'none'
 var enablePublicIP = newOrExistingPublicIp != 'none'
 var enableTrafficManager = newOrExistingTrafficManager != 'none'
-
 
 var noAvailabilityZones = [
   'northcentralus'
@@ -87,6 +93,8 @@ module clusterModule 'ContainerService/managedClusters.bicep' = if (enableKubern
     assignRole: assignRole
     newOrExisting: newOrExisting[newOrExistingKubernetes]
     isZoneRedundant: isZoneRedundant && !contains(noAvailabilityZones, location)
+    subject: subject
+    clusterUserName: kubernetesParams.clusterUserName
   }
 }
 var rbacPolicies = [
@@ -109,6 +117,7 @@ module cosmosDB 'documentDB/databaseAccounts.bicep' = if (enableComosDB) {
   params: {
     location: location
     name: cosmosDBName
+    cosmosDBRG: cosmosDBRG
     newOrExisting: newOrExisting[newOrExistingCosmosDB]
     secondaryLocations: secondaryLocations
     isZoneRedundant: isZoneRedundant && !contains(noAvailabilityZones, location)
@@ -121,6 +130,7 @@ module storageAccount 'storage/storageAccounts.bicep' = if (enableStorage) {
     location: location
     name: take(storageAccountName, 24)
     newOrExisting: newOrExisting[newOrExistingStorageAccount]
+    resourceGroupName: storageResourceGroupName
     isZoneRedundant: isZoneRedundant && !contains(noAvailabilityZones, location)
   }
 }
@@ -151,18 +161,15 @@ module trafficManager 'network/trafficManagerProfiles.bicep' = if (enableTraffic
   }
 }
 
-module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault && (enableComosDB || enableStorage)) {
+module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault) {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVault.outputs.name
-    secrets: union(
-      enableStorage ? [ { secretName: storageSecretName, secretValue: storageAccount.outputs.blobStorageConnectionString } ] : [],
-      enableComosDB ? [ { secretName: cassandraSecretName, secretValue: cosmosDB.outputs.cassandraConnectionString } ] : []
-    )
+    secrets: [ { secretName: storageSecretName, secretValue: storageAccount.outputs.blobStorageConnectionString } ]
   }
 }
 
 output keyVaultName string = enableKeyVault ? keyVault.outputs.name : ''
-output cassandraConnectionString string = enableComosDB ? cosmosDB.outputs.cassandraConnectionString : ''
-output blobStorageConnectionString string = enableStorage ? storageAccount.outputs.blobStorageConnectionString : ''
+output cassandraConnectionString string = newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : ''
+output blobStorageConnectionString string = newOrExistingStorageAccount == 'new' ? storageAccount.outputs.blobStorageConnectionString : ''
 output ipAddress string = enablePublicIP ? publicIp.outputs.ipAddress : ''
