@@ -138,7 +138,6 @@ module deployResources 'modules/resources.bicep' = if (epicEULA) {
     storageAccountName: '${take(location, 8)}${storageAccountName}'
     storageResourceGroupName: storageResourceGroupName
     storageSecretName: 'horde-storage-connection-string'
-    cassandraSecretName: 'horde-db-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
     subject: 'system:serviceaccount:horde-tests:workload-identity-sa'
