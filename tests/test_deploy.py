@@ -32,5 +32,5 @@ def test_get_resources():
     key_vaults = get_key_vault_names()
     assert key_vaults
     for key_vault in key_vaults:
-        assert get_key_vault_secret("horde-storage-connection-string", key_vault)
-        assert get_key_vault_secret("horde-db-connection-string", key_vault)
+        assert get_key_vault_secret("ucddc-storage-connection-string", key_vault)
+        assert get_key_vault_secret("ucddc-db-connection-string", key_vault)
