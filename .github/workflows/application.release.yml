@@ -1,0 +1,61 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+name: Solution Template Release
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+env:
+  APPLICATION_DIRECTORY: marketplace/application/horde-storage
+  PLAN_NAME: preview
+  APPLICATION_NAME: unreal-cloud-ddc
+
+jobs:
+  ValidateARMTemplates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Generate ARM template from Bicep templates
+        uses: Azure/bicep-build-action@v1.0.1
+        with:
+          bicepFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.bicep"
+          outputFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.json"
+      - name: Run ARM-TTK
+        uses: ./.github/actions/run-armttk
+        with:
+          templatesFolderPath: "${{ env.APPLICATION_DIRECTORY }}/app-contents"
+          armttkVersion: aka.ms/arm-ttk-latest
+  CreatePublishOffer:
+    runs-on: ubuntu-latest
+    needs: ValidateARMTemplates
+    environment: Unreal Cloud DDC Live
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and create/update offer
+        uses: ./.github/actions/commercial-marketplace
+        with:
+          azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
+          offerType: ma
+          command: create
+          applicationName: ${{ env.APPLICATION_NAME }}
+          planName: ${{ env.PLAN_NAME }}
+          applicationDirectory: ${{ env.APPLICATION_DIRECTORY }}
+        timeout-minutes: 5
+      - name: Publish offer
+        uses: ./.github/actions/commercial-marketplace
+        with:
+          azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
+          offerType: ma
+          command: publish
+          applicationName: ${{ env.APPLICATION_NAME }}
+        timeout-minutes: 5
