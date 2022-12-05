@@ -40,11 +40,9 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Build and create/update offer
         uses: ./.github/actions/commercial-marketplace
         with:
-          azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
           offerType: ma
           command: create
           applicationName: ${{ env.APPLICATION_NAME }}
@@ -54,7 +52,6 @@ jobs:
       - name: Publish offer
         uses: ./.github/actions/commercial-marketplace
         with:
-          azureCredentials: ${{ secrets.AZURE_CREDENTIALS }}
           offerType: ma
           command: publish
           applicationName: ${{ env.APPLICATION_NAME }}
