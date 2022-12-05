@@ -31,6 +31,7 @@ runs:
       uses: azure/login@v1
       with:
         creds: ${{ inputs.azureCredentials }}
+        allow-no-subscriptions: true
     - name: Package zip file
       shell: bash
       working-directory: ${{ inputs.workingDirectory }}
