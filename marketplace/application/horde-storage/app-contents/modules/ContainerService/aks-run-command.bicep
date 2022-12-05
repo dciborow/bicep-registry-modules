@@ -2,7 +2,7 @@
 param aksName string
 
 @description('The location to deploy the resources to')
-param location string = resourceGroup().location
+param location string
 
 @description('How the deployment script should be forced to execute')
 param forceUpdateTag  string = utcNow()
