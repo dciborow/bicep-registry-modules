@@ -26,7 +26,7 @@ jobs:
         uses: ./.github/actions/run-armttk
         with:
           templatesFolderPath: "${{ env.APPLICATION_DIRECTORY }}/app-contents"
-          armttkVersion: aka.ms/arm-ttk-latest
+          armttkVersion: aka.ms/arm-ttk-marketplace
   CreatePublishOffer:
     runs-on: ubuntu-latest
     needs: ValidateARMTemplates
@@ -34,15 +34,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: 'Az CLI login'
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Build and create/update offer
         uses: ./.github/actions/commercial-marketplace
         with:
+          azureCredentials: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
           offerType: ma
           command: create
           applicationName: ${{ env.APPLICATION_NAME }}
@@ -52,6 +47,7 @@ jobs:
       - name: Publish offer
         uses: ./.github/actions/commercial-marketplace
         with:
+          azureCredentials: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
           offerType: ma
           command: publish
           applicationName: ${{ env.APPLICATION_NAME }}
