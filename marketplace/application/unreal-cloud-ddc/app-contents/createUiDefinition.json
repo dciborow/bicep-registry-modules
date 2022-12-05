@@ -1,0 +1,662 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "config": {
+      "basics": {
+        "resourceGroup": {
+          "allowExisting": true
+        }
+      }
+    },
+    "basics": [
+      {
+        "name": "regionsSelected",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Select secondary regions to deploy (0 min, 4 max).",
+        "toolTip": "Select the secondary regions to deploy Unreal Cloud DDC.",
+        "multiselect": true,
+        "selectAll": false,
+        "defaultValue": [],
+        "filter": true,
+        "filterPlaceholder": "Filter regions ...",
+        "multiLine": true,
+        "constraints": {
+            "allowedValues": [
+                {
+                    "label": "East Asia",
+                    "value": "eastasia"
+                },
+                {
+                    "label": "Southeast Asia",
+                    "value": "southeastasia"
+                },
+                {
+                    "label": "Central US",
+                    "value": "centralus"
+                },
+                {
+                    "label": "East US",
+                    "value": "eastus"
+                },
+                {
+                    "label": "East US 2",
+                    "value": "eastus2"
+                },
+                {
+                    "label": "West US",
+                    "value": "westus"
+                },
+                {
+                    "label": "North Central US",
+                    "value": "northcentralus"
+                },
+                {
+                    "label": "South Central US",
+                    "value": "southcentralus"
+                },
+                {
+                    "label": "North Europe",
+                    "value": "northeurope"
+                },
+                {
+                    "label": "West Europe",
+                    "value": "westeurope"
+                },
+                {
+                    "label": "Japan West",
+                    "value": "japanwest"
+                },
+                {
+                    "label": "Japan East",
+                    "value": "japaneast"
+                },
+                {
+                    "label": "Brazil South",
+                    "value": "brazilsouth"
+                },
+                {
+                    "label": "Australia East",
+                    "value": "australiaeast"
+                },
+                {
+                    "label": "Australia Southeast",
+                    "value": "australiasoutheast"
+                },
+                {
+                    "label": "South India",
+                    "value": "southindia"
+                },
+                {
+                    "label": "Central India",
+                    "value": "centralindia"
+                },
+                {
+                    "label": "West India",
+                    "value": "westindia"
+                },
+                {
+                    "label": "Canada Central",
+                    "value": "canadacentral"
+                },
+                {
+                    "label": "Canada East",
+                    "value": "canadaeast"
+                },
+                {
+                    "label": "UK South",
+                    "value": "uksouth"
+                },
+                {
+                    "label": "UK West",
+                    "value": "ukwest"
+                },
+                {
+                    "label": "West Central US",
+                    "value": "westcentralus"
+                },
+                {
+                    "label": "West US 2",
+                    "value": "westus2"
+                },
+                {
+                    "label": "Korea Central",
+                    "value": "koreacentral"
+                },
+                {
+                    "label": "Korea South",
+                    "value": "koreasouth"
+                },
+                {
+                    "label": "France Central",
+                    "value": "francecentral"
+                },
+                {
+                    "label": "France South",
+                    "value": "francesouth"
+                },
+                {
+                    "label": "Australia Central",
+                    "value": "australiacentral"
+                },
+                {
+                    "label": "Australia Central 2",
+                    "value": "australiacentral2"
+                },
+                {
+                    "label": "UAE Central",
+                    "value": "uaecentral"
+                },
+                {
+                    "label": "UAE North",
+                    "value": "uaenorth"
+                },
+                {
+                    "label": "South Africa North",
+                    "value": "southafricanorth"
+                },
+                {
+                    "label": "South Africa West",
+                    "value": "southafricawest"
+                },
+                {
+                    "label": "Switzerland North",
+                    "value": "switzerlandnorth"
+                },
+                {
+                    "label": "Switzerland West",
+                    "value": "switzerlandwest"
+                },
+                {
+                    "label": "Germany North",
+                    "value": "germanynorth"
+                },
+                {
+                    "label": "Germany West Central",
+                    "value": "germanywestcentral"
+                },
+                {
+                    "label": "Norway West",
+                    "value": "norwaywest"
+                },
+                {
+                    "label": "Norway East",
+                    "value": "norwayeast"
+                },
+                {
+                    "label": "Brazil Southeast",
+                    "value": "brazilsoutheast"
+                }
+            ],
+            "required": false
+        },
+        "visible": true
+      },
+      {
+        "name": "isZoneRedundant",
+        "type": "Microsoft.Common.CheckBox",
+        "toolTip": "Optionally enable Zone Redundancy to divide workload across different zones in within the same region for increased availability. This setting is ignored for unsupported regions.",
+        "label": "Zone Redundant",
+        "constraints": {
+          "required": false,
+          "validationMessage": "Select to enable Zone Redundancy"
+        }
+      },
+      {
+        "name": "name",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Name",
+        "toolTip": "Name of Unreal Cloud DDC deployment.",
+        "defaultValue": "[concat('horde', take(replace(guid(), '-', ''), 6))]",
+        "constraints": {
+          "required": true,
+          "validations": [
+            {
+              "regex": "^[a-zA-Z0-9-]{0,19}[a-zA-Z0-9]$",
+              "message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-20 characters."
+            }
+          ]
+        },
+        "visible": true
+      },
+      {
+        "name": "agentPoolCount",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Agent Pool Count",
+        "toolTip": "Three 16-core Agents are recommended",
+        "defaultValue": 3,
+        "constraints": {
+          "required": true,
+          "validations": [
+            {
+              "regex": "^[0-9-]{0,2}[0-9]$",
+              "message": "The Unreal Cloud DDC pool count must be less then 100."
+            }
+          ]
+        },
+        "visible": true
+      },
+      {
+        "name": "vmSize",
+        "type": "Microsoft.Compute.SizeSelector",
+        "label": "Size",
+        "toolTip": "Select Virtual Machine Size of Nodes",
+        "recommendedSizes": [
+          "Standard_L16s_v2",
+          "Standard_L16s_v3"
+        ],
+        "options": {
+          "hideDiskTypeFilter": false
+        },
+        "osPlatform": "Linux",
+        "count": "[basics('agentPoolCount')]",
+        "visible": true
+      },
+      {
+            "name": "EpicEULAAccept",
+            "type": "Microsoft.Common.CheckBox",
+            "toolTip": "Accept Epic EULA, https://store.epicgames.com/en-US/eula.",
+            "label": "Accept Epic EULA Agreement",
+            "constraints": {
+              "required": true,
+              "validationMessage": "You must agree to Epic's EULA to continue"
+            }
+      },
+      {
+        "name": "ServicePrincipal",
+        "type": "Microsoft.Common.ServicePrincipalSelector",
+        "label": {
+          "password": "Password",
+          "certificateThumbprint": "Certificate thumbprint",
+          "authenticationType": "Authentication Type",
+          "sectionHeader": "Service Principal"
+        },
+        "toolTip": {
+          "password": "Password"
+        },
+        "defaultValue": {
+          "principalId": "<default guid>",
+          "name": "(New) default App Id"
+        },
+        "options": {
+          "hideCertificate": false
+        },
+        "constraints": {
+          "required": true
+        },
+        "visible": true
+      },
+      {
+        "name": "WorkerServicePrincipal",
+        "type": "Microsoft.Common.ServicePrincipalSelector",
+        "label": {
+          "password": "Password",
+          "certificateThumbprint": "Certificate thumbprint",
+          "authenticationType": "Authentication Type",
+          "sectionHeader": "Service Principal"
+        },
+        "toolTip": {
+          "password": "Password"
+        },
+        "defaultValue": {
+          "principalId": "<default guid>",
+          "name": "(New) default App Id"
+        },
+        "options": {
+          "hideCertificate": false
+        },
+        "constraints": {
+          "required": true
+        },
+        "visible": true
+      }
+    ],
+    "steps": [
+      {
+        "name": "Advanced",
+        "label": "Advanced",
+        "subLabel": {
+          "preValidation": "Advanced",
+          "postValidation": "Security"
+        },
+        "bladeTitle": "Advanced",
+        "elements": [
+		  {
+			"name": "GarbageCollection",
+			"type": "Microsoft.Common.Section",
+			"label": "Garbage Colleciton",
+			"elements": [
+				{
+					"name": "CleanOldRefRecords",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Clean Old Ref Records.",
+					"toolTip": "Delete old ref records no longer in use across the entire system"
+				},
+				{
+					"name": "CleanOldBlobs",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Clean Old Blobs",
+					"toolTip": "Delete old blobs that are no longer referenced by any ref"
+				}
+			],
+			"visible": true
+		  },
+		  {
+			"name": "Resources",
+			"type": "Microsoft.Common.Section",
+			"label": "Resources",
+			"elements": [
+				{
+					"name": "deployStorage",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing storage account",
+					"toolTip": "This storage account is used as the primary location for cached content.",
+					"visible": true
+				},
+				{
+					"name": "storageSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select storage account",
+					"resourceType": "Microsoft.Storage/storageAccounts",
+					"toolTip": "Select an existing Storage Account.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "onBasics"
+					}
+					},
+					"visible": "[steps('Advanced').deployStorage]"
+				},
+				{
+					"name": "storageName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Storage Account Name",
+					"toolTip": "Storage Account Name.",
+					"defaultValue": "[concat('hordestore', take(replace(guid(), '-', ''), 5))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployStorage]",
+					"validations": [
+						{
+						"regex": "^[a-zA-Z0-9-]{3,24}[a-zA-Z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployStorage)]"
+				},
+				{
+					"name": "deployKeyVault",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing Key Vault",
+					"toolTip": "Key Vault is used to secure connection information between AKS and Azure Storage, and to manage the HTTPs certificate.",
+					"visible": true
+				},
+				{
+					"name": "keyVaultSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Key Vault",
+					"resourceType": "Microsoft.KeyVault/vaults",
+					"toolTip": "Select an existing key vault.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployKeyVault]"
+				},
+				{
+					"name": "keyVaultName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Key Vault Name",
+					"toolTip": "Key Vault Name.",
+					"defaultValue": "[concat('hordevault', take(replace(guid(), '-', ''), 5))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployKeyVault]",
+					"validations": [
+						{
+						"regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployKeyVault)]"
+				},
+				{
+					"name": "deployCosmosDB",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing Cosmos DB",
+					"toolTip": "Cassandra is used to store the index of the cached content. Additional Cassandra implementations will be supported in the future.",
+					"visible": true
+				},
+				{
+					"name": "cosmosDBSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Cosmos DB account",
+					"resourceType": "Microsoft.documentDB/databaseAccounts",
+					"toolTip": "Select an existing Cosmos DB account",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployCosmosDB]"
+				},
+				{
+					"name": "cosmosDBName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Cosmos DB Name",
+					"toolTip": "Name of new Cosmos DB resource.",
+					"defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployCosmosDB]",
+					"validations": [
+						{
+						"regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployCosmosDB)]"
+				},
+				{
+					"name": "deployPublicIP",
+					"type": "Microsoft.Common.CheckBox",
+					"label": "Use existing Public IP",
+					"toolTip": "The public IP addresses are used to connect AKS to the Azure Traffic Manager Profile.",
+					"visible": true
+				},
+				{
+					"name": "publicIPSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Public IP account",
+					"resourceType": "Microsoft.Network/publicIPAddresses",
+					"toolTip": "Select an existing storage account.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployPublicIP]"
+				},
+				{
+					"name": "publicIPName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Public IP Name",
+					"toolTip": "Name of new Public IP Resource",
+					"defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployPublicIP]",
+					"validations": [
+						{
+						"regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]$",
+						"message": "The Unreal Cloud DDC name can only contain alphanumeric values and hyphens, but may not end with a hyphen. The name must be between 1-15 characters."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployPublicIP)]"
+				},
+				{
+						"name": "deployTrafficManager",
+						"type": "Microsoft.Common.CheckBox",
+						"label": "Use existing Traffic Manager",
+						"toolTip": "Select to use an existing Traffic Manager, otherwise a new Traffic Manager will be created.",
+						"visible": true
+				},
+				{
+					"name": "trafficManagerSelector",
+					"type": "Microsoft.Solutions.ResourceSelector",
+					"label": "Select Traffic Manager Profile",
+					"resourceType": "Microsoft.Network/TrafficManagerProfiles",
+					"toolTip": "Select an existing traffic manager profile.",
+					"options": {
+					"filter": {
+						"subscription": "onBasics",
+						"location": "all"
+					}
+					},
+					"visible": "[steps('Advanced').deployTrafficManager]"
+				},
+				{
+					"name": "trafficManagerName",
+					"type": "Microsoft.Common.TextBox",
+					"label": "Traffic Manager Name",
+					"toolTip": "Name of new Traffic Manager Resource",
+					"defaultValue": "[concat('horde-tm-', take(replace(guid(), '-', ''), 6))]",
+					"constraints": {
+					"required": "[steps('Advanced').deployTrafficManager]",
+					"validations": [
+						{
+						"regex": "^[a-z][a-z0-9-.]{1,61}[a-z0-9]$",
+						"message": "The traffic manager name can only contain alphanumeric values, periods, and hyphens, but may not end with a hyphen."
+						}
+					]
+					},
+					"visible": "[not(steps('Advanced').deployTrafficManager)]"
+				}
+			],
+		  "visible": true
+		  }
+        ]
+      },
+      {
+        "name": "Security",
+        "label": "Security",
+        "subLabel": {
+          "preValidation": "Security",
+          "postValidation": "Done"
+        },
+        "bladeTitle": "Security",
+        "elements": [
+          {
+            "name": "hostname",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Host Name",
+            "toolTip": "Application Endpoint secured by HTTPS, ex: horde-storage.contos.com",
+            "defaultValue": "[concat('horde-tm-', take(replace(guid(), '-', ''), 6), '.net')]",
+            "constraints": {
+              "validations": [
+                {
+                  "regex": "^[a-z][a-z0-9-.]{1,61}[a-z0-9]$",
+                  "message": "The hostname can only contain alphanumeric values, periods and hyphens, but may not end with a hyphen."
+                }
+              ]
+            }
+          },
+          {
+            "name": "certificateIssuer",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Certificate Issuer",
+            "toolTip": "Set this value to name the Certificate Issuer in the Key Vault, otherwise a Self signed certificate will be created",
+            "defaultValue": "Self",
+            "constraints": {
+              "validations": [
+                {
+                  "regex": "^[A-Za-z][A-Za-z0-9-]{1,61}[A-Za-z0-9]$",
+                  "message": "The certificate issuer can only contain alphanumeric values, and hyphens, but may not end with a hyphen."
+                }
+              ]
+            }
+          },
+          {
+            "name": "issuerProviderDropDown",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Issuer Provider",
+            "defaultValue": "DigiCert",
+            "toolTip": "Issuer must be preconfigured",
+            "multiLine": true,
+            "defaultDescription": "A value for selection",
+            "constraints": {
+                "allowedValues": [
+                    {
+                        "label": "DigiCert",
+                        "description": "Supported in all key vault service locations in public cloud and Azure Government",
+                        "value": "DigiCert"
+                    },
+                    {
+                        "label": "GlobalSign",
+                        "description": "Supported in all key vault service locations in public cloud and Azure Government",
+                        "value": "GlobalSign"
+                    },
+                    {
+                        "label": "Custom",
+                        "description": "Use Custom Certificate Provider configured for Subscription",
+                        "value": "Custom"
+                    }
+                ],
+                "required": "[not(equals(steps('Security').certificateIssuer, 'Self'))]"
+            },
+            "visible": "[not(equals(steps('Security').certificateIssuer, 'Self'))]"
+          },
+          {
+            "name": "issuerProvider",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Custom Issuer Provider",
+            "toolTip": "certificate Issuer Provider",
+            "visible": "[equals(steps('Security').issuerProviderDropDown, 'Custom')]",
+            "defaultValue": "",
+            "constraints": {
+              "validations": [
+                {
+                  "regex": "^[A-Za-z][A-Za-z0-9-]{1,61}[A-Za-z0-9]$",
+                  "message": "The certificate issuer can only contain alphanumeric values, and hyphens, but may not end with a hyphen."
+                }
+              ]
+            }          
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "aksName": "[basics('name')]",
+      "agentPoolCount": "[basics('agentPoolCount')]",
+      "isZoneRedundant": "[basics('isZoneRedundant')]",      
+      "vmSize": "[basics('vmSize')]",
+      "newOrExistingStorageAccount": "[if(steps('Advanced').Resources.deployStorage,        'existing', 'new')]",
+      "newOrExistingKeyVault"      : "[if(steps('Advanced').Resources.deployKeyVault,       'existing', 'new')]",
+      "newOrExistingCosmosDB"      : "[if(steps.Advanced.Resources('deployCosmosDB'),       'existing', 'new')]",
+      "newOrExistingTrafficManager": "[if(steps.Advanced.Resources('deployTrafficManager'), 'existing', 'new')]",
+
+      "storageAccountName": "[ if(steps('Advanced').Resources.deployStorage,        steps.Advanced.Resources('storageSelector').name,        steps.Advanced.Resources('storageAccountName'))]",
+      "keyVaultName"      : "[ if(steps('Advanced').Resources.deployKeyVault,       steps.Advanced.Resources('keyVaultSelector').name,       steps.Advanced.Resources('keyVaultName')      )]",
+      "cosmosDBName"      : "[ if(steps('Advanced').Resources.deployCosmosDB,       steps.Advanced.Resources('cosmosDBSelector').name,       steps.Advanced.Resources('cosmosDBName')      )]",      
+      "trafficManagerName": "[ if(steps('Advanced').Resources.deployTrafficManager, steps.Advanced.Resources('trafficManagerSelector').name, steps.Advanced.Resources('trafficManagerName'))]",
+      "publicIpName"      : "[ if(steps('Advanced').Resources.deployTrafficManager, steps.Advanced.Resources('publicIPSelector').name,       steps.Advanced.Resources('publicIpName')      )]",
+
+      "cosmosDBRG": "[if(steps.Advanced('deployCosmosDB'), split(steps.Advanced('cosmosDBSelector').id, '/')[4], resourceGroup().name)]",
+      "hostname": "[steps.Security('hostname')]",
+      "certificateIssuer": "[steps.Security('certificateIssuer')]",
+      "issuerProvider": "[if(equals(steps('Security').issuerProviderDropDown, 'Custom'), steps.Security('certificateIssuer'), steps.Security('issuerProviderDropDown')]",
+      "servicePrincipalClientId": "[basics('ServicePrincipal').appId]",
+      "workerServicePrincipalClientId": "[basics('WorkerServicePrincipal').appId]",
+      "epicEULA": "[basics('EpicEULAAccept')]",
+      "secondaryLocations": "[basics('regionsSelected')]",
+	  "CleanOldRefRecords": "[steps.Advanced('GarbageCollection').CleanOldRefRecords]",
+	  "CleanOldBlobs": "[steps.Advanced('GarbageCollection').CleanOldBlobs]"
+    }
+  }
+}
