@@ -5,7 +5,7 @@ description: Build and publish Azure Commercial Marketplace offers
 inputs:
   azureCredentials:
     description: Service prinpical Azure credentials
-    required: true
+    default: ''
   offerType:
     description: The offer type to run command on
     required: true
@@ -29,6 +29,7 @@ runs:
   steps:
     - name: Azure Login
       uses: azure/login@v1
+      if: inputs.azureCredentials != ''
       with:
         creds: ${{ inputs.azureCredentials }}
     - name: Package zip file
