@@ -30,9 +30,17 @@ jobs:
   CreatePublishOffer:
     runs-on: ubuntu-latest
     needs: ValidateARMTemplates
+    environment: Unreal Cloud DDC Live
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Build and create/update offer
         uses: ./.github/actions/commercial-marketplace
         with:
