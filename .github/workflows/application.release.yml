@@ -5,9 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-permissions:
-      id-token: write
-      contents: read
+
 env:
   APPLICATION_DIRECTORY: marketplace/application/horde-storage
   PLAN_NAME: preview
@@ -36,15 +34,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: 'Az CLI login'
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Build and create/update offer
         uses: ./.github/actions/commercial-marketplace
         with:
+          azureCredentials: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
           offerType: ma
           command: create
           applicationName: ${{ env.APPLICATION_NAME }}
@@ -54,6 +47,7 @@ jobs:
       - name: Publish offer
         uses: ./.github/actions/commercial-marketplace
         with:
+          azureCredentials: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
           offerType: ma
           command: publish
           applicationName: ${{ env.APPLICATION_NAME }}
