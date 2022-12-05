@@ -58,7 +58,7 @@ for KEYVAULT_NAME in $KEY_VAULTS; do
     echo "##[debug] Create secrets in Key Vault"
     az keyvault secret set \
         --vault-name "$KEYVAULT_NAME" \
-        --name "horde-client-app-secret" \
+        --name "ucddc-client-app-secret" \
         --value "$SECRET" \
         > /dev/null 2>&1 || exit
 

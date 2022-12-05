@@ -17,7 +17,7 @@ if [ -z "$TEMPLATE" ]; then
     TEMPLATE="mainTemplate.bicep"
 fi
 
-echo '##[section]Horde Storage - Deploy Bicep Template'
+echo '##[section]UC DDC Storage - Deploy Bicep Template'
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 
 az deployment group create \

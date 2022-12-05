@@ -15,7 +15,7 @@ jobs:
   DeployTemplate:
     runs-on: ubuntu-latest
     env:
-      WORKING_DIR: marketplace/application/horde-storage/app-contents
+      WORKING_DIR: marketplace/application/unreal-cloud-ddc/app-contents
       resourceGroup: devops-resources
       location: eastus
       storageAccount: unrealddcdevopsstorage

@@ -16,7 +16,7 @@ OBJECT_ID=$2
 
 CLUSTER_NAMES=$(az aks list -g "$RESOURCE_GROUP" --query [].[name] --output tsv)
 for CLUSTER_NAME in $CLUSTER_NAMES; do
-    echo '##[section] Horde Storage - enable OIDC issuer'
+    echo '##[section] Unreal Cloud DDC - enable OIDC issuer'
 
     echo '##[command] az extension add --name aks-preview && az extension update --name aks-preview'
     az feature register \
@@ -57,8 +57,8 @@ for CLUSTER_NAME in $CLUSTER_NAMES; do
     echo '{
         "name":"'"$CLUSTER_NAME"'",
         "issuer":"'"$ISSUER_URL"'",
-        "subject":"system:serviceaccount:horde-tests:workload-identity-sa",
-        "description":"For use by Horde Storage app on pipeline test cluster ",
+        "subject":"system:serviceaccount:ucddc-tests:workload-identity-sa",
+        "description":"For use by UC DDC Storage app on pipeline test cluster ",
         "audiences":["api://AzureADTokenExchange"]
     }' > parameters.json
 

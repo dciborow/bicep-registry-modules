@@ -1,6 +1,6 @@
 @description('Deployment Location')
 param location string
-param name string = 'horde-storage-k8-cluster'
+param name string = 'ucddc-storage-k8-cluster'
 param agentPoolCount int = 3
 param agentPoolName string = 'k8agent'
 param vmSize string = 'Standard_L16s_v2'
@@ -32,7 +32,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2021-03-01' = {
         osType: 'Linux'
         mode: 'System'
         nodeLabels: {
-          type: 'horde-storage'
+          type: 'ucddc-storage'
         }
       }
     ]

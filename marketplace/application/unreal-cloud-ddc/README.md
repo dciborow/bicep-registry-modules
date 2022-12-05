@@ -4,7 +4,7 @@
 app_id: azure-uc-ddc
 app_name: Unreal Cloud DDC on Azure
 plan_names:
-  - horde-storage: 
+  - unreal-cloud-ddc: 
     type: managed_app
 
 listing_config: ./listing_config.json
@@ -19,7 +19,7 @@ Before deploying the Unreal Cloud DDC solution, the following is needed:
 * Create `main.parameters.json` with values for deployment. `app_contents/mainTemplate.parameters.json` may be used as an example.
 
 ## Deply Unreal Cloud DDC
-Create a new shell script using `../scripts/horde-deploy.sh` as an example or run:
+Create a new shell script using `../scripts/deployDev.sh` as an example or run:
  
 ```bash
 MY_CLUSTER=<Name of AKS Cluster>
@@ -29,7 +29,7 @@ LOCATION=<Primary Azure Region of Deployment>
 AGENT_POOL_COUNT=<Number of AKS Nodes>
 OBJECT_ID=<OBJECT_ID of Service Principal>
 
-../scripts/horde-deploy.sh $MY_CLUSTER $RESOURCE_GROUP $LOCATION $AGENT_POOL_COUNT $OBJECT_ID
+../scripts/deployDev.sh $MY_CLUSTER $RESOURCE_GROUP $LOCATION $AGENT_POOL_COUNT $OBJECT_ID
 ```
 
 From the output, copy and run the `az rest ...` command to setup the federated credential.
@@ -39,10 +39,10 @@ Ensure that you have run the `az rest ...` command outputted in the last step, a
 
 * Add the Service Principal as a Secrets Admin to Key Vault
 * Set the following Secrets to Key Vault to the SP Secret
-  * horde-client-app-secret
+  * uc-ddc-client-app-secret
   * build-app-secret
 
-Now restart the "horde-test" containers on the AKS cluster.
+Now restart the "ucddc-test" containers on the AKS cluster.
 
 Once succesfully deployed, you should be able to validate by visting `https://CLUSTER_URL/health/live`
 # Code structure

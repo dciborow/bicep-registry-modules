@@ -33,7 +33,7 @@ param CleanOldBlobs bool = true
 
 var locations = union([ location ], secondaryLocations)
 
-module hordeSetup 'horde-umbrella.bicep' = [for (location, index) in locations: {
+module hordeSetup 'ucddc-umbrella.bicep' = [for (location, index) in locations: {
   name: 'helmInstallHorde-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     aksName: aksName

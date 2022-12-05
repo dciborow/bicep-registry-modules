@@ -1,10 +1,10 @@
 @description('Deployment Location')
 param location string
-param name string = 'horde-storage-k8-cluster'
+param name string = 'ucddc-storage-k8-cluster'
 param agentPoolCount int = 3
 param agentPoolName string = 'k8agent'
 param vmSize string = 'Standard_L16s_v2'
-param nodeLabels string = 'horde-storage'
+param nodeLabels string = 'ucddc-storage'
 param assignRole bool = false
 param dnsPrefix string = 'k8-${take(uniqueString(name), 5)}'
 param kubernetesVersion string = '1.22.11'

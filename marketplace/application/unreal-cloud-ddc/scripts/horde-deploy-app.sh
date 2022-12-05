@@ -11,7 +11,7 @@ MY_CLUSTER=$1
 RESOURCE_GROUP=$2
 LOCATION=$3
 
-echo '##[section]Horde Storage - Deploy Bicep Template'
+echo '##[section]UC DDC Storage - Deploy Bicep Template'
 az group create \
     --name $RESOURCE_GROUP\
     --location $LOCATION

@@ -21,7 +21,7 @@
             "value": "343ad76e-e613-4265-bd73-594662dc6223"
         },
         "hostname": {
-            "value": "deploy1.horde-storage.gaming.azure.com"
+            "value": "deploy1.ucddc-storage.gaming.azure.com"
         },
         "certificateIssuer": {
             "value": "Azure-Gaming"

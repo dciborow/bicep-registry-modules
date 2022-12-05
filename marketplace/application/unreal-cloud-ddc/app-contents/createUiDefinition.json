@@ -208,7 +208,7 @@
         "type": "Microsoft.Common.TextBox",
         "label": "Name",
         "toolTip": "Name of Unreal Cloud DDC deployment.",
-        "defaultValue": "[concat('horde', take(replace(guid(), '-', ''), 6))]",
+        "defaultValue": "[concat('ucddc', take(replace(guid(), '-', ''), 6))]",
         "constraints": {
           "required": true,
           "validations": [
@@ -373,7 +373,7 @@
 					"type": "Microsoft.Common.TextBox",
 					"label": "Storage Account Name",
 					"toolTip": "Storage Account Name.",
-					"defaultValue": "[concat('hordestore', take(replace(guid(), '-', ''), 5))]",
+					"defaultValue": "[concat('ucddcstore', take(replace(guid(), '-', ''), 5))]",
 					"constraints": {
 					"required": "[steps('Advanced').deployStorage]",
 					"validations": [
@@ -411,7 +411,7 @@
 					"type": "Microsoft.Common.TextBox",
 					"label": "Key Vault Name",
 					"toolTip": "Key Vault Name.",
-					"defaultValue": "[concat('hordevault', take(replace(guid(), '-', ''), 5))]",
+					"defaultValue": "[concat('ucddcvault', take(replace(guid(), '-', ''), 5))]",
 					"constraints": {
 					"required": "[steps('Advanced').deployKeyVault]",
 					"validations": [
@@ -449,7 +449,7 @@
 					"type": "Microsoft.Common.TextBox",
 					"label": "Cosmos DB Name",
 					"toolTip": "Name of new Cosmos DB resource.",
-					"defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
+					"defaultValue": "[concat('ucddcdb', take(replace(guid(), '-', ''), 6))]",
 					"constraints": {
 					"required": "[steps('Advanced').deployCosmosDB]",
 					"validations": [
@@ -487,7 +487,7 @@
 					"type": "Microsoft.Common.TextBox",
 					"label": "Public IP Name",
 					"toolTip": "Name of new Public IP Resource",
-					"defaultValue": "[concat('hordedb', take(replace(guid(), '-', ''), 6))]",
+					"defaultValue": "[concat('ucddcdb', take(replace(guid(), '-', ''), 6))]",
 					"constraints": {
 					"required": "[steps('Advanced').deployPublicIP]",
 					"validations": [
@@ -525,7 +525,7 @@
 					"type": "Microsoft.Common.TextBox",
 					"label": "Traffic Manager Name",
 					"toolTip": "Name of new Traffic Manager Resource",
-					"defaultValue": "[concat('horde-tm-', take(replace(guid(), '-', ''), 6))]",
+					"defaultValue": "[concat('ucddc-tm-', take(replace(guid(), '-', ''), 6))]",
 					"constraints": {
 					"required": "[steps('Advanced').deployTrafficManager]",
 					"validations": [
@@ -555,8 +555,8 @@
             "name": "hostname",
             "type": "Microsoft.Common.TextBox",
             "label": "Host Name",
-            "toolTip": "Application Endpoint secured by HTTPS, ex: horde-storage.contos.com",
-            "defaultValue": "[concat('horde-tm-', take(replace(guid(), '-', ''), 6), '.net')]",
+            "toolTip": "Application Endpoint secured by HTTPS, ex: ucddc-storage.contos.com",
+            "defaultValue": "[concat('ucddc-tm-', take(replace(guid(), '-', ''), 6), '.net')]",
             "constraints": {
               "validations": [
                 {
