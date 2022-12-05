@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 env:
-  APPLICATION_DIRECTORY: marketplace/application/horde-storage
+  APPLICATION_DIRECTORY: marketplace/application/unreal-cloud-ddc
   PLAN_NAME: preview
   APPLICATION_NAME: unreal-cloud-ddc
   CLEANUP: false
