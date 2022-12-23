@@ -1,13 +1,10 @@
-@description('Traffic Manager Profile Resource Name')
+// Copyright (c) 2022 Microsoft Corporation. All rights reserved.
+// Azure Traffic Manager Profile
+
+//                                                    Parameters
+// ********************************************************************************************************************
 param name string = 'traffic-mp-${uniqueString(resourceGroup().id, subscription().id)}'
-
-@description('Relative DNS name for the traffic manager profile, must be globally unique.')
 param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
-
-@allowed([ 'new', 'existing' ])
-param newOrExisting string = 'new'
-
-@description('An array of objects that represent the endpoints in the Traffic Manager profile. {name: string, target: string, endpointStatus: string, endpointLocation: string}')
 param endpoints array = []
 param monitorConfig object = {
   protocol: 'HTTPS'
@@ -25,6 +22,12 @@ param monitorConfig object = {
   ]
 }
 
+@allowed([ 'new', 'existing' ])
+param newOrExisting string = 'new'
+// End Parameters
+
+//                                                    Resources
+// ********************************************************************************************************************
 resource trafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08-01' = if (newOrExisting == 'new') {
   name: name
   location: 'global'
@@ -64,5 +67,9 @@ resource trafficManagerEndpoints 'Microsoft.Network/TrafficManagerProfiles/Exter
 }]
 
 resource existingTrafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08-01' existing = { name: name }
+// End Resources
 
+//                                                    Outputs
+// ********************************************************************************************************************
 output name string = newOrExisting == 'new' ? trafficManagerProfile.name : existingTrafficManagerProfile.name
+// End Outputs

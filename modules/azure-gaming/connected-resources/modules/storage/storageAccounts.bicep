@@ -1,23 +1,24 @@
-@description('Deployment Location')
-param location string
+// Copyright (c) 2022 Microsoft Corporation. All rights reserved.
+// Azure Storage Accounts
 
+//                                                    Parameters
+// ********************************************************************************************************************
+param location string
 param name string = uniqueString(resourceGroup().id)
+param resourceGroupName string = resourceGroup().name
+param subnetID string = ''
+param enableVNET bool = false
+param isZoneRedundant bool = false
+param storageAccountType string = isZoneRedundant ? 'Standard_ZRS' : 'Standard_LRS'
 
 @allowed([ 'new', 'existing' ])
 param newOrExisting string = 'new'
+// End Parameters
 
-@description('Resource Group')
-param resourceGroupName string = resourceGroup().name
-
-param subnetID string = ''
-param enableVNET bool = false
-
-@description('Toggle to enable or disable zone redudance.')
-param isZoneRedundant bool = false
-
-@description('Storage Account Type. Use Zonal Redundant Storage when able.')
-param storageAccountType string = isZoneRedundant ? 'Standard_ZRS' : 'Standard_LRS'
-
+//                                                    Variables
+// ********************************************************************************************************************
+var keys = newOrExisting == 'new' ? listKeys(newStorageAccount.id, newStorageAccount.apiVersion) : listKeys(storageAccount.id, storageAccount.apiVersion)
+var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${keys.keys[0].value}'
 var networkAcls = enableVNET ? {
   defaultAction: 'Deny'
   virtualNetworkRules: [
@@ -27,7 +28,10 @@ var networkAcls = enableVNET ? {
     }
   ]
 } : {}
+// End Variables
 
+//                                                    Resources
+// ********************************************************************************************************************
 resource newStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' = if (newOrExisting == 'new') {
   name: name
   location: location
@@ -58,9 +62,10 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' existing 
   scope: resourceGroup(resourceGroupName)
   name: name
 }
+// End Resources
 
-var keys = newOrExisting == 'new' ? listKeys(newStorageAccount.id, newStorageAccount.apiVersion) : listKeys(storageAccount.id, storageAccount.apiVersion)
-var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${keys.keys[0].value}'
-
+//                                                    Outputs
+// ********************************************************************************************************************
 output id string = newOrExisting == 'new' ? newStorageAccount.id : storageAccount.id
 output blobStorageConnectionString string = blobStorageConnectionString
+// End Outputs

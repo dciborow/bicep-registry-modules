@@ -1,3 +1,8 @@
+// Copyright (c) 2022 Microsoft Corporation. All rights reserved.
+// Deploy AKS
+
+//                                                    Parameters
+// ********************************************************************************************************************
 @description('Deployment Location')
 param location string
 param name string = 'k8-cluster'
@@ -21,7 +26,10 @@ param isZoneRedundant bool = false
 param subject string = ''
 
 param clusterUserName string = 'k8-${take(uniqueString(location, name), 15)}'
+// End Parameters
 
+//                                                    Resources
+// ********************************************************************************************************************
 resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = if (newOrExisting == 'new') {
   name: clusterUserName
   location: location
@@ -69,6 +77,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-previ
 }
 
 resource existingUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = if (newOrExisting == 'existing') { name: 'k8-${take(uniqueString(location, name), 15)}' }
+
 resource existingAksCluster 'Microsoft.ContainerService/managedClusters@2021-03-01' existing = if (newOrExisting == 'existing') { name: name }
 
 resource federatedId 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2022-01-31-preview' = if (newOrExisting == 'new' && subject != '') {
@@ -83,8 +92,6 @@ resource federatedId 'Microsoft.ManagedIdentity/userAssignedIdentities/federated
   }
 }
 
-
-@description('This is the built-in Network Contributor role. See https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#contributor')
 resource networkContributorRoleDefinition 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
   scope: subscription()
   name: '4d97b98b-1d4f-4787-a291-c67834d212e7'
@@ -98,7 +105,11 @@ resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-prev
     principalType: 'ServicePrincipal'
   }
 }
+// End Resources
 
+//                                                    Outputs
+// ********************************************************************************************************************
 output nodeResourceGroup string = newOrExisting == 'new' ? aksCluster.properties.nodeResourceGroup : existingAksCluster.properties.nodeResourceGroup
 output clusterUserObjectId string = newOrExisting == 'new' ? clusterUser.properties.principalId : existingUser.properties.principalId
 output clusterUrl string = newOrExisting == 'new' ? aksCluster.properties.fqdn : existingAksCluster.properties.fqdn
+// End Outputs

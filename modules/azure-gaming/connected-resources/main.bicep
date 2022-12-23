@@ -1,3 +1,7 @@
+// Copyright (c) 2022 Microsoft Corporation. All rights reserved.
+// Azure Gaming Resources
+//                                                    Parameters
+// ********************************************************************************************************************
 @description('Deployment Location')
 param location string
 
@@ -63,7 +67,10 @@ param assignRole bool = true
 
 @description('Enable Zonal Redunancy for supported regions')
 param isZoneRedundant bool = true
+// End Parameters
 
+//                                                    Modules
+// ********************************************************************************************************************
 module deployResources 'modules/resources.bicep' = {
   name: guid(keyVaultName, publicIpName, cosmosDBName, storageAccountName)
   params: {
@@ -88,9 +95,8 @@ module deployResources 'modules/resources.bicep' = {
     trafficManagerName: trafficManagerName
     trafficManagerDnsName: trafficManagerDnsName
     storageAccountName: '${take(location, 8)}${storageAccountName}'
-    storageSecretName: 'storage-connection-string'
-    cassandraSecretName: 'db-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
   }
 }
+// End Modules

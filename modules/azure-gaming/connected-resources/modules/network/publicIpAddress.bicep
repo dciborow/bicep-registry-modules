@@ -1,23 +1,24 @@
-@description('Deployment Location')
+// Copyright (c) 2022 Microsoft Corporation. All rights reserved.
+// Azure Public IP Addresses
+
+//                                                    Parameters
+// ********************************************************************************************************************
 param location string
-
-@description('Resource Group Name')
 param resourceGroupName string = resourceGroup().name
-
-@description('PublicIP Resource Name')
 param name string = 'pubip${uniqueString(resourceGroup().id)}'
-
-@allowed([ 'new', 'existing' ])
-@description('Create new or use existing resource selection. new/existing')
-param newOrExisting string = 'new'
-
+param publicIpAllocationMethod string = 'Static'
+param publicIpDns string = 'dns-${uniqueString(resourceGroup().id, name)}'
 param publicIpSku object = {
   name: 'Standard'
   tier: 'Regional'
 }
-param publicIpAllocationMethod string = 'Static'
-param publicIpDns string = 'dns-${uniqueString(resourceGroup().id, name)}'
 
+@allowed([ 'new', 'existing' ])
+param newOrExisting string = 'new'
+// End Parameters
+
+//                                                    Resources
+// ********************************************************************************************************************
 resource newPublicIP 'Microsoft.Network/publicIPAddresses@2021-03-01' = if (newOrExisting == 'new') {
   name: name
   sku: publicIpSku
@@ -34,7 +35,11 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2021-03-01' existing = if
   name: name
   scope: resourceGroup(resourceGroupName)
 }
+// End Resources
 
+//                                                    Outputs
+// ********************************************************************************************************************
 output name string = newOrExisting == 'new' ? newPublicIP.name : publicIP.name
 output id string = newOrExisting == 'new' ? newPublicIP.id : publicIP.id
 output ipAddress string = newOrExisting == 'new' ? newPublicIP.properties.ipAddress : publicIP.properties.ipAddress
+// End Outputs
