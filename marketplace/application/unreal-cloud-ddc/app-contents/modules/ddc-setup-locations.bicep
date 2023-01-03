@@ -1,6 +1,6 @@
 param aksName string
 @description('Deployment Location')
-param location string = resourceGroup().location
+param location string
 
 @description('Secondary Deployment Locations')
 param secondaryLocations array = []
@@ -52,7 +52,7 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (location, index) in locations: {
   }
 }]
 
-module configAKS '../../../bicep-templates/ContainerService/configure-aks.bicep' = [for (location, index) in locations: if(setup) {
+module configAKS 'modules/ContainerService/configure-aks.bicep' = [for (location, index) in locations: if(setup) {
   name: 'configAKS-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     location: location

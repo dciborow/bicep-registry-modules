@@ -1,5 +1,5 @@
 @description('Deployment Location')
-param location string = resourceGroup().location
+param location string
 
 @description('Secondary Deployment Locations')
 param secondaryLocations array = []
@@ -114,7 +114,7 @@ resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
   }
 }
 
-module deployResources '../../bicep-templates/resources.bicep' = if (epicEULA) {
+module deployResources 'modules/resources.bicep' = if (epicEULA) {
   name: guid(keyVaultName, publicIpName, cosmosDBName, storageAccountName)
   params: {
     location: location
@@ -145,7 +145,7 @@ module deployResources '../../bicep-templates/resources.bicep' = if (epicEULA) {
   }
 }
 
-module secondaryResources '../../bicep-templates/resources.bicep' = [for location in secondaryLocations: if (epicEULA) {
+module secondaryResources 'modules/resources.bicep' = [for location in secondaryLocations: if (epicEULA) {
   name: guid(keyVaultName, publicIpName, storageAccountName, location)
   params: {
     location: location
@@ -171,7 +171,7 @@ module secondaryResources '../../bicep-templates/resources.bicep' = [for locatio
   }
 }]
 
-module kvCert '../../bicep-templates/keyvault/create-kv-certificate.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && enableCert) {
+module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && enableCert) {
   name: 'akvCert-${location}'
   dependsOn: [
     deployResources
@@ -190,7 +190,7 @@ module kvCert '../../bicep-templates/keyvault/create-kv-certificate.bicep' = [fo
   }
 }]
 
-module buildApp '../../bicep-templates/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
+module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
   name: 'build-app-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     deployResources
@@ -203,7 +203,7 @@ module buildApp '../../bicep-templates/keyvault/vaults/secrets.bicep' = [for loc
   }
 }]
 
-module cosmosDB '../../bicep-templates/documentDB/databaseAccounts.bicep' = {
+module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = {
   name: 'cosmosDB-${uniqueString(location, resourceGroup().id, deployment().name)}-key'
   dependsOn: [
     deployResources
@@ -218,7 +218,7 @@ module cosmosDB '../../bicep-templates/documentDB/databaseAccounts.bicep' = {
   }
 }
 
-module cassandraKeys '../../bicep-templates/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
+module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
   name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
