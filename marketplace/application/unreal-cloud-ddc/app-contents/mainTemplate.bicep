@@ -138,7 +138,6 @@ module deployResources 'modules/resources.bicep' = if (epicEULA) {
     storageAccountName: '${take(location, 8)}${storageAccountName}'
     storageResourceGroupName: storageResourceGroupName
     storageSecretName: 'ddc-storage-connection-string'
-    cassandraSecretName: 'ddc-db-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
     subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
