@@ -33,8 +33,8 @@ param CleanOldBlobs bool = true
 
 var locations = union([ location ], secondaryLocations)
 
-module hordeSetup 'ucddc-umbrella.bicep' = [for (location, index) in locations: {
-  name: 'helmInstallHorde-${uniqueString(location, resourceGroup().id, deployment().name)}'
+module ddcSetup 'ddc-umbrella.bicep' = [for (location, index) in locations: {
+  name: 'helmInstall-ddc-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     aksName: aksName
     location: location
@@ -52,24 +52,24 @@ module hordeSetup 'ucddc-umbrella.bicep' = [for (location, index) in locations: 
   }
 }]
 
-module configAKS 'ContainerService/configure-aks.bicep' = [for (location, index) in locations: if(setup) {
+module configAKS 'modules/ContainerService/configure-aks.bicep' = [for (location, index) in locations: if(setup) {
   name: 'configAKS-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     location: location
     aksName: '${aksName}-${take(location, 8)}'
-    additionalCharts: [ hordeSetup[index].outputs.helmChart ]
+    additionalCharts: [ ddcSetup[index].outputs.helmChart ]
     staticIP: '${publicIpName}-${location}'
     azureTenantID: azureTenantID
   }
 }]
 
 
-module combo 'ContainerService/helmChartInstall.bicep' = [for (location, index) in locations: if(!setup) {
+module combo 'modules/ContainerService/helmChartInstall.bicep' = [for (location, index) in locations: if(!setup) {
   name: 'helmInstall-UnrealCloud-${uniqueString(aksName, location, resourceGroup().name)}'
   params: {
     aksName: '${aksName}-${take(location, 8)}'
     location: location
-    helmCharts: [hordeSetup[index].outputs.helmChart]
+    helmCharts: [ddcSetup[index].outputs.helmChart]
     useExistingManagedIdentity: true
     managedIdentityName: 'id-${aksName}-${location}'
     existingManagedIdentitySubId: existingManagedIdentitySubId
