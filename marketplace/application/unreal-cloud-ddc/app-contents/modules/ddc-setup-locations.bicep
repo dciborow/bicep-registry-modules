@@ -64,7 +64,7 @@ module configAKS 'modules/ContainerService/configure-aks.bicep' = [for (location
 }]
 
 
-module combo '../../../bicep-templates/ContainerService/helmChartInstall.bicep' = [for (location, index) in locations: if(!setup) {
+module combo 'modules/ContainerService/helmChartInstall.bicep' = [for (location, index) in locations: if(!setup) {
   name: 'helmInstall-UnrealCloud-${uniqueString(aksName, location, resourceGroup().name)}'
   params: {
     aksName: '${aksName}-${take(location, 8)}'
