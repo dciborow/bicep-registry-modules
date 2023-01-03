@@ -1,5 +1,5 @@
 @description('Deployment Location')
-param location string
+param location string = resourceGroup().location
 
 @description('Secondary Deployment Locations')
 param secondaryLocations array = []
@@ -15,11 +15,11 @@ param _artifactsLocationSasToken string = ''
   'existing'
 ])
 param newOrExistingKubernetes string = 'new'
-param aksName string = 'ucddc-storage-${take(uniqueString(resourceGroup().id), 6)}'
+param aksName string = 'ddc-storage-${take(uniqueString(resourceGroup().id), 6)}'
 param agentPoolCount int = 3
 param agentPoolName string = 'k8agent'
 param vmSize string = 'Standard_L16s_v2'
-param hostname string = 'deploy1.ucddc-storage.gaming.azure.com'
+param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
 
 @description('Enable to configure certificate. Default: true')
 param enableCert bool = true
@@ -41,7 +41,7 @@ param isZoneRedundant bool = true
   'existing'
 ])
 param newOrExistingStorageAccount string = 'new'
-param storageAccountName string = 'ucddc${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+param storageAccountName string = 'ddc${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
 param storageResourceGroupName string = resourceGroup().name
 
 @allowed([
@@ -49,21 +49,21 @@ param storageResourceGroupName string = resourceGroup().name
   'existing'
 ])
 param newOrExistingKeyVault string = 'new'
-param keyVaultName string = take('ucddcKeyVault${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
+param keyVaultName string = take('ddcKeyVault${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
 
 @allowed([
   'new'
   'existing'
 ])
 param newOrExistingPublicIp string = 'new'
-param publicIpName string = 'ucddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+param publicIpName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
 
 @allowed([
   'new'
   'existing'
 ])
 param newOrExistingTrafficManager string = 'new'
-param trafficManagerName string = 'ucddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+param trafficManagerName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
 @description('Relative DNS name for the traffic manager profile, must be globally unique.')
 param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
 
@@ -72,7 +72,7 @@ param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, sub
   'existing'
 ])
 param newOrExistingCosmosDB string = 'new'
-param cosmosDBName string = 'ucddcDB-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+param cosmosDBName string = 'ddc-db-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
 param cosmosDBRG string = resourceGroup().name
 
 param servicePrincipalClientID string = ''
@@ -114,7 +114,7 @@ resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
   }
 }
 
-module deployResources 'modules/resources.bicep' = if (epicEULA) {
+module deployResources '../../bicep-templates/resources.bicep' = if (epicEULA) {
   name: guid(keyVaultName, publicIpName, cosmosDBName, storageAccountName)
   params: {
     location: location
@@ -137,14 +137,15 @@ module deployResources 'modules/resources.bicep' = if (epicEULA) {
     trafficManagerDnsName: trafficManagerDnsName
     storageAccountName: '${take(location, 8)}${storageAccountName}'
     storageResourceGroupName: storageResourceGroupName
-    storageSecretName: 'ucddc-storage-connection-string'
+    storageSecretName: 'ddc-storage-connection-string'
+    cassandraSecretName: 'ddc-db-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
-    subject: 'system:serviceaccount:ucddc-tests:workload-identity-sa'
+    subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
   }
 }
 
-module secondaryResources 'modules/resources.bicep' = [for location in secondaryLocations: if (epicEULA) {
+module secondaryResources '../../bicep-templates/resources.bicep' = [for location in secondaryLocations: if (epicEULA) {
   name: guid(keyVaultName, publicIpName, storageAccountName, location)
   params: {
     location: location
@@ -163,14 +164,14 @@ module secondaryResources 'modules/resources.bicep' = [for location in secondary
     publicIpName: '${publicIpName}-${location}'
     storageAccountName: '${take(location, 8)}${storageAccountName}'
     storageResourceGroupName: storageResourceGroupName
-    storageSecretName: 'ucddc-storage-connection-string'
+    storageSecretName: 'ddc-storage-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
-    subject: 'system:serviceaccount:ucddc-tests:workload-identity-sa'
+    subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
   }
 }]
 
-module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && enableCert) {
+module kvCert '../../bicep-templates/keyvault/create-kv-certificate.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && enableCert) {
   name: 'akvCert-${location}'
   dependsOn: [
     deployResources
@@ -189,20 +190,20 @@ module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for location in 
   }
 }]
 
-module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for ucddcLocation in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
-  name: 'build-app-${ucddcLocation}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+module buildApp '../../bicep-templates/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
+  name: 'build-app-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     deployResources
     secondaryResources
   ]
   params: {
-    keyVaultName: take('${ucddcLocation}-${keyVaultName}', 24)
+    keyVaultName: take('${location}-${keyVaultName}', 24)
     secretName: 'build-app-secret'
     secretValue: workerServicePrincipalSecret
   }
 }]
 
-module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = {
+module cosmosDB '../../bicep-templates/documentDB/databaseAccounts.bicep' = {
   name: 'cosmosDB-${uniqueString(location, resourceGroup().id, deployment().name)}-key'
   dependsOn: [
     deployResources
@@ -217,20 +218,20 @@ module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = {
   }
 }
 
-module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
+module cassandraKeys '../../bicep-templates/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
   name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
   ]
   params: {
     keyVaultName: take('${location}-${keyVaultName}', 24)
-    secretName: 'ucddc-db-connection-string'
+    secretName: 'ddc-db-connection-string'
     secretValue: cosmosDB.outputs.cassandraConnectionString
   }
 }]
 
-module setuplocations 'modules/ucddc-setup-locations.bicep' = if (assignRole && epicEULA) {
-  name: 'setupUCDDC-${location}'
+module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && epicEULA) {
+  name: 'setup-ddc-${location}'
   dependsOn: [
     cassandraKeys
   ]
