@@ -4,7 +4,7 @@ param resourceGroupName string
 param keyVaultName string
 param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
-param hostname string = 'deploy1.horde-storage.gaming.azure.com'
+param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
 param keyVaultTenantID string = subscription().tenantId
 param loginTenantID string = subscription().tenantId
 param enableWorker bool = false
@@ -51,10 +51,10 @@ var locationMapping = {
 
 var helmChart = 'oci://tchordestoragecontainerregistry.azurecr.io/helm/tc-horde-storage'
 var helmName = 'myhordetest'
-var helmNamespace = 'horde-tests'
-var siteName = 'hordegamingstore'
+var helmNamespace = 'ddc-tests'
+var siteName = 'ddcgamingstore'
 
-var imageVersion = '0.36.1'
+var imageVersion = '0.37.4'
 
 var secretStore = {
   enabled: true
@@ -97,9 +97,9 @@ var ingress = {
 
 // helm install --set-json '${string(helmJSON)}'
 var helmJSON = {
-  'horde-storage': {
+  'unreal-cloud-ddc': {
     config: {
-      Azure: { ConnectionString: 'akv!${keyVaultName}|horde-storage-connection-string' }
+      Azure: { ConnectionString: 'akv!${keyVaultName}|ddc-connection-string' }
       Scylla: {
         ConnectionString: 'akv!${keyVaultName}|horde-db-connection-string'
         LocalDatacenterName: locationMapping[location]
@@ -119,59 +119,59 @@ var helmJSON = {
 }
 
 var helmWorker = [
-  'horde-storage.worker.config.Replication.Enabled=true'
-  'horde-storage.worker.config.Replication.Replicators[0].ReplicatorName=Replicator${location}'
-  'horde-storage.worker.config.Replication.Replicators[0].Namespace=${namespace}'
-  'horde-storage.worker.config.Replication.Replicators[0].Version=Refs'
-  'horde-storage.worker.config.Replication.Replicators[0].ConnectionString=${helmJSON['horde-storage'].ingress.hostname}'
+  'unreal-cloud-ddc.worker.config.Replication.Enabled=true'
+  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].ReplicatorName=Replicator${location}'
+  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].Namespace=${namespace}'
+  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].Version=Refs'
+  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].ConnectionString=${helmJSON['unreal-cloud-ddc'].ingress.hostname}'
 ]
 
 var helmArgs = union([
-  'horde-storage.env[0].name=AZURE_CLIENT_ID'
-  'horde-storage.env[0].value=${federatedId}'
-  'horde-storage.env[1].name=AZURE_TENANT_ID'
-  'horde-storage.env[1].value=${keyVaultTenantID}'
-  'horde-storage.env[2].name=AZURE_FEDERATED_TOKEN_FILE'
-  'horde-storage.env[2].value=/var/run/secrets/tokens/azure-identity-token'
-  'horde-storage.service.extraPort[0].name=internal-http'
-  'horde-storage.service.extraPort[0].port=8080'
-  'horde-storage.service.extraPort[0].targetPort=internal-http'
-  'horde-storage.config.Azure.ConnectionString=${helmJSON['horde-storage'].config.Azure.ConnectionString}'
-  'horde-storage.config.Scylla.ConnectionString=${helmJSON['horde-storage'].config.Scylla.ConnectionString}'
-  'horde-storage.config.Scylla.LocalDatacenterName=${helmJSON['horde-storage'].config.Scylla.LocalDatacenterName}'
-  'horde-storage.config.Scylla.LocalKeyspaceSuffix=${helmJSON['horde-storage'].config.Scylla.LocalKeyspaceSuffix}'
-  'horde-storage.config.Scylla.UseAzureCosmosDB=true'
-  'horde-storage.config.Scylla.InlineBlobMaxSize=0'
-  'horde-storage.ingress.hostname=${helmJSON['horde-storage'].ingress.hostname}'
-  'horde-storage.ingress.tlsCertName=${helmJSON['horde-storage'].ingress.tlsCertName}'
-  'horde-storage.secretStore.clientID=${helmJSON['horde-storage'].secretStore.clientID}'
-  'horde-storage.secretStore.keyvaultName=${helmJSON['horde-storage'].secretStore.keyVaultName}'
-  'horde-storage.secretStore.resourceGroup=${helmJSON['horde-storage'].secretStore.resourceGroup}'
-  'horde-storage.secretStore.subscriptionId=${helmJSON['horde-storage'].secretStore.subscriptionID}'
-  'horde-storage.secretStore.tenantId=${helmJSON['horde-storage'].secretStore.tenantID}'
-  'horde-storage.serviceAccount.annotations.azure\\.workload\\.identity/client-id=${helmJSON['horde-storage'].serviceAccount.annotations.azure.workload['identity/client-id']}'
-  'horde-storage.worker.env[0].name=AZURE_CLIENT_ID'
-  'horde-storage.worker.env[0].value=${federatedId}'
-  'horde-storage.worker.env[1].name=AZURE_TENANT_ID'
-  'horde-storage.worker.env[1].value=${keyVaultTenantID}'
-  'horde-storage.worker.env[2].name=AZURE_FEDERATED_TOKEN_FILE'
-  'horde-storage.worker.env[2].value=/var/run/secrets/tokens/azure-identity-token'
-  'horde-storage.worker.enabled=true'
-  'horde-storage.worker.config.Azure.ConnectionString=${helmJSON['horde-storage'].config.Azure.ConnectionString}'
-  'horde-storage.worker.config.Scylla.ConnectionString=${helmJSON['horde-storage'].config.Scylla.ConnectionString}'
-  'horde-storage.worker.config.Scylla.LocalDatacenterName=${helmJSON['horde-storage'].config.Scylla.LocalDatacenterName}'
-  'horde-storage.worker.config.Scylla.LocalKeyspaceSuffix=${helmJSON['horde-storage'].config.Scylla.LocalKeyspaceSuffix}'
-  'horde-storage.worker.config.Scylla.UseAzureCosmosDB=true'
-  'horde-storage.worker.config.Scylla.InlineBlobMaxSize=0'
-  'horde-storage.worker.config.GC.CleanOldRefRecords=${CleanOldRefRecords}'
-  'horde-storage.worker.config.GC.CleanOldBlobs=${CleanOldBlobs}'
+  'unreal-cloud-ddc.env[0].name=AZURE_CLIENT_ID'
+  'unreal-cloud-ddc.env[0].value=${federatedId}'
+  'unreal-cloud-ddc.env[1].name=AZURE_TENANT_ID'
+  'unreal-cloud-ddc.env[1].value=${keyVaultTenantID}'
+  'unreal-cloud-ddc.env[2].name=AZURE_FEDERATED_TOKEN_FILE'
+  'unreal-cloud-ddc.env[2].value=/var/run/secrets/tokens/azure-identity-token'
+  'unreal-cloud-ddc.service.extraPort[0].name=internal-http'
+  'unreal-cloud-ddc.service.extraPort[0].port=8080'
+  'unreal-cloud-ddc.service.extraPort[0].targetPort=internal-http'
+  'unreal-cloud-ddc.config.Azure.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Azure.ConnectionString}'
+  'unreal-cloud-ddc.config.Scylla.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Scylla.ConnectionString}'
+  'unreal-cloud-ddc.config.Scylla.LocalDatacenterName=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalDatacenterName}'
+  'unreal-cloud-ddc.config.Scylla.LocalKeyspaceSuffix=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalKeyspaceSuffix}'
+  'unreal-cloud-ddc.config.Scylla.UseAzureCosmosDB=true'
+  'unreal-cloud-ddc.config.Scylla.InlineBlobMaxSize=0'
+  'unreal-cloud-ddc.ingress.hostname=${helmJSON['unreal-cloud-ddc'].ingress.hostname}'
+  'unreal-cloud-ddc.ingress.tlsCertName=${helmJSON['unreal-cloud-ddc'].ingress.tlsCertName}'
+  'unreal-cloud-ddc.secretStore.clientID=${helmJSON['unreal-cloud-ddc'].secretStore.clientID}'
+  'unreal-cloud-ddc.secretStore.keyvaultName=${helmJSON['unreal-cloud-ddc'].secretStore.keyVaultName}'
+  'unreal-cloud-ddc.secretStore.resourceGroup=${helmJSON['unreal-cloud-ddc'].secretStore.resourceGroup}'
+  'unreal-cloud-ddc.secretStore.subscriptionId=${helmJSON['unreal-cloud-ddc'].secretStore.subscriptionID}'
+  'unreal-cloud-ddc.secretStore.tenantId=${helmJSON['unreal-cloud-ddc'].secretStore.tenantID}'
+  'unreal-cloud-ddc.serviceAccount.annotations.azure\\.workload\\.identity/client-id=${helmJSON['unreal-cloud-ddc'].serviceAccount.annotations.azure.workload['identity/client-id']}'
+  'unreal-cloud-ddc.worker.env[0].name=AZURE_CLIENT_ID'
+  'unreal-cloud-ddc.worker.env[0].value=${federatedId}'
+  'unreal-cloud-ddc.worker.env[1].name=AZURE_TENANT_ID'
+  'unreal-cloud-ddc.worker.env[1].value=${keyVaultTenantID}'
+  'unreal-cloud-ddc.worker.env[2].name=AZURE_FEDERATED_TOKEN_FILE'
+  'unreal-cloud-ddc.worker.env[2].value=/var/run/secrets/tokens/azure-identity-token'
+  'unreal-cloud-ddc.worker.enabled=true'
+  'unreal-cloud-ddc.worker.config.Azure.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Azure.ConnectionString}'
+  'unreal-cloud-ddc.worker.config.Scylla.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Scylla.ConnectionString}'
+  'unreal-cloud-ddc.worker.config.Scylla.LocalDatacenterName=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalDatacenterName}'
+  'unreal-cloud-ddc.worker.config.Scylla.LocalKeyspaceSuffix=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalKeyspaceSuffix}'
+  'unreal-cloud-ddc.worker.config.Scylla.UseAzureCosmosDB=true'
+  'unreal-cloud-ddc.worker.config.Scylla.InlineBlobMaxSize=0'
+  'unreal-cloud-ddc.worker.config.GC.CleanOldRefRecords=${CleanOldRefRecords}'
+  'unreal-cloud-ddc.worker.config.GC.CleanOldBlobs=${CleanOldBlobs}'
   'global.ServiceCredentials.OAuthClientId=${helmJSON.global.ServiceCredentials.OAuthClientId}'
   'global.ServiceCredentials.OAuthClientSecret=${helmJSON.global.ServiceCredentials.OAuthClientSecret}'
   'global.ServiceCredentials.OAuthLoginUrl=${helmJSON.global.ServiceCredentials.OAuthLoginUrl}'
   'global.ServiceCredentials.OAuthScope=${helmJSON.global.ServiceCredentials.OAuthScope}'
   'global.auth.schemes.Bearer.jwtAuthority=${helmJSON.global.jwtAuthority}'
   'global.auth.schemes.Bearer.jwtAudience=${helmJSON.global.jwtAudience}'
-  'horde-storage.podForceRestart=true'
+  'unreal-cloud-ddc.podForceRestart=true'
 ], enableWorker ? helmWorker : [])
 
 var helmArgsString = substring(string(helmArgs), 1, length(string(helmArgs)) - 2)
