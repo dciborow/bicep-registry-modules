@@ -15,6 +15,8 @@ param _artifactsLocationSasToken string = ''
   'existing'
 ])
 param newOrExistingKubernetes string = 'new'
+
+@description('Name of Kubernetes Resource')
 param aksName string = 'ddc-storage-${take(uniqueString(resourceGroup().id), 6)}'
 param agentPoolCount int = 3
 param agentPoolName string = 'k8agent'
