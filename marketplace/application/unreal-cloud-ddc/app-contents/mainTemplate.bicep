@@ -18,6 +18,8 @@ param newOrExistingKubernetes string = 'new'
 
 @description('Name of Kubernetes Resource')
 param aksName string = 'ddc-storage-${take(uniqueString(resourceGroup().id), 6)}'
+
+@description('Number of Kubernetes Nodes')
 param agentPoolCount int = 3
 param agentPoolName string = 'k8agent'
 param vmSize string = 'Standard_L16s_v2'
