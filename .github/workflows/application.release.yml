@@ -18,16 +18,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Generate ARM template from Bicep templates
         uses: Azure/bicep-build-action@v1.0.1
         with:
           bicepFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.bicep"
           outputFilePath: "${{ env.APPLICATION_DIRECTORY }}/app-contents/mainTemplate.json"
+
       - name: Run ARM-TTK
         uses: ./.github/actions/run-armttk
         with:
           templatesFolderPath: "${{ env.APPLICATION_DIRECTORY }}/app-contents"
           armttkVersion: aka.ms/arm-ttk-marketplace
+
   CreatePublishOffer:
     runs-on: ubuntu-latest
     needs: ValidateARMTemplates
@@ -35,6 +38,34 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+
+      - name: Calculate version
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_prefix: "uc-ddc"
+          dry_run: true
+          default_bump: false
+
+      - name: Set Version
+        if: steps.tag_version.outputs.release_type
+        shell: bash
+        env:
+          OLD_VERSION: ${{ steps.tag_version.outputs.previous_version }}
+          VERSION: ${{ steps.tag_version.outputs.new_version }}
+        run: sed -ri "s/$OLD_VERSION/$VERSION/" "${{ env.APPLICATION_DIRECTORY }}/listing_config.json" || exit 1
+
+      - uses: EndBug/add-and-commit@v9
+        if: steps.tag_version.outputs.release_type
+        with:
+          message: Update Version to ${{ steps.tag_version.outputs.new_version }}
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
+          add: "${{ env.APPLICATION_DIRECTORY }}/listing_config.json"
+        
       - name: Build and create/update offer
         uses: ./.github/actions/commercial-marketplace
         with:
@@ -45,6 +76,7 @@ jobs:
           planName: ${{ env.PLAN_NAME }}
           applicationDirectory: ${{ env.APPLICATION_DIRECTORY }}
         timeout-minutes: 5
+
       - name: Publish offer
         uses: ./.github/actions/commercial-marketplace
         with:
@@ -53,3 +85,13 @@ jobs:
           command: publish
           applicationName: ${{ env.APPLICATION_NAME }}
         timeout-minutes: 5
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: steps.tag_version.outputs.release_type
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ steps.tag_version.outputs.new_tag }}
+          prerelease: false
+          files: |
+            LICENSE.md
+            ${{ env.APPLICATION_DIRECTORY }}/*.zip
