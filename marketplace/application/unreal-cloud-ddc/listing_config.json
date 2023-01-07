@@ -150,7 +150,7 @@
         ]
       },
       "technical_configuration" : {
-        "version"               : "0.1.27",
+        "version"               : "0.1.28",
         "allowedCustomerActions": [
           "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*;Microsoft.Insights/*"
         ],
