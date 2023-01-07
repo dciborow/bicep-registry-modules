@@ -633,7 +633,7 @@
     "outputs": {
       "location": "[location()]",
       "aksName": "[basics('name')]",
-      "agentPoolCount": "[basics('agentPoolCount')]",
+      "agentPoolCount": "[int(basics('agentPoolCount'))]",
       "isZoneRedundant": "[basics('isZoneRedundant')]",      
       "vmSize": "[basics('vmSize')]",
       "newOrExistingStorageAccount": "[if(steps('Advanced').Resources.deployStorage,        'existing', 'new')]",
