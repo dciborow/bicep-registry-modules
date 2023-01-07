@@ -80,7 +80,7 @@ param cosmosDBName string = 'ddc-db-${uniqueString(resourceGroup().id, subscript
 param cosmosDBRG string = resourceGroup().name
 
 param servicePrincipalClientID string = ''
-param workerServicePrincipalClientID string
+param workerServicePrincipalClientID string = ''
 
 @secure()
 param workerServicePrincipalSecret string = ''

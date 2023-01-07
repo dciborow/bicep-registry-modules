@@ -366,7 +366,7 @@
 						"location": "onBasics"
 					}
 					},
-					"visible": "[steps('Advanced').deployStorage]"
+					"visible": "[steps('Advanced').Resources.deployStorage]"
 				},
 				{
 					"name": "storageName",
@@ -375,7 +375,7 @@
 					"toolTip": "Storage Account Name.",
 					"defaultValue": "[concat('ucddcstore', take(replace(guid(), '-', ''), 5))]",
 					"constraints": {
-					"required": "[steps('Advanced').deployStorage]",
+					"required": "[steps('Advanced').Resources.deployStorage]",
 					"validations": [
 						{
 						"regex": "^[a-zA-Z0-9-]{3,24}[a-zA-Z0-9]$",
@@ -383,7 +383,7 @@
 						}
 					]
 					},
-					"visible": "[not(steps('Advanced').deployStorage)]"
+					"visible": "[not(steps('Advanced').Resources.deployStorage)]"
 				},
 				{
 					"name": "deployKeyVault",
@@ -404,7 +404,7 @@
 						"location": "all"
 					}
 					},
-					"visible": "[steps('Advanced').deployKeyVault]"
+					"visible": "[steps('Advanced').Resources.deployKeyVault]"
 				},
 				{
 					"name": "keyVaultName",
@@ -413,7 +413,7 @@
 					"toolTip": "Key Vault Name.",
 					"defaultValue": "[concat('ucddcvault', take(replace(guid(), '-', ''), 5))]",
 					"constraints": {
-					"required": "[steps('Advanced').deployKeyVault]",
+					"required": "[steps('Advanced').Resources.deployKeyVault]",
 					"validations": [
 						{
 						"regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
@@ -421,7 +421,7 @@
 						}
 					]
 					},
-					"visible": "[not(steps('Advanced').deployKeyVault)]"
+					"visible": "[not(steps('Advanced').Resources.deployKeyVault)]"
 				},
 				{
 					"name": "deployCosmosDB",
@@ -442,7 +442,7 @@
 						"location": "all"
 					}
 					},
-					"visible": "[steps('Advanced').deployCosmosDB]"
+					"visible": "[steps('Advanced').Resources.deployCosmosDB]"
 				},
 				{
 					"name": "cosmosDBName",
@@ -451,7 +451,7 @@
 					"toolTip": "Name of new Cosmos DB resource.",
 					"defaultValue": "[concat('ucddcdb', take(replace(guid(), '-', ''), 6))]",
 					"constraints": {
-					"required": "[steps('Advanced').deployCosmosDB]",
+					"required": "[steps('Advanced').Resources.deployCosmosDB]",
 					"validations": [
 						{
 						"regex": "^[a-zA-Z0-9-]{0,14}[a-zA-Z0-9]$",
@@ -459,7 +459,7 @@
 						}
 					]
 					},
-					"visible": "[not(steps('Advanced').deployCosmosDB)]"
+					"visible": "[not(steps('Advanced').Resources.deployCosmosDB)]"
 				},
 				{
 					"name": "deployPublicIP",
@@ -480,7 +480,7 @@
 						"location": "all"
 					}
 					},
-					"visible": "[steps('Advanced').deployPublicIP]"
+					"visible": "[steps('Advanced').Resources.deployPublicIP]"
 				},
 				{
 					"name": "publicIPName",
@@ -489,7 +489,7 @@
 					"toolTip": "Name of new Public IP Resource",
 					"defaultValue": "[concat('ucddcdb', take(replace(guid(), '-', ''), 6))]",
 					"constraints": {
-					"required": "[steps('Advanced').deployPublicIP]",
+					"required": "[steps('Advanced').Resources.deployPublicIP]",
 					"validations": [
 						{
 						"regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]$",
@@ -497,7 +497,7 @@
 						}
 					]
 					},
-					"visible": "[not(steps('Advanced').deployPublicIP)]"
+					"visible": "[not(steps('Advanced').Resources.deployPublicIP)]"
 				},
 				{
 						"name": "deployTrafficManager",
@@ -518,7 +518,7 @@
 						"location": "all"
 					}
 					},
-					"visible": "[steps('Advanced').deployTrafficManager]"
+					"visible": "[steps('Advanced').Resources.deployTrafficManager]"
 				},
 				{
 					"name": "trafficManagerName",
@@ -527,7 +527,7 @@
 					"toolTip": "Name of new Traffic Manager Resource",
 					"defaultValue": "[concat('ucddc-tm-', take(replace(guid(), '-', ''), 6))]",
 					"constraints": {
-					"required": "[steps('Advanced').deployTrafficManager]",
+					"required": "[steps('Advanced').Resources.deployTrafficManager]",
 					"validations": [
 						{
 						"regex": "^[a-z][a-z0-9-.]{1,61}[a-z0-9]$",
@@ -535,7 +535,7 @@
 						}
 					]
 					},
-					"visible": "[not(steps('Advanced').deployTrafficManager)]"
+					"visible": "[not(steps('Advanced').Resources.deployTrafficManager)]"
 				}
 			],
 		  "visible": true
@@ -633,7 +633,7 @@
     "outputs": {
       "location": "[location()]",
       "aksName": "[basics('name')]",
-      "agentPoolCount": "[basics('agentPoolCount')]",
+      "agentPoolCount": "[int(basics('agentPoolCount'))]",
       "isZoneRedundant": "[basics('isZoneRedundant')]",      
       "vmSize": "[basics('vmSize')]",
       "newOrExistingStorageAccount": "[if(steps('Advanced').Resources.deployStorage,        'existing', 'new')]",
