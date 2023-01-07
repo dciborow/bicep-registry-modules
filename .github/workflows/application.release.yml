@@ -92,6 +92,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: ${{ steps.tag_version.outputs.new_tag }}
           prerelease: false
+          draft: true
           files: |
             LICENSE.md
             ${{ env.APPLICATION_DIRECTORY }}/*.zip
