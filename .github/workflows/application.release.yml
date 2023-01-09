@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+    paths: 
+      - marketplace/**
 
 env:
   APPLICATION_DIRECTORY: marketplace/application/unreal-cloud-ddc
