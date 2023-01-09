@@ -66,7 +66,7 @@ jobs:
           committer_email: actions@github.com
           add: "${{ env.APPLICATION_DIRECTORY }}/listing_config.json"
         
-      - name: Build and create/update offer
+      - name: Publish Preview Offer
         uses: ./.github/actions/commercial-marketplace
         with:
           azureCredentials: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
@@ -75,15 +75,6 @@ jobs:
           applicationName: ${{ env.APPLICATION_NAME }}
           planName: ${{ env.PLAN_NAME }}
           applicationDirectory: ${{ env.APPLICATION_DIRECTORY }}
-        timeout-minutes: 5
-
-      - name: Publish offer
-        uses: ./.github/actions/commercial-marketplace
-        with:
-          azureCredentials: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
-          offerType: ma
-          command: publish
-          applicationName: ${{ env.APPLICATION_NAME }}
         timeout-minutes: 5
 
       - uses: "marvinpinto/action-automatic-releases@latest"
