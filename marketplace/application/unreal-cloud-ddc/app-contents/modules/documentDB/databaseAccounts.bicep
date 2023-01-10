@@ -107,3 +107,5 @@ resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = {
 
 @description('Key to connect with Cosmos DB')
 output cassandraConnectionString string = cassandraConnectionString
+
+output name string = name

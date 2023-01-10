@@ -105,6 +105,28 @@ module cassandra 'app-contents/modules/documentDB/databaseAccounts.bicep' = {
   }
 }
 
+var secondaryRegions = [for (region, i) in secondaryLocations: {
+  locationName: contains(region, 'locationName') ? region.locationName : region
+  failoverPriority: contains(region, 'failoverPriority') ? region.failoverPriority : i + 1
+  isZoneRedundant: contains(region, 'isZoneRedundant') ? region.isZoneRedundant : isZoneRedundant
+}]
+
+var locations = union([
+    {
+      locationName: location
+      failoverPriority: 0
+      isZoneRedundant: isZoneRedundant
+    }
+  ], secondaryRegions)
+
+resource cassandraDB 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = {
+  name: cassandra.name
+}
+
+var unwind = [for location in locations: '${toLower(name)}-${location.locationName}.cassandra.cosmos.azure.com']
+var locationString = replace(substring(string(unwind), 1, length(string(unwind))-2), '"', '')
+var cassandraConnectionString = 'Contact Points=${toLower(name)}.cassandra.cosmos.azure.com,${locationString};Username=${toLower(name)};Password=${cassandraDB.listKeys().primaryMasterKey};Port=10350'
+
 module storageAccount 'app-contents/modules/storage/storageAccounts.bicep' = [for location in union([ location ], secondaryLocations): {
   name: 'storageAccount-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
@@ -263,6 +285,7 @@ module ucDDC 'app-contents/mainTemplate.bicep' = if (!marketplace) {
     epicEULA: epicEULA
     isZoneRedundant: isZoneRedundant
     enableCert: enableCert
+    cassandraConnectionString: cassandraConnectionString
     _artifactsLocation: _artifactsLocation
     _artifactsLocationSasToken:_artifactsLocationSasToken
   }
