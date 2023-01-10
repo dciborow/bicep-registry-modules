@@ -47,6 +47,7 @@ param assignRole bool = true
 param subject string = ''
 
 param storageSecretName string = ''
+param storageAccountSecrets array = []
 
 var newOrExisting = {
   new: 'new'
@@ -160,11 +161,19 @@ module trafficManager 'network/trafficManagerProfiles.bicep' = if (enableTraffic
   }
 }
 
-module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault) {
+module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault && newOrExistingStorageAccount == 'new') {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVault.outputs.name
     secrets: [ { secretName: storageSecretName, secretValue: storageAccount.outputs.blobStorageConnectionString } ]
+  }
+}
+
+module exisingSecretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault && newOrExistingStorageAccount == 'existing') {
+  name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
+  params: {
+    keyVaultName: keyVault.outputs.name
+    secrets: [ { secretName: storageSecretName, secretValue: storageAccountSecrets } ]
   }
 }
 

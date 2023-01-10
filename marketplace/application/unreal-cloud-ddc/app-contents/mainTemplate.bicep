@@ -10,6 +10,7 @@ param _artifactsLocation string = deployment().properties.templateLink.uri
 @description('The sasToken required to access _artifactsLocation.')
 @secure()
 param _artifactsLocationSasToken string = ''
+
 @allowed([
   'new'
   'existing'
@@ -103,6 +104,9 @@ param CleanOldRefRecords bool = true
 
 @description('Delete old blobs that are no longer referenced by any ref - this runs in each region to cleanup that regions blob stores')
 param CleanOldBlobs bool = true
+
+@secure()
+param cassandraConnectionString string = ''
 
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 
@@ -206,7 +210,7 @@ module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for location in union
   }
 }]
 
-module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = {
+module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCosmosDB == 'new') {
   name: 'cosmosDB-${uniqueString(location, resourceGroup().id, deployment().name)}-key'
   dependsOn: [
     deployResources
@@ -229,7 +233,7 @@ module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for location in 
   params: {
     keyVaultName: take('${location}-${keyVaultName}', 24)
     secretName: 'ddc-db-connection-string'
-    secretValue: cosmosDB.outputs.cassandraConnectionString
+    secretValue: newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : cassandraConnectionString
   }
 }]
 
