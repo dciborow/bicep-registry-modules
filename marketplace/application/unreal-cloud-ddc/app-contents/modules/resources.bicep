@@ -47,7 +47,9 @@ param assignRole bool = true
 param subject string = ''
 
 param storageSecretName string = ''
-param storageAccountSecrets array = []
+
+@secure()
+param storageAccountSecret string = ''
 
 var newOrExisting = {
   new: 'new'
@@ -173,7 +175,7 @@ module exisingSecretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVault.outputs.name
-    secrets: [ { secretName: storageSecretName, secretValue: storageAccountSecrets } ]
+    secrets: [ { secretName: storageSecretName, secretValue: storageAccountSecret } ]
   }
 }
 

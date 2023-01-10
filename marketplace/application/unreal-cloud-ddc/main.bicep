@@ -137,6 +137,15 @@ module storageAccount 'app-contents/modules/storage/storageAccounts.bicep' = [fo
   }
 }]
 
+resource existingStorageAccounts 'Microsoft.Storage/storageAccounts@2019-06-01' = [for location in union([ location ], secondaryLocations): {
+  name: take('${take(location, 8)}${storageAccountName}',24)
+}]
+
+var keys = newOrExisting == 'new' ? listKeys(newStorageAccount.id, newStorageAccount.apiVersion) : listKeys(storageAccount.id, storageAccount.apiVersion)
+var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${keys.keys[0].value}'
+
+
+
 module trafficManager 'app-contents/modules/network/trafficManagerProfiles.bicep' = {
   name: 'trafficManager-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
@@ -246,6 +255,9 @@ resource hordeStorage 'Microsoft.Solutions/applications@2021-07-01' = if(marketp
       }
       enableCert: {
         value: enableCert
+      }
+      cassandraConnectionString: {
+        value: cassandraConnectionString
       }
     }
     jitAccessPolicy: null
