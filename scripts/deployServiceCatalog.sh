@@ -20,7 +20,7 @@ az account show || exit 1
 
 # Create a application definition resource group
 echo "Creating $appDefinitionResourceGroup in "$location"..."
-az group create --name $appDefinitionResourceGroup --location "$location" --tags $tag
+az group create --name $appDefinitionResourceGroup --location "$location" --tags $tag || exit 1
 
 # Get Azure Active Directory group to manage the application
 groupid=$(az ad group show --group reader --query objectId --output tsv)
@@ -46,7 +46,7 @@ az managedapp definition create \
 
 # Create application resource group
 echo "Creating $appResourceGroup in "$location"..."
-az group create --name $appResourceGroup --location "$location" --tags $tag
+az group create --name $appResourceGroup --location "$location" --tags $tag || exit 1
 
 # Get ID of managed application definition
 appid=$(az managedapp definition show --name $managedApp --resource-group $appDefinitionResourceGroup --query id --output tsv)
@@ -65,4 +65,4 @@ az managedapp create \
     --resource-group $appResourceGroup \
     --managedapp-definition-id $appid \
     --managed-rg-id $managedGroupId \
-    --parameters "{\"storageAccountNamePrefix\": {\"value\": \"demostorage\"}, \"storageAccountType\": {\"value\": \"Standard_LRS\"}}"
+    --parameters @mainTemplate.parameters.json
