@@ -1,9 +1,9 @@
 @description('Deployment Location')
 param location string
 
+param name string = uniqueString(resourceGroup().id)
 param resourceGroupName string = resourceGroup().name
 
-param name string = uniqueString(resourceGroup().id)
 @allowed([ 'new', 'existing' ])
 param newOrExisting string = 'new'
 
