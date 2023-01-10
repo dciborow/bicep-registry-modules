@@ -137,14 +137,6 @@ module storageAccount 'app-contents/modules/storage/storageAccounts.bicep' = [fo
   }
 }]
 
-resource existingStorageAccounts 'Microsoft.Storage/storageAccounts@2019-06-01' existing = [for location in union([ location ], secondaryLocations): {
-  name: take('${take(location, 8)}${storageAccountName}',24)
-}]
-
-var blobConnectionStrings = [for (location, index) in union([ location, ], secondaryLocations): [
-  listKeys(existingStorageAccounts[index].id, existingStorageAccounts[index].apiVersion)
-]]
-
 module trafficManager 'app-contents/modules/network/trafficManagerProfiles.bicep' = {
   name: 'trafficManager-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
