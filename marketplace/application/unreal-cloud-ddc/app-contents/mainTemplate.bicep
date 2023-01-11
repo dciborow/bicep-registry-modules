@@ -1,3 +1,4 @@
+//  Parameters
 @description('Deployment Location')
 param location string
 
@@ -145,6 +146,8 @@ param CleanOldBlobs bool = true
 @secure()
 param cassandraConnectionString string = ''
 
+param storageConnectionStrings array = []
+
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 
 resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
@@ -186,6 +189,7 @@ module deployResources 'modules/resources.bicep' = if (epicEULA) {
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
     subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
+    storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[0] : ''
   }
 }
 
@@ -212,6 +216,7 @@ module secondaryResources 'modules/resources.bicep' = [for location in secondary
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
     subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
+    storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[index-1] : ''
   }
 }]
 

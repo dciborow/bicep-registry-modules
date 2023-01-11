@@ -64,3 +64,4 @@ var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${
 output id string = newOrExisting == 'new' ? newStorageAccount.id : storageAccount.id
 output blobStorageConnectionString string = blobStorageConnectionString
 output resourceGroupName string = resourceGroupName
+output apiVersion string = newStorageAccount.apiVersion

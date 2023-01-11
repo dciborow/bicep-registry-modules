@@ -250,6 +250,9 @@ resource hordeStorage 'Microsoft.Solutions/applications@2021-07-01' = if(marketp
       cassandraConnectionString: {
         value: cassandraConnectionString
       }
+      storageConnectionStrings: {
+        value: [for i in range(0, length(locations)): [listKeys(storageAccount[i].outputs.id, storageAccount[i].outputs.apiVersion)]]
+      }
     }
     jitAccessPolicy: null
   }
@@ -289,6 +292,7 @@ module ucDDC 'app-contents/mainTemplate.bicep' = if (!marketplace) {
     isZoneRedundant: isZoneRedundant
     enableCert: enableCert
     cassandraConnectionString: cassandraConnectionString
+    storageConnectionStrings: [for i in range(0, length(locations)): [listKeys(storageAccount[i].outputs.id, storageAccount[i].outputs.apiVersion)]]
     _artifactsLocation: _artifactsLocation
     _artifactsLocationSasToken:_artifactsLocationSasToken
   }
