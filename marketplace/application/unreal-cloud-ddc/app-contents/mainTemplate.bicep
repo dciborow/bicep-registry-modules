@@ -150,6 +150,7 @@ param storageConnectionStrings array = []
 
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 
+//  Resources
 resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
   name: 'pid-7837dd60-4ba8-419a-a26f-237bbe170773-partnercenter'
   properties: {
@@ -302,6 +303,7 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     CleanOldBlobs: CleanOldBlobs
   }
 }
+// End
 
 @description('Location of required artifacts.')
 output _artifactsLocation string = _artifactsLocation
