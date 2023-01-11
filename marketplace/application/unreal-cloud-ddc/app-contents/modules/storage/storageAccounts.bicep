@@ -7,9 +7,6 @@ param resourceGroupName string = resourceGroup().name
 @allowed([ 'new', 'existing' ])
 param newOrExisting string = 'new'
 
-@description('Resource Group')
-param resourceGroupName string = resourceGroup().name
-
 param subnetID string = ''
 param enableVNET bool = false
 
