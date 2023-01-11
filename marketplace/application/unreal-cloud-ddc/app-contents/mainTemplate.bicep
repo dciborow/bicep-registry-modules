@@ -217,7 +217,7 @@ module secondaryResources 'modules/resources.bicep' = [for (location, index) in 
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
     subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
-    storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[index-1] : ''
+    storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[index+1] : ''
   }
 }]
 
