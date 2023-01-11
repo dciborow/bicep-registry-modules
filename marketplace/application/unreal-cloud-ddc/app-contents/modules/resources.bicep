@@ -171,14 +171,6 @@ module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && ena
   }
 }
 
-module exisingSecretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault && newOrExistingStorageAccount == 'existing') {
-  name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
-  params: {
-    keyVaultName: keyVault.outputs.name
-    secrets: [ { secretName: storageSecretName, secretValue: storageAccountSecret } ]
-  }
-}
-
 output keyVaultName string = enableKeyVault ? keyVault.outputs.name : ''
 output cassandraConnectionString string = newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : ''
 output blobStorageConnectionString string = newOrExistingStorageAccount == 'new' ? storageAccount.outputs.blobStorageConnectionString : ''

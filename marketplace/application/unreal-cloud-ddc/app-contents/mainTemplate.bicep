@@ -152,7 +152,7 @@ module deployResources 'modules/resources.bicep' = if (epicEULA) {
   }
 }
 
-module secondaryResources 'modules/resources.bicep' = [for (location, index) in secondaryLocations: if (epicEULA) {
+module secondaryResources 'modules/resources.bicep' = [for location in secondaryLocations: if (epicEULA) {
   name: guid(keyVaultName, publicIpName, storageAccountName, location)
   params: {
     location: location
