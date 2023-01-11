@@ -1,0 +1,72 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "newOrExistingKubernetes": {
+      "value": "new"
+    },
+    "name": {
+      "value": "horde-storage"
+    },
+    "agentPoolCount": {
+      "value": 2
+    },
+    "agentPoolName": {
+      "value": "k8agent"
+    },
+    "vmSize": {
+      "value": "Standard_L8s_v3"
+    },
+    "hostname": {
+      "value": "deploy1.horde-storage.gaming.azure.com"
+    },
+    "isZoneRedundant": {
+      "value": false
+    },
+    "assignRole": {
+      "value": true
+    },
+    "storageAccountTier": {
+      "value": "Standard"
+    },
+    "newOrExistingKeyVault": {
+      "value": "new"
+    },
+    "newOrExistingPublicIp": {
+      "value": "new"
+    },
+    "newOrExistingTrafficManager": {
+      "value": "new"
+    },
+    "newOrExistingCosmosDB": {
+      "value": "new"
+    },
+    "servicePrincipalClientID": {
+      "value": ""
+    },
+    "enableCert": {
+      "value": true
+    },
+    "certificateName": {
+      "value": "unreal-cloud-ddc-cert"
+    },
+    "epicEULA": {
+      "value": true
+    },
+    "managedResourceGroupName": {
+      "value": "mrg"
+    },
+    "publisher": {
+      "value": "prod"
+    },
+    "marketplace": {
+      "value": false
+    },
+    "_artifactsLocation": {
+      "value": "https://dciborowmmlsparkstore.blob.core.windows.net/mmlspark/"
+  },
+  "_artifactsLocationSasToken": {
+      "value": ""
+  }
+}
+}

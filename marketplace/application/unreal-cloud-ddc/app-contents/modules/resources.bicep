@@ -48,6 +48,9 @@ param subject string = ''
 
 param storageSecretName string = ''
 
+@secure()
+param storageAccountSecret string = ''
+
 var newOrExisting = {
   new: 'new'
   existing: 'existing'
@@ -160,7 +163,7 @@ module trafficManager 'network/trafficManagerProfiles.bicep' = if (enableTraffic
   }
 }
 
-module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault) {
+module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault && newOrExistingStorageAccount == 'new') {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVault.outputs.name
