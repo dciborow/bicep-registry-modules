@@ -56,7 +56,7 @@ resource newStorageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = if (
   }
 }
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' existing = {
   scope: resourceGroup(resourceGroupName)
   name: name
 }
