@@ -10,6 +10,8 @@ param _artifactsLocation string = deployment().properties.templateLink.uri
 @description('The sasToken required to access _artifactsLocation.')
 @secure()
 param _artifactsLocationSasToken string = ''
+
+@description('New or Existing Kubernentes Resources')
 @allowed([
   'new'
   'existing'
@@ -21,8 +23,14 @@ param aksName string = 'ddc-storage-${take(uniqueString(resourceGroup().id), 6)}
 
 @description('Number of Kubernetes Nodes')
 param agentPoolCount int = 3
+
+@description('Name of Kubernetes Agent Pool')
 param agentPoolName string = 'k8agent'
+
+@description('Virtual Machine Skew for Kubernetes')
 param vmSize string = 'Standard_L16s_v2'
+
+@description('Hostname of Deployment')
 param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
 
 @description('Enable to configure certificate. Default: true')
@@ -40,48 +48,73 @@ param assignRole bool = true
 @description('Enable Zonal Redunancy for supported regions')
 param isZoneRedundant bool = true
 
+@description('Create new or use existing Storage Account.')
 @allowed([
   'new'
   'existing'
 ])
 param newOrExistingStorageAccount string = 'new'
+
+@description('Name of Storage Account resource')
 param storageAccountName string = 'ddc${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+
+@description('Name of Storage Account Resource Group')
 param storageResourceGroupName string = resourceGroup().name
 
+@description('Create new or use existing Key Vault')
 @allowed([
   'new'
   'existing'
 ])
 param newOrExistingKeyVault string = 'new'
+
+@description('Name of Key Vault resource')
 param keyVaultName string = take('ddcKeyVault${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
 
+@description('Create new or use existing Public IP resource')
 @allowed([
   'new'
   'existing'
 ])
 param newOrExistingPublicIp string = 'new'
+
+@description('Name of Public IP Resource')
 param publicIpName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
 
+@description('Create new or use existing Traffic Manager Profile.')
 @allowed([
   'new'
   'existing'
 ])
 param newOrExistingTrafficManager string = 'new'
+
+@description('New of Traffic Manager Profile.')
 param trafficManagerName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+
 @description('Relative DNS name for the traffic manager profile, must be globally unique.')
 param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
 
+
+@description('Create new or use existing CosmosDB for Cassandra.')
 @allowed([
   'new'
   'existing'
 ])
 param newOrExistingCosmosDB string = 'new'
+
+@description('Name of Cosmos DB resource.')
 param cosmosDBName string = 'ddc-db-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+
+@description('Name of Cosmos DB Resource Group.')
 param cosmosDBRG string = resourceGroup().name
 
+@description('Application Managed Identity ID')
 param servicePrincipalClientID string = ''
+
+@description('Worker Managed Identity ID, required for geo-replication.')
 param workerServicePrincipalClientID string = ''
 
+@description('Worker Managed Identity Secret, which will be stored in Key Vault, and is required for geo-replication.')
 @secure()
 param workerServicePrincipalSecret string = ''
 
@@ -93,9 +126,14 @@ param epicEULA bool = false
 
 @description('Active Directory Tennat ID')
 param azureTenantID string = subscription().tenantId
+
+@description('Tenant ID for Key Vault')
 param keyVaultTenantID string = azureTenantID
+
+@description('Tenant ID for Authentication')
 param loginTenantID string = azureTenantID
 
+@description('Namespace for Unreal DDC Contents')
 param namespace string = 'defaultnamespace'
 
 @description('Delete old ref records no longer in use across the entire system')
@@ -257,7 +295,14 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
   }
 }
 
+@description('Location of required artifacts.')
 output _artifactsLocation string = _artifactsLocation
+
+@description('Token for retrieving  required Artifacts from storage.')
 output _artifactsLocationWithToken bool = _artifactsLocationWithToken
+
+@description('Name of Cosmos DB resource')
 output cosmosDBName string = cosmosDBName
+
+@description('New or Existing Cosmos DB resource')
 output newOrExistingCosmosDB string = newOrExistingCosmosDB
