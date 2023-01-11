@@ -30,7 +30,7 @@ var networkAcls = enableVNET ? {
   ]
 } : {}
 
-resource newStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' = if (newOrExisting == 'new') {
+resource newStorageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = if (newOrExisting == 'new') {
   name: name
   location: location
   sku: {
