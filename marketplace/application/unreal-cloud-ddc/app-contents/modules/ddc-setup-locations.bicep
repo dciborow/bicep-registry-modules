@@ -31,6 +31,8 @@ param CleanOldRefRecords bool = true
 @description('Delete old blobs that are no longer referenced by any ref - this runs in each region to cleanup that regions blob stores')
 param CleanOldBlobs bool = true
 
+param helmVersion string = 'latest'
+
 var locations = union([ location ], secondaryLocations)
 
 module ddcSetup 'ddc-umbrella.bicep' = [for (location, index) in locations: {
@@ -49,6 +51,7 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (location, index) in locations: {
     namespace: namespace
     CleanOldRefRecords: !contains(secondaryLocations, location) ? CleanOldRefRecords : false
     CleanOldBlobs: CleanOldBlobs
+    helmVersion: helmVersion
   }
 }]
 

@@ -9,6 +9,7 @@ param keyVaultTenantID string = subscription().tenantId
 param loginTenantID string = subscription().tenantId
 param enableWorker bool = false
 param namespace string = ''
+param helmVersion string = 'latest'
 
 @description('this should be enabled in one region - it will delete old ref records no longer in use across the entire system')
 param CleanOldRefRecords bool = false
@@ -182,6 +183,7 @@ var helmCharts = {
   helmNamespace: helmNamespace
   helmValues: helmArgsString
   helmWorker: helmWorker
+  version: helmVersion
 }
 
 output helmChart object = helmCharts

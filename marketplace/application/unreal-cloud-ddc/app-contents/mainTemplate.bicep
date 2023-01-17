@@ -148,6 +148,8 @@ param cassandraConnectionString string = ''
 
 param storageConnectionStrings array = []
 
+param helmVersion string = '0.2.2'
+
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 
 //  Resources
@@ -301,6 +303,7 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     namespace: namespace
     CleanOldRefRecords: CleanOldRefRecords
     CleanOldBlobs: CleanOldBlobs
+    helmVersion: helmVersion
   }
 }
 // End
