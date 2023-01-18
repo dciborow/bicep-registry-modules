@@ -191,7 +191,7 @@ module deployResources 'modules/resources.bicep' = if (epicEULA) {
     storageSecretName: 'ddc-storage-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
-    subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
+    subject: 'system:serviceaccount:horde-tests:workload-identity-sa'
     storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[0] : ''
   }
 }
@@ -218,7 +218,7 @@ module secondaryResources 'modules/resources.bicep' = [for (location, index) in 
     storageSecretName: 'ddc-storage-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
-    subject: 'system:serviceaccount:ddc-tests:workload-identity-sa'
+    subject: 'system:serviceaccount:horde-tests:workload-identity-sa'
     storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[index+1] : ''
   }
 }]
