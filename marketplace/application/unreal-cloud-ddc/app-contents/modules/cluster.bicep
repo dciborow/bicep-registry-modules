@@ -32,7 +32,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2021-03-01' = {
         osType: 'Linux'
         mode: 'System'
         nodeLabels: {
-          type: 'ucddc-storage'
+          type: 'horde-storage'
         }
       }
     ]

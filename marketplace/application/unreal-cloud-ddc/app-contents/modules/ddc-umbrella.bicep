@@ -100,9 +100,9 @@ var ingress = {
 var helmJSON = {
   'unreal-cloud-ddc': {
     config: {
-      Azure: { ConnectionString: 'akv!${keyVaultName}|ddc-connection-string' }
+      Azure: { ConnectionString: 'akv!${keyVaultName}|ddc-storage-connection-string' }
       Scylla: {
-        ConnectionString: 'akv!${keyVaultName}|horde-db-connection-string'
+        ConnectionString: 'akv!${keyVaultName}|ddc-db-connection-string'
         LocalDatacenterName: locationMapping[location]
         LocalKeyspaceSuffix: location
         UseAzureCosmosDB: true
