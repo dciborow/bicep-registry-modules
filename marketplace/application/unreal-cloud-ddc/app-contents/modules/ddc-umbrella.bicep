@@ -53,7 +53,7 @@ var locationMapping = {
 var helmChart = 'oci://tchordestoragecontainerregistry.azurecr.io/helm/tc-horde-storage'
 var helmName = 'myhordetest'
 var helmNamespace = 'horde-tests'
-var siteName = 'hordegamingstore'
+var siteName = 'ddc-${location}'
 
 var imageVersion = '0.37.4'
 
