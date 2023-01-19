@@ -21,7 +21,7 @@
         "defaultValue": [],
         "filter": true,
         "filterPlaceholder": "Filter regions ...",
-        "multiLine": true,
+        "multiLine": false,
         "constraints": {
           "allowedValues": [
             {
