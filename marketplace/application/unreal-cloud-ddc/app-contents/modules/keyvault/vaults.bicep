@@ -46,7 +46,7 @@ resource existingKeyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = if (
 }
 
 resource identityRoleAssignDeployment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for rbacPolicy in rbacPolicies: if (assignRole) {
-  name: guid(rbacSecretsReaderRole, rbacPolicy.objectId)
+  name: guid(keyVault.id, rbacSecretsReaderRole, rbacPolicy.objectId)
   scope: keyVault
   properties: {
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', rbacSecretsReaderRole)
@@ -56,7 +56,7 @@ resource identityRoleAssignDeployment 'Microsoft.Authorization/roleAssignments@2
 }]
 
 resource rbacCertsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for rbacPolicy in rbacPolicies: if (assignRole) {
-  name: guid(rbacCertificateOfficerRole, rbacPolicy.objectId)
+  name: guid(keyVault.id, rbacCertificateOfficerRole, rbacPolicy.objectId)
   scope: keyVault
   properties: {
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', rbacCertificateOfficerRole)
