@@ -151,6 +151,7 @@ param storageConnectionStrings array = []
 param helmVersion string = '0.2.2'
 
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
+var nodeLabels = 'horde-storage'
 
 //  Resources
 resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
@@ -180,6 +181,7 @@ module deployResources 'modules/resources.bicep' = if (epicEULA) {
       agentPoolName: agentPoolName
       vmSize: vmSize
       clusterUserName: 'id-${aksName}-${location}'
+      nodeLabels: nodeLabels
     }
     secondaryLocations: secondaryLocations
     keyVaultName: take('${location}-${keyVaultName}', 24)
@@ -210,6 +212,7 @@ module secondaryResources 'modules/resources.bicep' = [for (location, index) in 
       agentPoolName: agentPoolName
       vmSize: vmSize
       clusterUserName: 'id-${aksName}-${location}'
+      nodeLabels: nodeLabels
     }
     keyVaultName: take('${location}-${keyVaultName}', 24)
     publicIpName: '${publicIpName}-${location}'

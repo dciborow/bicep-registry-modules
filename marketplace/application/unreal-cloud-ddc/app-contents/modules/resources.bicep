@@ -40,6 +40,7 @@ param kubernetesParams object = {
   vmSize: 'Standard_D2_v2'
   assignRole: true
   clusterUserName: 'k8-${take(uniqueString(location, resourceGroup().id), 15)}'
+  nodeLabels: 'defaultLabel'
 }
 param assignRole bool = true
 
@@ -97,6 +98,7 @@ module clusterModule 'ContainerService/managedClusters.bicep' = if (enableKubern
     isZoneRedundant: isZoneRedundant && !contains(noAvailabilityZones, location)
     subject: subject
     clusterUserName: kubernetesParams.clusterUserName
+    nodeLabels: kubernetesParams.nodeLabels
   }
 }
 var rbacPolicies = [
