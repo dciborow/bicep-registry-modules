@@ -165,11 +165,11 @@ module trafficManager 'network/trafficManagerProfiles.bicep' = if (enableTraffic
   }
 }
 
-module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault && newOrExistingStorageAccount == 'new') {
+module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault) {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVault.outputs.name
-    secrets: [ { secretName: storageSecretName, secretValue: storageAccount.outputs.blobStorageConnectionString } ]
+    secrets: [ { secretName: storageSecretName, secretValue: newOrExistingStorageAccount == 'new' ? storageAccount.outputs.blobStorageConnectionString : storageAccountSecret} ]
   }
 }
 
