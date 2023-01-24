@@ -5,8 +5,8 @@
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/dotnet:0-3.1",
 	"features": {
-		"ghcr.io/devcontainers/features/python:1": {},
+		// "ghcr.io/devcontainers/features/python:1": {},
 		"ghcr.io/devcontainers/features/azure-cli:1": {}
 	},	
-	"postCreateCommand": "python -m pip install --user pytest pytest-azure"
+	// "postCreateCommand": "python -m pip install --user pytest pytest-azure"
 }
