@@ -11,7 +11,7 @@ param forceUpdateTag string = utcNow()
 param useExistingManagedIdentity bool = false
 
 @description('Name of the Managed Identity resource')
-param managedIdentityName string = 'id-AksRun-${location}-${uniqueString(aksName, location)}'
+param managedIdentityName string = 'id-AksRun-${location}'
 
 @description('For an existing Managed Identity, the Subscription Id it is located in')
 param existingManagedIdentitySubId string = subscription().subscriptionId
