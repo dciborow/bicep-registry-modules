@@ -1,30 +1,42 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.245.2/containers/ubuntu
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
 	"name": "Ubuntu",
-	"build": {
-		"dockerfile": "Dockerfile"
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/dotnet:0-3.1",
+	"features": {
+		"ghcr.io/devcontainers/features/python:1": {},
+		// "ghcr.io/devcontainers-contrib/features/bandit:2": {},
+		// "ghcr.io/devcontainers-contrib/features/black:2": {},
+		// "ghcr.io/devcontainers-contrib/features/flit:2": {},
+		"ghcr.io/devcontainers/features/azure-cli:1": {}
 	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				// "littlefoxteam.vscode-python-test-adapter",
+				// "ms-azuretools.vscode-bicep",
+				// "ms-python.python",
+				// "ms-vscode.azurecli",
+				// "ms-dotnettools.vscode-dotnet-runtime",
+				// "ms-azuretools.vscode-bicep"
+			],
+		}
+	},
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
+	// "postCreateCommand": "python --version"
+	"postCreateCommand": "python -m pip install --user pytest pytest-azure"
 
-	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode",
-	"features": {
-		"git": "latest",
-		"azure-cli": "latest"
-	},
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"ms-azuretools.vscode-bicep",
-				"msazurermtools.azurerm-vscode-tools",
-				"ms-vscode.azure-account"
-			]
-		}
-	}
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
 }

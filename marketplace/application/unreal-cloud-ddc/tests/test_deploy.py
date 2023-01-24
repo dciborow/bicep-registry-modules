@@ -23,7 +23,7 @@ After setting variables, and installing testing utiltiies, execute using the fol
 `pytest test_vm_installations.py`
 
 """
-from microsoft.industrialai.utils.test_utils import get_aks_name 
+from pytest_azure.utils import get_aks_name 
 
 def test_get_compute():
     assert get_aks_name()

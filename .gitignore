@@ -9,3 +9,4 @@ scripts/temp_*
 **.zip
 
 parameters.json
+**.pyc
