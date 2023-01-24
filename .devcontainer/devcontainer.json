@@ -6,21 +6,11 @@
 	"image": "mcr.microsoft.com/devcontainers/dotnet:0-3.1",
 	"features": {
 		"ghcr.io/devcontainers/features/python:1": {},
-		// "ghcr.io/devcontainers-contrib/features/bandit:2": {},
-		// "ghcr.io/devcontainers-contrib/features/black:2": {},
-		// "ghcr.io/devcontainers-contrib/features/flit:2": {},
 		"ghcr.io/devcontainers/features/azure-cli:1": {}
 	},
 	"customizations": {
 		"vscode": {
-			"extensions": [
-				// "littlefoxteam.vscode-python-test-adapter",
-				// "ms-azuretools.vscode-bicep",
-				// "ms-python.python",
-				// "ms-vscode.azurecli",
-				// "ms-dotnettools.vscode-dotnet-runtime",
-				// "ms-azuretools.vscode-bicep"
-			],
+			"extensions": []
 		}
 	},
 
