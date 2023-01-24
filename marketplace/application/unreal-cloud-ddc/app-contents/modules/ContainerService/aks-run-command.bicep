@@ -17,7 +17,7 @@ param rbacRolesNeeded array = [
 param useExistingManagedIdentity bool = false
 
 @description('Name of the Managed Identity resource')
-param managedIdentityName string = 'id-AksRunCommandProxy'
+param managedIdentityName string = 'id-AksRunCommandProxy-${location}'
 
 @description('For an existing Managed Identity, the Subscription Id it is located in')
 param existingManagedIdentitySubId string = subscription().subscriptionId
