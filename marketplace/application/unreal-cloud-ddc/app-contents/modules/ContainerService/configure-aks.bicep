@@ -9,6 +9,17 @@ param enableSecretStore bool = true
 param enableIngress bool = true
 param azureTenantID string = subscription().tenantId
 
+param managedIdentityName string = 'id-ddc-storage-${location}'
+
+@description('Does the Managed Identity already exists, or should be created')
+param useExistingManagedIdentity bool = false
+
+@description('For an existing Managed Identity, the Subscription Id it is located in')
+param existingManagedIdentitySubId string = subscription().subscriptionId
+
+@description('For an existing Managed Identity, the Resource Group it is located in')
+param existingManagedIdentityResourceGroupName string = resourceGroup().name
+
 module helmInstallWorkloadID 'workload-id.bicep' = if(enableWorkloadIdentity) { 
   name: 'helmInstallWorkloadID-${uniqueString(aksName, location, resourceGroup().name)}'
   params: {
@@ -35,5 +46,9 @@ module combo 'helmChartInstall.bicep' = {
     aksName: aksName
     location: location
     helmCharts: helmCharts
+    useExistingManagedIdentity: useExistingManagedIdentity
+    managedIdentityName: managedIdentityName
+    existingManagedIdentitySubId: existingManagedIdentitySubId
+    existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
   }
 }

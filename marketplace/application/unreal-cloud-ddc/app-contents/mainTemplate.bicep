@@ -95,7 +95,6 @@ param trafficManagerName string = 'ddcPublicIP${uniqueString(resourceGroup().id,
 @description('Relative DNS name for the traffic manager profile, must be globally unique.')
 param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
 
-
 @description('Create new or use existing CosmosDB for Cassandra.')
 @allowed([
   'new'
@@ -149,6 +148,17 @@ param cassandraConnectionString string = ''
 param storageConnectionStrings array = []
 
 param helmVersion string = '0.2.2'
+
+param managedIdentityPrefix string = 'id-ddc-storage-'
+
+@description('Does the Managed Identity already exists, or should be created')
+param useExistingManagedIdentity bool = false
+
+@description('For an existing Managed Identity, the Subscription Id it is located in')
+param existingManagedIdentitySubId string = subscription().subscriptionId
+
+@description('For an existing Managed Identity, the Resource Group it is located in')
+param existingManagedIdentityResourceGroupName string = resourceGroup().name
 
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'
@@ -239,8 +249,8 @@ module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for location in 
     certificateCommonName: hostname
     issuerName: certificateIssuer
     issuerProvider: issuerProvider
-    useExistingManagedIdentity: newOrExistingStorageAccount == 'new' ? true : false
-    managedIdentityName: 'id-${aksName}-${location}'
+    useExistingManagedIdentity: useExistingManagedIdentity
+    managedIdentityName: '${managedIdentityPrefix}${location}'
     rbacRolesNeededOnKV: '00482a5a-887f-4fb3-b363-3b7fe8e74483' // Key Vault Admin
   }
 }]
@@ -289,6 +299,7 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
   name: 'setup-ddc-${location}'
   dependsOn: [
     cassandraKeys
+    kvCert
   ]
   params: {
     aksName: aksName
@@ -307,6 +318,10 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     CleanOldRefRecords: CleanOldRefRecords
     CleanOldBlobs: CleanOldBlobs
     helmVersion: helmVersion
+    useExistingManagedIdentity: true  // Reuse ID Created for Key Vault
+    managedIdentityPrefix: managedIdentityPrefix
+    existingManagedIdentitySubId: existingManagedIdentitySubId
+    existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
   }
 }
 // End

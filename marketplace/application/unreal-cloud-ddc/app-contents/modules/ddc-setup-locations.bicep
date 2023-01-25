@@ -11,7 +11,11 @@ param keyVaultName string
 param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string
-param setup bool = true
+
+param managedIdentityPrefix string = 'id-ddc-storage-'
+
+@description('Does the Managed Identity already exists, or should be created')
+param useExistingManagedIdentity bool = false
 
 @description('For an existing Managed Identity, the Subscription Id it is located in')
 param existingManagedIdentitySubId string = subscription().subscriptionId
@@ -55,7 +59,7 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (location, index) in locations: {
   }
 }]
 
-module configAKS 'ContainerService/configure-aks.bicep' = [for (location, index) in locations: if(setup) {
+module configAKS 'ContainerService/configure-aks.bicep' = [for (location, index) in locations: {
   name: 'configAKS-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     location: location
@@ -63,18 +67,8 @@ module configAKS 'ContainerService/configure-aks.bicep' = [for (location, index)
     additionalCharts: [ ddcSetup[index].outputs.helmChart ]
     staticIP: '${publicIpName}-${location}'
     azureTenantID: azureTenantID
-  }
-}]
-
-
-module combo 'ContainerService/helmChartInstall.bicep' = [for (location, index) in locations: if(!setup) {
-  name: 'helmInstall-UnrealCloud-${uniqueString(aksName, location, resourceGroup().name)}'
-  params: {
-    aksName: '${aksName}-${take(location, 8)}'
-    location: location
-    helmCharts: [ddcSetup[index].outputs.helmChart]
-    useExistingManagedIdentity: true
-    managedIdentityName: 'id-${aksName}-${location}'
+    useExistingManagedIdentity: useExistingManagedIdentity
+    managedIdentityName: '${managedIdentityPrefix}${location}'
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
   }
