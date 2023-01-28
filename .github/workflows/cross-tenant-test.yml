@@ -1,0 +1,64 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+name: Cross Tenant App Testing
+
+concurrency: 
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  DeployTemplate:
+    runs-on: ubuntu-latest
+    environment: CrossTenant
+    env:
+      WORKING_DIR: marketplace/application/key-vault-certificate
+      location: eastus
+    steps:
+    - uses: actions/checkout@v3
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: DeployARM
+      id: deploy_arm
+      run: |
+        cd $WORKING_DIR || exit
+        suffix=$RANDOM
+        echo "RAND_SUFFIX=$suffix" >> $GITHUB_OUTPUT
+
+        az deployment group create \
+          --name devops-test-$suffix \
+          --resource-group devops-test-$suffix \
+          --template-file main.bicep \
+          --parameters location="$location"
+
+    - name: TestARM
+      id: test_arm
+      env:
+#         SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+#         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+#         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+#         TENANT_ID: ${{ secrets.TENANT_ID }}
+        RG: devops-test-${{ steps.deploy_arm.outputs.RAND_SUFFIX }}
+      run: |
+        python3 -m pip install \
+          pytest-azure
+
+        cd ${PWD}
+        python3 -m pytest tests
+
+    - name: CleanupARM
+      if: always()
+      env:
+        suffix: ${{ steps.deploy_arm.outputs.RAND_SUFFIX }}
+      run: |
+        echo Clean Up: devops-test-$suffix
+        az group delete \
+          --no-wait \
+          --yes \
+          --resource-group devops-test-$suffix
