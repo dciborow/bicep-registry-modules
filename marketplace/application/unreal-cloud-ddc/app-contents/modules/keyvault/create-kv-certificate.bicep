@@ -61,11 +61,17 @@ resource existingDepScriptId 'Microsoft.ManagedIdentity/userAssignedIdentities@2
   scope: resourceGroup(existingManagedIdentitySubId, existingManagedIdentityResourceGroupName)
 }
 
+@description('This is the built-in Key Vault Administrator role. See https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#key-vault-administrator')
+resource keyVaultAdministratorRoleDefinition 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
+  scope: subscription()
+  name: '00482a5a-887f-4fb3-b363-3b7fe8e74483'
+}
+
 resource rbacKv 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(akv.id, rbacRolesNeededOnKV, useExistingManagedIdentity ? existingDepScriptId.id : newDepScriptId.id)
+  name: guid(akv.id, rbacRolesNeededOnKV, string(useExistingManagedIdentity))
   scope: akv
   properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', rbacRolesNeededOnKV)
+    roleDefinitionId: keyVaultAdministratorRoleDefinition.id
     principalId: useExistingManagedIdentity ? existingDepScriptId.properties.principalId : newDepScriptId.properties.principalId
     principalType: 'ServicePrincipal'
   }
