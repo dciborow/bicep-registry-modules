@@ -11,25 +11,21 @@ do
     echo "Creating AKV Cert $certName with CN $certCommonName (attempt $retryLoopCount)..."
 
     if [ -z "$issuerName" ] || [ -z "$issuerProvider" ]; then
-        az keyvault certificate create \
-            --vault-name $akvName \
-            -n $certName \
-            -p "$(az keyvault certificate get-default-policy \
-            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g )" \
-            && break
+        policy=$(az keyvault certificate get-default-policy \
+            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g )
     else
         az keyvault certificate issuer create \
             --vault-name $akvName \
             --issuer-name $issuerName \
             --provider-name $issuerProvider
-        az keyvault certificate create \
-            --vault-name $akvName \
-            -n $certName \
-            -p "$(az keyvault certificate get-default-policy \
-            | sed -e s/Self/${issuerName}/g \
-            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g )" \
-            && break
+        policy=$(az keyvault certificate get-default-policy \
+            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g )
     fi
+    az keyvault certificate create \
+        --vault-name $akvName \
+        -n $certName \
+        -p "$policy" \
+        && break
 
     sleep $retrySleep
     retryLoopCount=$((retryLoopCount+1))
