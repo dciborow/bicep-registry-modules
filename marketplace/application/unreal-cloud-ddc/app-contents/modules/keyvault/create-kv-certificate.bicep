@@ -74,6 +74,7 @@ resource rbacKv 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     roleDefinitionId: keyVaultAdministratorRoleDefinition.id
     principalId: useExistingManagedIdentity ? existingDepScriptId.properties.principalId : newDepScriptId.properties.principalId
     principalType: 'ServicePrincipal'
+    delegatedManagedIdentityResourceId: useExistingManagedIdentity ? existingDepScriptId.id : newDepScriptId.id
   }
 }
 
