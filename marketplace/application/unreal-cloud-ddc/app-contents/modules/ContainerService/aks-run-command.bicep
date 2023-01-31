@@ -39,6 +39,9 @@ param initialScriptDelay string = '120s'
 @description('When the script resource is cleaned up')
 param cleanupPreference string = 'OnSuccess'
 
+@description('Set to false to deploy from as an ARM template for debugging') 
+param isApp bool = true
+
 resource aks 'Microsoft.ContainerService/managedClusters@2022-01-02-preview' existing = {
   name: aksName
 }
@@ -53,6 +56,8 @@ resource existingDepScriptId 'Microsoft.ManagedIdentity/userAssignedIdentities@2
   scope: resourceGroup(existingManagedIdentitySubId, existingManagedIdentityResourceGroupName)
 }
 
+var delegatedManagedIdentityResourceId = useExistingManagedIdentity ? existingDepScriptId.id : newDepScriptId.id
+
 resource rbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleDefId in rbacRolesNeeded: {
   name: guid(aks.id, roleDefId, useExistingManagedIdentity ? existingDepScriptId.id : newDepScriptId.id)
   scope: aks
@@ -60,6 +65,7 @@ resource rbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleDe
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', roleDefId)
     principalId: useExistingManagedIdentity ? existingDepScriptId.properties.principalId : newDepScriptId.properties.principalId
     principalType: 'ServicePrincipal'
+    delegatedManagedIdentityResourceId: isApp ? delegatedManagedIdentityResourceId : null
   }
 }]
 

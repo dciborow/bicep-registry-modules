@@ -160,6 +160,9 @@ param existingManagedIdentitySubId string = subscription().subscriptionId
 @description('For an existing Managed Identity, the Resource Group it is located in')
 param existingManagedIdentityResourceGroupName string = resourceGroup().name
 
+@description('Set to false to deploy from as an ARM template for debugging') 
+param isApp bool = true
+
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'
 
@@ -252,6 +255,7 @@ module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for location in 
     useExistingManagedIdentity: useExistingManagedIdentity
     managedIdentityName: '${managedIdentityPrefix}${location}'
     rbacRolesNeededOnKV: '00482a5a-887f-4fb3-b363-3b7fe8e74483' // Key Vault Admin
+    isApp: isApp
   }
 }]
 
@@ -322,6 +326,7 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     managedIdentityPrefix: managedIdentityPrefix
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
+    isApp: isApp
   }
 }
 // End

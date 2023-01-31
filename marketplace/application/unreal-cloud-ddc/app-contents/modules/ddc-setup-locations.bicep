@@ -37,6 +37,9 @@ param CleanOldBlobs bool = true
 
 param helmVersion string = 'latest'
 
+@description('Set to false to deploy from as an ARM template for debugging') 
+param isApp bool = true
+
 var locations = union([ location ], secondaryLocations)
 
 module ddcSetup 'ddc-umbrella.bicep' = [for (location, index) in locations: {
@@ -71,5 +74,6 @@ module configAKS 'ContainerService/configure-aks.bicep' = [for (location, index)
     managedIdentityName: '${managedIdentityPrefix}${location}'
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
+    isApp: isApp
   }
 }]

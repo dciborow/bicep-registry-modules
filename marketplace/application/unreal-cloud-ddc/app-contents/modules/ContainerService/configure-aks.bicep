@@ -20,6 +20,9 @@ param existingManagedIdentitySubId string = subscription().subscriptionId
 @description('For an existing Managed Identity, the Resource Group it is located in')
 param existingManagedIdentityResourceGroupName string = resourceGroup().name
 
+@description('Set to false to deploy from as an ARM template for debugging') 
+param isApp bool = true
+
 module helmInstallWorkloadID 'workload-id.bicep' = if(enableWorkloadIdentity) { 
   name: 'helmInstallWorkloadID-${uniqueString(aksName, location, resourceGroup().name)}'
   params: {
@@ -50,5 +53,6 @@ module combo 'helmChartInstall.bicep' = {
     managedIdentityName: managedIdentityName
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
+    isApp: isApp
   }
 }

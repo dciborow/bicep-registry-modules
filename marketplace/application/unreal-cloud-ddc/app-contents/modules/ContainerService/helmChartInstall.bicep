@@ -30,6 +30,9 @@ param cleanupPreference string = 'OnSuccess'
 @description('Helm Charts {helmChart: azure-marketplace/wordpress, helmName: my-wordpress, helmNamespace: wordpress, helmValues: array, helmRepo: <>, helmRepoURL: <>}')
 param helmCharts array
 
+@description('Set to false to deploy from as an ARM template for debugging') 
+param isApp bool = true
+
 var commands = [for (app, i) in helmCharts: join([
   contains(app, 'helmRepo') ? 'helm repo add ${app.helmRepo} ${app.helmRepoURL} && helm repo update &&' : ''
   'helm upgrade ${app.helmName} ${app.helmChart} --install'
@@ -53,5 +56,6 @@ module helmChartInstall 'aks-run-command.bicep' = {
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
     cleanupPreference: cleanupPreference
+    isApp: isApp
   }
 }
