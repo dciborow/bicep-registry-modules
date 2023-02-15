@@ -17,9 +17,7 @@ The following instructions are created to help with the development of Bicep pub
 
 ### Making a proposal
 
-<!-- TODO: update the issue link once the repo is public -->
-
-Before creating a new module, you must fill out this [issue template](https://github.com/Azure/bicep-registry-modules/issues/new) to make a proposal. Each module needs to have its own proposal. Please avoid including multiple modules in one issue. Once the proposal is approved, proceed with the following steps. You should not send out a pull request to add a module without an associated approval as the pull request will be rejected.
+Before creating a new module, you must fill out this [issue template](https://github.com/Azure/bicep-registry-modules/issues/new?assignees=&labels=Module+Proposal&template=module_proposal.yml&title=%5BModule+Proposal%5D%3A+) to make a proposal. Each module needs to have its own proposal. Please avoid including multiple modules in one issue. Once the proposal is approved, proceed with the following steps. You should not send out a pull request to add a module without an associated approval as the pull request will be rejected.
 
 ### Creating a directory for the new module
 
@@ -157,6 +155,12 @@ The `brm validate` command mentioned in the above step does not deploy the `test
 ## Submitting a pull request
 
 Once the module files are validated locally, you can commit your changes and open a pull request. You must link the new module proposal in the pull request description if you are trying to add a new module. Adding or updating multiple modules is not supported and will cause a failure in the pull request validation CI, so please only add or change one module at a time.
+
+### Optional: Enable Auto Generation with GitHub Actions
+
+Enable optional GitHub Workflows in your fork to enable auto-generation of assets with our [GitHub Action](/.github/workflows/push-auto-generate.yml).
+In order to trigger GitHub Actions after auto-generation, [add a GitHub PAT](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) as a secret in your forked repository called `PAT`.
+This `PAT` should NOT include the `workflow` scope.
 
 ## Publishing a module
 
