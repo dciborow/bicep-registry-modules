@@ -7,7 +7,7 @@ param vmSize string = 'Standard_L16s_v2'
 param nodeLabels string = 'defaultLabel'
 param assignRole bool = false
 param dnsPrefix string = 'k8-${take(uniqueString(name), 5)}'
-param kubernetesVersion string = '1.23.8'
+param kubernetesVersion string = '1.24.9'
 param availabilityZones array = [
   '1'
   '2'
