@@ -158,7 +158,7 @@
         ]
       },
       "technical_configuration" : {
-        "version"               : "0.1.51",
+        "version"               : "0.1.52",
         "allowedCustomerActions": [
           "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*;Microsoft.Insights/*"
         ],
