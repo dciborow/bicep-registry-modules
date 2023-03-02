@@ -147,7 +147,7 @@ param cassandraConnectionString string = ''
 
 param storageConnectionStrings array = []
 
-param helmVersion string = '0.2.2'
+param helmVersion string = '0.2.5'
 
 param managedIdentityPrefix string = 'id-ddc-storage-'
 

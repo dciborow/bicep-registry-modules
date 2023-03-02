@@ -55,7 +55,7 @@ var helmName = 'myhordetest'
 var helmNamespace = 'horde-tests'
 var siteName = 'ddc-${location}'
 
-var imageVersion = '0.37.4'
+var imageVersion = '0.38.1'
 
 var secretStore = {
   enabled: true
