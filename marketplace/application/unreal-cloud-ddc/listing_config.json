@@ -78,7 +78,7 @@
       "fdc4bb25-4f8d-4349-b760-911e1d61b3c2",
       "edf507a2-6235-46c5-b560-fd463ba2e771",
       "69c75911-7439-4362-855d-c8f3ecbbf3de",
-      "0ca618d2-22a8-413a-96d0-0.1.541129c3",
+      "0ca618d2-22a8-413a-96d0-0.1.551129c3",
       "3ce675b8-fcea-4732-a965-393bbe02d7ad",
       "8fee7450-a739-4529-8a51-f58a6617c27d",
       "ecfc2cfe-3121-4c2d-9cae-d52e2e13e55c",
@@ -121,7 +121,7 @@
             "ID":  "69c75911-7439-4362-855d-c8f3ecbbf3de"
           },
           {
-            "ID":  "0ca618d2-22a8-413a-96d0-0.1.541129c3"
+            "ID":  "0ca618d2-22a8-413a-96d0-0.1.551129c3"
           },          
           {
             "ID":  "11d3d3a9-33fe-42d9-9914-650a937780ca"
@@ -174,7 +174,7 @@
         ]
       },
       "technical_configuration" : {
-        "version"               : "0.1.54",
+        "version"               : "0.1.55",
         "allowedCustomerActions": [
           "Microsoft.Storage/*;Microsoft.KeyVault/*;Microsoft.ManagedIdentity/*;Microsoft.Network/*;Microsoft.Resources/*;Microsoft.Compute/*;Microsoft.ContainerService/*;Microsoft.Authorization/*;Microsoft.DocumentDB/*;Microsoft.Insights/*"
         ],
