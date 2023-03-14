@@ -2,13 +2,16 @@ param aksName string = ''
 param location string
 param resourceGroupName string
 param keyVaultName string
+param certificateName string
+param locationCertificateName string
 param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
+param locationHostname string
+param replicationSourceHostname string
 param keyVaultTenantID string = subscription().tenantId
 param loginTenantID string = subscription().tenantId
 param enableWorker bool = false
-param namespace string = ''
 param helmVersion string = 'latest'
 
 @description('this should be enabled in one region - it will delete old ref records no longer in use across the entire system')
@@ -16,6 +19,14 @@ param CleanOldRefRecords bool = false
 
 @description('this will delete old blobs that are no longer referenced by any ref - this runs in each region to cleanup that regions blob stores')
 param CleanOldBlobs bool = true
+
+param namespacesToReplicate array = []
+
+param restartPods bool = true
+param podRollMeSeed string = utcNow()
+
+@description('If this is non-empty, an open telemetry collector will be set up to send data to Application Insights')
+param appInsightsKey string = ''
 
 resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: 'id-${aksName}-${location}'
@@ -68,121 +79,184 @@ var secretStore = {
 
 var loginDomain = 'microsoftonline'
 
+var serviceCreds = {
+  OAuthClientId: workerServicePrincipalClientID
+  OAuthClientSecret: 'akv!${keyVaultName}|build-app-secret'
+  OAuthLoginUrl: '${environment().authentication.loginEndpoint}${loginTenantID}/oauth2/v2.0/token'
+  OAuthScope: 'api://${servicePrincipalClientID}/.default'
+}
+
 var global = {
   siteName: siteName
   authMethod: 'JWTBearer'
   jwtAuthority: 'https://login.${loginDomain}.com/${loginTenantID}'
   jwtAudience: 'api://${servicePrincipalClientID}'
   OverrideAppVersion: imageVersion
-  ServiceCredentials: {
-    OAuthClientId: workerServicePrincipalClientID
-    OAuthClientSecret: 'akv!${keyVaultName}|build-app-secret'
-    OAuthLoginUrl: '${environment().authentication.loginEndpoint}${loginTenantID}/oauth2/v2.0/token'
-    OAuthScope: 'api://${servicePrincipalClientID}/.default'
-  }
+  ServiceCredentials: serviceCreds
 }
 
 var ingress = {
   enabled: true
-  annotations: {
-    'kubernetes.io/ingress.class': 'nginx'
-    'nginx.ingress.kubernetes.io/proxy-body-size': 0
-  }
   hostname: hostname
   path: '/'
   pathType: 'Prefix'
   port: 8080
   tlsSecretName: 'ingress-tls-csi'
-  tlsCertName: 'unreal-cloud-ddc-cert'
+  tlsCertName: certificateName
 }
 
-// helm install --set-json '${string(helmJSON)}'
-var helmJSON = {
-  'unreal-cloud-ddc': {
-    config: {
-      Azure: { ConnectionString: 'akv!${keyVaultName}|ddc-storage-connection-string' }
-      Scylla: {
-        ConnectionString: 'akv!${keyVaultName}|ddc-db-connection-string'
-        LocalDatacenterName: locationMapping[location]
-        LocalKeyspaceSuffix: location
-        UseAzureCosmosDB: true
-        InlineBlobMaxSize: 0
-      }
-    }
-    ingress: ingress
-    secretStore: secretStore
-    serviceAccount: {
-      name: 'workload-identity-sa'
-      annotations: { azure: { workload: { 'identity/client-id': federatedId } } }
-    }
-  }
-  global: global
+var scyllaConnectionString = 'akv!${keyVaultName}|ddc-db-connection-string'
+var scyllaDataCenterName = locationMapping[location]
+
+var scyllaSpec = {
+  ConnectionString: scyllaConnectionString
+  LocalDatacenterName: scyllaDataCenterName
+  LocalKeyspaceSuffix: location
+  UseAzureCosmosDB: true
+  InlineBlobMaxSize: 0
 }
 
-var helmWorker = [
-  'unreal-cloud-ddc.worker.config.Replication.Enabled=true'
-  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].ReplicatorName=Replicator${location}'
-  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].Namespace=${namespace}'
-  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].Version=Refs'
-  'unreal-cloud-ddc.worker.config.Replication.Replicators[0].ConnectionString=${helmJSON['unreal-cloud-ddc'].ingress.hostname}'
+var storageConnectionString = 'akv!${keyVaultName}|ddc-storage-connection-string'
+
+// Preparing values parameters.
+
+// Setting up shared suffixes between main and worker.
+var scyllaValueSuffixes = [for kvp in items(scyllaSpec): '${kvp.key}=${kvp.value}' ]
+
+// Replace $(FEDERATED_ID) later as federatedId is not supported in loops.
+var sharedEnv = {
+  AZURE_CLIENT_ID: '$(FEDERATED_ID)'
+  AZURE_TENANT_ID: keyVaultTenantID
+  AZURE_FEDERATED_TOKEN_FILE: '/var/run/secrets/tokens/azure-identity-token'
+}
+
+var sharedEnvPairs = [for (env, index) in items(sharedEnv): [
+  'env[${index}].name=${env.key}'
+  'env[${index}].value=${env.value}'
+]]
+var sharedEnvValueSuffixes = flatten(sharedEnvPairs)
+
+var mainChartName = 'unreal-cloud-ddc'
+
+// Worker.
+
+var workerPrefix = '${mainChartName}.worker'
+var workerConfigPrefix = '${workerPrefix}.config'
+
+var replicationPrefix = '${workerConfigPrefix}.Replication'
+var replicationEnabledValue = '${replicationPrefix}.Enabled=true'
+var replicatorPrefix = '${replicationPrefix}.Replicators'
+var replicatorValueArrays = [for (namespaceToReplicate, index) in namespacesToReplicate: [
+  '${replicatorPrefix}[${index}].ReplicatorName=Replicator${location}'
+  '${replicatorPrefix}[${index}].Namespace=${namespaceToReplicate}'
+  '${replicatorPrefix}[${index}].Version=Refs'
+  '${replicatorPrefix}[${index}].ConnectionString=${replicationSourceHostname}'
+]]
+
+var workerReplicatorValues = (length(namespacesToReplicate) > 0) ? concat([replicationEnabledValue], flatten(replicatorValueArrays)) : []
+
+var workerScyllaValues = [for suffix in scyllaValueSuffixes: '${workerConfigPrefix}.Scylla.${suffix}' ]
+
+var workerEnvValues = [for suffix in sharedEnvValueSuffixes: '${workerPrefix}.${suffix}']
+
+var workerOtherValues = [
+  '${workerPrefix}.enabled=true'
+  '${workerConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
+  '${workerConfigPrefix}.GC.CleanOldRefRecords=${CleanOldRefRecords}'
+  '${workerConfigPrefix}.GC.CleanOldBlobs=${CleanOldBlobs}'
 ]
 
-var helmArgs = union([
-  'unreal-cloud-ddc.env[0].name=AZURE_CLIENT_ID'
-  'unreal-cloud-ddc.env[0].value=${federatedId}'
-  'unreal-cloud-ddc.env[1].name=AZURE_TENANT_ID'
-  'unreal-cloud-ddc.env[1].value=${keyVaultTenantID}'
-  'unreal-cloud-ddc.env[2].name=AZURE_FEDERATED_TOKEN_FILE'
-  'unreal-cloud-ddc.env[2].value=/var/run/secrets/tokens/azure-identity-token'
-  'unreal-cloud-ddc.service.extraPort[0].name=internal-http'
-  'unreal-cloud-ddc.service.extraPort[0].port=8080'
-  'unreal-cloud-ddc.service.extraPort[0].targetPort=internal-http'
-  'unreal-cloud-ddc.config.Azure.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Azure.ConnectionString}'
-  'unreal-cloud-ddc.config.Scylla.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Scylla.ConnectionString}'
-  'unreal-cloud-ddc.config.Scylla.LocalDatacenterName=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalDatacenterName}'
-  'unreal-cloud-ddc.config.Scylla.LocalKeyspaceSuffix=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalKeyspaceSuffix}'
-  'unreal-cloud-ddc.config.Scylla.UseAzureCosmosDB=true'
-  'unreal-cloud-ddc.config.Scylla.InlineBlobMaxSize=0'
-  'unreal-cloud-ddc.ingress.hostname=${helmJSON['unreal-cloud-ddc'].ingress.hostname}'
-  'unreal-cloud-ddc.ingress.tlsCertName=${helmJSON['unreal-cloud-ddc'].ingress.tlsCertName}'
-  'unreal-cloud-ddc.secretStore.clientID=${helmJSON['unreal-cloud-ddc'].secretStore.clientID}'
-  'unreal-cloud-ddc.secretStore.keyvaultName=${helmJSON['unreal-cloud-ddc'].secretStore.keyVaultName}'
-  'unreal-cloud-ddc.secretStore.resourceGroup=${helmJSON['unreal-cloud-ddc'].secretStore.resourceGroup}'
-  'unreal-cloud-ddc.secretStore.subscriptionId=${helmJSON['unreal-cloud-ddc'].secretStore.subscriptionID}'
-  'unreal-cloud-ddc.secretStore.tenantId=${helmJSON['unreal-cloud-ddc'].secretStore.tenantID}'
-  'unreal-cloud-ddc.serviceAccount.annotations.azure\\.workload\\.identity/client-id=${helmJSON['unreal-cloud-ddc'].serviceAccount.annotations.azure.workload['identity/client-id']}'
-  'unreal-cloud-ddc.worker.env[0].name=AZURE_CLIENT_ID'
-  'unreal-cloud-ddc.worker.env[0].value=${federatedId}'
-  'unreal-cloud-ddc.worker.env[1].name=AZURE_TENANT_ID'
-  'unreal-cloud-ddc.worker.env[1].value=${keyVaultTenantID}'
-  'unreal-cloud-ddc.worker.env[2].name=AZURE_FEDERATED_TOKEN_FILE'
-  'unreal-cloud-ddc.worker.env[2].value=/var/run/secrets/tokens/azure-identity-token'
-  'unreal-cloud-ddc.worker.enabled=true'
-  'unreal-cloud-ddc.worker.config.Azure.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Azure.ConnectionString}'
-  'unreal-cloud-ddc.worker.config.Scylla.ConnectionString=${helmJSON['unreal-cloud-ddc'].config.Scylla.ConnectionString}'
-  'unreal-cloud-ddc.worker.config.Scylla.LocalDatacenterName=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalDatacenterName}'
-  'unreal-cloud-ddc.worker.config.Scylla.LocalKeyspaceSuffix=${helmJSON['unreal-cloud-ddc'].config.Scylla.LocalKeyspaceSuffix}'
-  'unreal-cloud-ddc.worker.config.Scylla.UseAzureCosmosDB=true'
-  'unreal-cloud-ddc.worker.config.Scylla.InlineBlobMaxSize=0'
-  'unreal-cloud-ddc.worker.config.GC.CleanOldRefRecords=${CleanOldRefRecords}'
-  'unreal-cloud-ddc.worker.config.GC.CleanOldBlobs=${CleanOldBlobs}'
-  'global.ServiceCredentials.OAuthClientId=${helmJSON.global.ServiceCredentials.OAuthClientId}'
-  'global.ServiceCredentials.OAuthClientSecret=${helmJSON.global.ServiceCredentials.OAuthClientSecret}'
-  'global.ServiceCredentials.OAuthLoginUrl=${helmJSON.global.ServiceCredentials.OAuthLoginUrl}'
-  'global.ServiceCredentials.OAuthScope=${helmJSON.global.ServiceCredentials.OAuthScope}'
-  'global.auth.schemes.Bearer.jwtAuthority=${helmJSON.global.jwtAuthority}'
-  'global.auth.schemes.Bearer.jwtAudience=${helmJSON.global.jwtAudience}'
-  'unreal-cloud-ddc.podForceRestart=true'
-], enableWorker ? helmWorker : [])
+var workerRestartValues = restartPods ? [ '${workerPrefix}.podAnnotations.rollme=${uniqueString(podRollMeSeed)}' ] : []
 
-var helmArgsString = substring(string(helmArgs), 1, length(string(helmArgs)) - 2)
+var workerValues = enableWorker ? concat(workerOtherValues, workerEnvValues, workerScyllaValues, workerReplicatorValues, workerRestartValues) : []
+
+// Global values.
+
+var globalValues = [
+  'global.auth.schemes.Bearer.jwtAuthority=${global.jwtAuthority}'
+  'global.auth.schemes.Bearer.jwtAudience=${global.jwtAudience}'
+  'global.siteName=${siteName}'
+  'global.ServiceCredentials.OAuthClientId=${serviceCreds.OAuthClientId}'
+  'global.ServiceCredentials.OAuthClientSecret=${serviceCreds.OAuthClientSecret}'
+  'global.ServiceCredentials.OAuthLoginUrl=${serviceCreds.OAuthLoginUrl}'
+  'global.ServiceCredentials.OAuthScope=${serviceCreds.OAuthScope}'
+]
+
+var locationTlsSecretName = '${ingress.tlsSecretName}-${location}'
+
+var secretStoreValues = [
+  'secretStore.enabled=true'
+  'secretStore.clientID=${secretStore.clientID}'
+  'secretStore.keyvaultName=${secretStore.keyVaultName}'
+  'secretStore.resourceGroup=${secretStore.resourceGroup}'
+  'secretStore.subscriptionId=${secretStore.subscriptionID}'
+  'secretStore.tenantId=${secretStore.tenantID}'
+  'secretStore.tlsSecretName=${ingress.tlsSecretName}'
+  'secretStore.tlsCertName=${ingress.tlsCertName}'
+  'secretStore.extraHosts[0].tlsSecretName=${locationTlsSecretName}'
+  'secretStore.extraHosts[0].tlsCertName=${locationCertificateName}'
+]
+
+var otelSamplingRatio = '0.01'
+
+var otelEnv = {
+  OTEL_SERVICE_NAME: 'unreal-cloud-ddc'
+  OTEL_SERVICE_VERSION: '1.0.0'
+  OTEL_EXPORTER_OTLP_ENDPOINT: 'http://$(HOST_IP):4317'
+  OTEL_SAMPLING_RATIO: otelSamplingRatio
+}
+
+var otelEnvPairsSimple = [for (env, index) in items(otelEnv): [
+  'env[${index}].name=${env.key}'
+  'env[${index}].value=${env.value}'
+]]
+var otelEnvValueSuffixesSimple = flatten(otelEnvPairsSimple)
+var lastEnvIndex = length(otelEnvPairsSimple)
+var hostIPEnvValueSuffixes = [
+  'env[${lastEnvIndex}].name=HOST_IP'
+  'env[${lastEnvIndex}].valueFrom.fieldRef.fieldPath=status.hostIP'
+]
+
+var useOtel = (appInsightsKey != '')
+var otelEnvValueSuffixes = useOtel ? concat(otelEnvValueSuffixesSimple, hostIPEnvValueSuffixes) : []
+
+var mainEnvValueSuffixes = concat(sharedEnvValueSuffixes, otelEnvValueSuffixes)
+
+var mainEnvValues = [for suffix in mainEnvValueSuffixes: '${mainChartName}.${suffix}']
+
+var mainConfigPrefix = '${mainChartName}.config'
+var mainScyllaValues = [for suffix in scyllaValueSuffixes: '${mainConfigPrefix}.Scylla.${suffix}' ]
+
+var mainOtherValues = [
+  '${mainConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
+  '${mainConfigPrefix}.GC.CleanOldBlobs=false'
+  '${mainChartName}.serviceAccount.annotations.azure\\.workload\\.identity/client-id=${federatedId}'
+]
+
+var mainRestartValues = restartPods ? [ '${mainChartName}.podAnnotations.rollme=${uniqueString(podRollMeSeed)}' ] : []
+
+var mainValues = concat(mainEnvValues, mainScyllaValues, mainOtherValues, mainRestartValues)
+
+var ingressAksValues = [
+  'ingressAks.enabled=true'
+  'ingressAks.tlsEnabled=true'
+  'ingressAks.hosts[0].name=${hostname}'
+  'ingressAks.hosts[0].tlsSecretName=${ingress.tlsSecretName}'
+  'ingressAks.hosts[1].name=${locationHostname}'
+  'ingressAks.hosts[1].tlsSecretName=${locationTlsSecretName}'
+]
+
+var otelCollectorValues = useOtel ? ['opentelemetry-collector.config.exporters.azuremonitor.instrumentation_key=${appInsightsKey}'] : []
+
+var helmValuesListCombined = concat(globalValues, secretStoreValues, mainValues, workerValues, ingressAksValues, otelCollectorValues)
+var helmValuesStringWithTemplate = '"${join(helmValuesListCombined, '","')}"'
+var helmValuesString = replace(helmValuesStringWithTemplate, '$(FEDERATED_ID)', federatedId)
 
 var helmCharts = {
   helmChart: helmChart
   helmName: helmName
   helmNamespace: helmNamespace
-  helmValues: helmArgsString
-  helmWorker: helmWorker
+  helmValues: helmValuesString
   version: helmVersion
 }
 

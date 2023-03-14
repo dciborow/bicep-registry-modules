@@ -11,6 +11,7 @@ param rbacPolicies array = []
 ])
 param newOrExisting string = 'new'
 param assignRole bool = true
+param tags object = {}
 
 var rbacSecretsReaderRole = '4633458b-17de-408a-b874-0445c86b69e6'
 var rbacCertificateOfficerRole = 'a4417e6f-fecd-4de8-b567-7b0420556985'
@@ -28,6 +29,7 @@ var networkAcls = enableVNet ? {
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = if (newOrExisting == 'new') {
   name: take(name, 24)
   location: location
+  tags: tags
   properties: {
     enableSoftDelete: true
     softDeleteRetentionInDays: 7

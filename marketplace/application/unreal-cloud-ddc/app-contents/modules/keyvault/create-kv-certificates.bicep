@@ -22,11 +22,11 @@ param existingManagedIdentitySubId string = subscription().subscriptionId
 @description('For an existing Managed Identity, the Resource Group it is located in')
 param existingManagedIdentityResourceGroupName string = resourceGroup().name
 
-@description('The name of the certificate to create')
-param certificateName string
+@description('The names of the certificate to create')
+param certificateNames array
 
-@description('The common name of the certificate to create')
-param certificateCommonName string = certificateName
+@description('The common names of the certificate to create')
+param certificateCommonNames array = certificateNames
 
 @description('A delay before the script import operation starts. Primarily to allow Azure AAD Role Assignments to propagate')
 param initialScriptDelay string = '0'
@@ -83,8 +83,8 @@ resource rbacKv 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
-resource createImportCert 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
-  name: 'AKV-Cert-${akv.name}-${replace(replace(certificateName,':',''),'/','-')}'
+resource createImportCerts 'Microsoft.Resources/deploymentScripts@2020-10-01' = [for (certName, index) in certificateNames: {
+  name: 'AKV-Cert-${akv.name}-${replace(replace(certName,':',''),'/','-')}'
   location: location
   identity: {
     type: 'UserAssigned'
@@ -108,11 +108,11 @@ resource createImportCert 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
       }
       {
         name: 'certName'
-        value: certificateName
+        value: certName
       }
       {
         name: 'certCommonName'
-        value: certificateCommonName
+        value: certificateCommonNames[index]
       }
       {
         name: 'initialDelay'
@@ -135,22 +135,24 @@ resource createImportCert 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
         value: '5s'
       }
     ]
-    scriptContent: loadTextContent('create-kv.sh')
+    scriptContent: loadTextContent('create-kv-cert.sh')
     cleanupPreference: cleanupPreference
   }
-}
+}]
+
+// Output results from the first certificate.
 
 @description('Certificate name')
-output certificateName string = createImportCert.properties.outputs.name
+output certificateName string = createImportCerts[0].properties.outputs.name
 
 @description('KeyVault secret id to the created version')
-output certificateSecretId string = contains(createImportCert.properties.outputs, 'certSecretId') ? createImportCert.properties.outputs.certSecretId.versioned : ''
+output certificateSecretId string = contains(createImportCerts[0].properties.outputs, 'certSecretId') ? createImportCerts[0].properties.outputs.certSecretId.versioned : ''
 
 @description('KeyVault secret id which uses the unversioned uri')
-output certificateSecretIdUnversioned string = contains(createImportCert.properties.outputs, 'certSecretId') ? createImportCert.properties.outputs.certSecretId.unversioned : ''
+output certificateSecretIdUnversioned string = contains(createImportCerts[0].properties.outputs, 'certSecretId') ? createImportCerts[0].properties.outputs.certSecretId.unversioned : ''
 
 @description('Certificate Thumbprint')
-output certificateThumbprint string = contains(createImportCert.properties.outputs, 'thumbprint') ? createImportCert.properties.outputs.thumbprint : ''
+output certificateThumbprint string = contains(createImportCerts[0].properties.outputs, 'thumbprint') ? createImportCerts[0].properties.outputs.thumbprint : ''
 
 @description('Certificate Thumbprint (in hex)')
-output certificateThumbprintHex string = contains(createImportCert.properties.outputs, 'thumbprintHex') ? createImportCert.properties.outputs.thumbprintHex : ''
+output certificateThumbprintHex string = contains(createImportCerts[0].properties.outputs, 'thumbprintHex') ? createImportCerts[0].properties.outputs.thumbprintHex : ''

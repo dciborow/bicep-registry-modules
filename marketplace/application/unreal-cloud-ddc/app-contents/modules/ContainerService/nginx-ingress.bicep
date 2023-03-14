@@ -11,27 +11,33 @@ var helmName = 'ingress-nginx'
 var namespace = 'ingress-basic'
 
 var helmArgs = [
-  'ingress-nginx.controller.replicaCount=2'
-  'ingress-nginx.controller.labels.azure\\.workload\\.identity/use="true"'
-  'ingress-nginx.controller.nodeSelector.kubernetes\\.io/os=linux'
-  'ingress-nginx.controller.nodeSelector.kubernetes\\.io/arch=linux'
-  'ingress-nginx.controller.image.repository=mcr.microsoft.com/oss/kubernetes/ingress/nginx-ingress-controller'
-  'ingress-nginx.controller.image.tag=v1.0.4'
-  'ingress-nginx.controller.image.digest=""'
-  'ingress-nginx.controller.admissionWebhooks.patch.nodeSelector.kubernetes\\.io/os=linux'
-  'ingress-nginx.controller.admissionWebhooks.patch.nodeSelector.kubernetes\\.io/arch=amd64'
-  'ingress-nginx.controller.admissionWebhooks.patch.image.repository=mcr.microsoft.com/oss/kubernetes/ingress/nginx-ingress-controller'
-  'ingress-nginx.controller.admissionWebhooks.patch.image.tag=v1.1.1'
-  'ingress-nginx.controller.admissionWebhooks.patch.image.digest=""'
-  'ingress-nginx.controller.defaultBackend.nodeSelector.kubernetes\\.io/os=linux'
-  'ingress-nginx.controller.defaultBackend.nodeSelector.kubernetes\\.io/arch=amd64'
-  'ingress-nginx.controller.defaultBackend.image.repository=mcr.microsoft.com/oss/kubernetes/defaultbackend'
-  'ingress-nginx.controller.defaultBackend.image.tag=1.4'
-  'ingress-nginx.controller.defaultBackend.image.digest=""'
-  'ingress-nginx.controller.service.loadBalancerIP=${staticIP}'
-  'ingress-nginx.controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-resource-group="${resourceGroupName}"'
+  'controller.replicaCount=2'
+  'controller.nodeSelector.kubernetes\\.io/os=linux'
+  'controller.nodeSelector.kubernetes\\.io/arch=amd64'
+  'controller.image.repository=mcr.microsoft.com/oss/kubernetes/ingress/nginx-ingress-controller'
+  'controller.image.tag=v1.0.4'
+  'controller.image.digest=null'
+  'controller.admissionWebhooks.patch.nodeSelector.kubernetes\\.io/os=linux'
+  'controller.admissionWebhooks.patch.nodeSelector.kubernetes\\.io/arch=amd64'
+  'controller.admissionWebhooks.patch.image.repository=mcr.microsoft.com/oss/kubernetes/ingress/kube-webhook-certgen'
+  'controller.admissionWebhooks.patch.image.tag=v1.1.1'
+  'controller.admissionWebhooks.patch.image.digest=null'
+  'controller.defaultBackend.nodeSelector.kubernetes\\.io/os=linux'
+  'controller.defaultBackend.nodeSelector.kubernetes\\.io/arch=amd64'
+  'controller.defaultBackend.image.repository=mcr.microsoft.com/oss/kubernetes/defaultbackend'
+  'controller.defaultBackend.image.tag=1.4'
+  'controller.defaultBackend.image.digest=null'
+  'controller.service.externalTrafficPolicy=Local'
+  'controller.service.loadBalancerIP=${staticIP}'
+  'controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-resource-group="${resourceGroupName}"'
 ]
-var helmArgsString = replace(replace(string(helmArgs), '[', ''), ']', '')
+
+var helmStringArgs = [
+  'controller.labels.azure\\.workload\\.identity/use=true'
+]
+
+var helmValues = '"${join(helmArgs, '","')}"'
+var helmStringValues = '"${join(helmStringArgs, '","')}"'
 
 var helmCharts = {
   helmRepo: helmRepo
@@ -39,7 +45,8 @@ var helmCharts = {
   helmChart: helmChart
   helmName: helmName
   helmNamespace: namespace
-  helmValues: helmArgsString
+  helmValues: helmValues
+  helmStringValues: helmStringValues
   version: '4.1.3'
 }
 

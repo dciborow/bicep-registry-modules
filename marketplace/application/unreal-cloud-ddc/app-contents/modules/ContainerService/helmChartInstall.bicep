@@ -38,6 +38,7 @@ var commands = [for (app, i) in helmCharts: join([
   'helm upgrade ${app.helmName} ${app.helmChart} --install'
   contains(app, 'helmNamespace') ? '--create-namespace --namespace ${app.helmNamespace}' : ''
   contains(app, 'helmValues') ? '--set ${app.helmValues}' : ''
+  contains(app, 'helmStringValues') ? '--set-string ${app.helmStringValues}' : ''
   contains(app, 'version') ? '--version ${app.version}' : ''
   '|| exit 1'
 ], ' ')]

@@ -12,24 +12,14 @@ param storageResourceGroupName string = resourceGroup().name
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingKeyVault string = 'none'
 param keyVaultName string = 'keyVault${uniqueString(resourceGroup().id, subscription().id)}'
+param keyVaultTags object = {}
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingPublicIp string = 'none'
 param publicIpName string = 'pubip${uniqueString(resourceGroup().id, subscription().id)}'
 
-@allowed([ 'new', 'existing', 'none' ])
-param newOrExistingCosmosDB string = 'none'
-param cosmosDBName string = 'cosmos${uniqueString(resourceGroup().id, subscription().id)}'
-param cosmosDBRG string = resourceGroup().name
-
-@description('array of region objects or regions: [{locationName: string, failoverPriority: int, isZoneRedundant: bool}] or [region: string]')
-param secondaryLocations array = []
-
-@allowed([ 'new', 'existing', 'none' ])
-param newOrExistingTrafficManager string = 'none'
-param trafficManagerName string = 'traffic-mp-${uniqueString(resourceGroup().id)}'
-@description('Relative DNS name for the traffic manager profile, must be globally unique.')
-param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
+@description('Existing traffic manager name to add endpoints to. Leave empty to skip endpoints')
+param trafficManagerNameForEndpoints string = ''
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingKubernetes string = 'none'
@@ -52,6 +42,11 @@ param storageSecretName string = ''
 @secure()
 param storageAccountSecret string = ''
 
+param useDnsZone bool = false
+param dnsZoneName string = ''
+param dnsZoneResourceGroupName string = ''
+param dnsRecordNameSuffix string = ''
+
 var newOrExisting = {
   new: 'new'
   existing: 'existing'
@@ -59,10 +54,9 @@ var newOrExisting = {
 
 var enableKubernetes = newOrExistingKubernetes != 'none'
 var enableKeyVault = newOrExistingKeyVault != 'none'
-var enableComosDB = newOrExistingCosmosDB != 'none'
 var enableStorage = newOrExistingStorageAccount != 'none'
 var enablePublicIP = newOrExistingPublicIp != 'none'
-var enableTrafficManager = newOrExistingTrafficManager != 'none'
+var enableTrafficManager = trafficManagerNameForEndpoints != ''
 
 var noAvailabilityZones = [
   'northcentralus'
@@ -111,20 +105,9 @@ module keyVault 'keyvault/vaults.bicep' = if (enableKeyVault) {
     location: location
     name: keyVaultName
     newOrExisting: newOrExisting[newOrExistingKeyVault]
+    tags: keyVaultTags
     rbacPolicies: rbacPolicies
     assignRole: assignRole
-  }
-}
-
-module cosmosDB 'documentDB/databaseAccounts.bicep' = if (enableComosDB) {
-  name: 'cosmosDB-${uniqueString(location, resourceGroup().id, deployment().name)}'
-  params: {
-    location: location
-    name: cosmosDBName
-    cosmosDBRG: cosmosDBRG
-    newOrExisting: newOrExisting[newOrExistingCosmosDB]
-    secondaryLocations: secondaryLocations
-    isZoneRedundant: isZoneRedundant && !contains(noAvailabilityZones, location)
   }
 }
 
@@ -145,15 +128,17 @@ module publicIp 'network/publicIpAddress.bicep' = if (enablePublicIP) {
     location: location
     name: publicIpName
     newOrExisting: newOrExisting[newOrExistingPublicIp]
+    useDnsZone: useDnsZone
+    dnsZoneName: dnsZoneName
+    dnsZoneResourceGroupName: dnsZoneResourceGroupName
+    dnsRecordNameSuffix: dnsRecordNameSuffix
   }
 }
 
-module trafficManager 'network/trafficManagerProfiles.bicep' = if (enableTrafficManager) {
-  name: 'trafficManager-${uniqueString(location, resourceGroup().id, deployment().name)}'
+module trafficManagerEndpoint 'network/trafficManagerEndpoints.bicep' = if (enableTrafficManager) {
+  name: 'trafficManagerEndpoint-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
-    name: trafficManagerName
-    newOrExisting: newOrExisting[newOrExistingTrafficManager]
-    trafficManagerDnsName: trafficManagerDnsName
+    trafficManagerName: trafficManagerNameForEndpoints
     endpoints: [
       enablePublicIP ? {
         name: 'publicip${location}'
@@ -174,6 +159,5 @@ module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && ena
 }
 
 output keyVaultName string = enableKeyVault ? keyVault.outputs.name : ''
-output cassandraConnectionString string = newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : ''
 output blobStorageConnectionString string = newOrExistingStorageAccount == 'new' ? storageAccount.outputs.blobStorageConnectionString : ''
 output ipAddress string = enablePublicIP ? publicIp.outputs.ipAddress : ''

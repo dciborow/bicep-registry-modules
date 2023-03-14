@@ -1,9 +1,6 @@
 param aksName string
-@description('Deployment Location')
-param location string
-
-@description('Secondary Deployment Locations')
-param secondaryLocations array = []
+@description('Deployment Location Specs')
+param locationSpecs array
 
 param resourceGroupName string = resourceGroup().name
 param publicIpName string
@@ -11,6 +8,7 @@ param keyVaultName string
 param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string
+param certificateName string
 
 param managedIdentityPrefix string = 'id-ddc-storage-'
 
@@ -27,8 +25,6 @@ param azureTenantID string = subscription().tenantId
 param keyVaultTenantID string = subscription().tenantId
 param loginTenantID string = subscription().tenantId
 
-param namespace string = ''
-
 @description('Delete old ref records no longer in use across the entire system')
 param CleanOldRefRecords bool = true
 
@@ -40,38 +36,43 @@ param helmVersion string = 'latest'
 @description('Set to false to deploy from as an ARM template for debugging') 
 param isApp bool = true
 
-var locations = union([ location ], secondaryLocations)
+@description('Array of ddc namespaces to replicate if there are secondary regions') 
+param namespacesToReplicate array = []
 
-module ddcSetup 'ddc-umbrella.bicep' = [for (location, index) in locations: {
-  name: 'helmInstall-ddc-${uniqueString(location, resourceGroup().id, deployment().name)}'
+module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
+  name: 'helmInstall-ddc-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
   params: {
     aksName: aksName
-    location: location
+    location: spec.location
     resourceGroupName: resourceGroupName
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: take('${spec.location}-${keyVaultName}', 24)
     servicePrincipalClientID: servicePrincipalClientID
     workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: hostname
+    locationHostname: spec.fullLocationHostName
+    replicationSourceHostname: spec.fullSourceLocationHostName
+    certificateName: certificateName
+    locationCertificateName: spec.locationCertName
     keyVaultTenantID: keyVaultTenantID
     loginTenantID: loginTenantID
-    enableWorker: !empty(secondaryLocations)
-    namespace: namespace
-    CleanOldRefRecords: !contains(secondaryLocations, location) ? CleanOldRefRecords : false
+    enableWorker: (length(locationSpecs) > 1)
+    CleanOldRefRecords: (locationSpecs[0].location == spec.location) ? CleanOldRefRecords : false
     CleanOldBlobs: CleanOldBlobs
+    namespacesToReplicate: namespacesToReplicate
     helmVersion: helmVersion
   }
 }]
 
-module configAKS 'ContainerService/configure-aks.bicep' = [for (location, index) in locations: {
-  name: 'configAKS-${uniqueString(location, resourceGroup().id, deployment().name)}'
+module configAKS 'ContainerService/configure-aks.bicep' = [for (spec, index) in locationSpecs: {
+  name: 'configAKS-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
   params: {
-    location: location
-    aksName: '${aksName}-${take(location, 8)}'
+    location: spec.location
+    aksName: '${aksName}-${take(spec.location, 8)}'
     additionalCharts: [ ddcSetup[index].outputs.helmChart ]
-    staticIP: '${publicIpName}-${location}'
+    staticIP: '${publicIpName}-${spec.location}'
     azureTenantID: azureTenantID
     useExistingManagedIdentity: useExistingManagedIdentity
-    managedIdentityName: '${managedIdentityPrefix}${location}'
+    managedIdentityName: '${managedIdentityPrefix}${spec.location}'
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
     isApp: isApp

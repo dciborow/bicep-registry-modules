@@ -34,6 +34,15 @@ param vmSize string = 'Standard_L16s_v2'
 @description('Hostname of Deployment')
 param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
 
+@description('If not empty, use the given existing DNS Zone for DNS entries and use shortHostname instead of hostname.')
+param dnsZoneName string = ''
+
+@description('If dnsZoneName is specified, its resource group must specified as well, since it is not expected to be part of the deployment resource group.')
+param dnsZoneResourceGroupName string = ''
+
+@description('Short hostname of deployment if dnsZoneName is specified')
+param shortHostname string = 'ddc'
+
 @description('Enable to configure certificate. Default: true')
 param enableCert bool = true
 
@@ -89,9 +98,8 @@ param publicIpName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subsc
 ])
 param newOrExistingTrafficManager string = 'new'
 
-@description('New of Traffic Manager Profile.')
-param trafficManagerName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
-
+@description('New or existing Traffic Manager Profile.')
+param trafficManagerName string = 'traffic-mp-${uniqueString(resourceGroup().id)}'
 @description('Relative DNS name for the traffic manager profile, must be globally unique.')
 param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
 
@@ -133,9 +141,6 @@ param keyVaultTenantID string = azureTenantID
 @description('Tenant ID for Authentication')
 param loginTenantID string = azureTenantID
 
-@description('Namespace for Unreal DDC Contents')
-param namespace string = 'defaultnamespace'
-
 @description('Delete old ref records no longer in use across the entire system')
 param CleanOldRefRecords bool = true
 
@@ -147,7 +152,7 @@ param cassandraConnectionString string = ''
 
 param storageConnectionStrings array = []
 
-param helmVersion string = '0.2.5'
+param helmVersion string = '0.2.3'
 
 param managedIdentityPrefix string = 'id-ddc-storage-'
 
@@ -163,8 +168,17 @@ param existingManagedIdentityResourceGroupName string = resourceGroup().name
 @description('Set to false to deploy from as an ARM template for debugging') 
 param isApp bool = true
 
+@description('Set tags to apply to Key Vault resources') 
+param keyVaultTags object = {}
+
+@description('Array of ddc namespaces to replicate if there are secondary regions') 
+param namespacesToReplicate array = []
+
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'
+
+var useDnsZone = (dnsZoneName != '') && (dnsZoneResourceGroupName != '')
+var fullHostname =  useDnsZone ? '${shortHostname}.${dnsZoneName}' : hostname
 
 //  Resources
 resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
@@ -179,40 +193,40 @@ resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
   }
 }
 
-module deployResources 'modules/resources.bicep' = if (epicEULA) {
-  name: guid(keyVaultName, publicIpName, cosmosDBName, storageAccountName)
+var enableTrafficManager = newOrExistingTrafficManager != 'none'
+
+module trafficManager 'modules/network/trafficManagerProfiles.bicep' = if (enableTrafficManager) {
+  name: 'trafficManager-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
-    location: location
-    newOrExistingKubernetes: newOrExistingKubernetes
-    newOrExistingKeyVault: newOrExistingKeyVault
-    newOrExistingPublicIp: newOrExistingPublicIp
-    newOrExistingStorageAccount: newOrExistingStorageAccount
-    newOrExistingTrafficManager: newOrExistingTrafficManager
-    kubernetesParams: {
-      name: '${aksName}-${take(location, 8)}'
-      agentPoolCount: agentPoolCount
-      agentPoolName: agentPoolName
-      vmSize: vmSize
-      clusterUserName: 'id-${aksName}-${location}'
-      nodeLabels: nodeLabels
-    }
-    secondaryLocations: secondaryLocations
-    keyVaultName: take('${location}-${keyVaultName}', 24)
-    publicIpName: '${publicIpName}-${location}'
-    trafficManagerName: trafficManagerName
+    name: trafficManagerName
+    newOrExisting: newOrExistingTrafficManager
     trafficManagerDnsName: trafficManagerDnsName
-    storageAccountName: '${take(location, 8)}${storageAccountName}'
-    storageResourceGroupName: storageResourceGroupName
-    storageSecretName: 'ddc-storage-connection-string'
-    assignRole: assignRole
-    isZoneRedundant: isZoneRedundant
-    subject: 'system:serviceaccount:horde-tests:workload-identity-sa'
-    storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[0] : ''
   }
 }
 
-module secondaryResources 'modules/resources.bicep' = [for (location, index) in secondaryLocations: if (epicEULA) {
-  name: guid(keyVaultName, publicIpName, storageAccountName, location)
+var trafficManagerNameForEndpoints = enableTrafficManager ? trafficManager.outputs.name : ''
+
+var allLocations = concat([location], secondaryLocations)
+
+// Compute "source" locations for replication.
+// Forms a cycle so that a given region replaces from only one other location.
+var lastLocationIndex = length(allLocations) - 1
+var sourceLocations = [for (location, index) in allLocations: (index > 0) ? allLocations[index-1] : allLocations[lastLocationIndex]]
+
+// Prepare a number of properties for each location
+var locationSpecs = [for (location, index) in allLocations: {
+  location: location
+  sourceLocation: sourceLocations[index]
+  locationCertName: '${certificateName}-${location}'
+  fullLocationHostName: '${location}.${fullHostname}'
+  fullSourceLocationHostName: '${sourceLocations[index]}.${fullHostname}'
+}]
+
+module allRegionalResources 'modules/resources.bicep' = [for (location, index) in allLocations: if (epicEULA) {
+  name: guid(keyVaultName, publicIpName, cosmosDBName, storageAccountName, location)
+  dependsOn: [
+    trafficManager
+  ]
   params: {
     location: location
     newOrExistingKubernetes: newOrExistingKubernetes
@@ -228,32 +242,37 @@ module secondaryResources 'modules/resources.bicep' = [for (location, index) in 
       nodeLabels: nodeLabels
     }
     keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultTags: keyVaultTags
     publicIpName: '${publicIpName}-${location}'
+    trafficManagerNameForEndpoints: trafficManagerNameForEndpoints
     storageAccountName: '${take(location, 8)}${storageAccountName}'
     storageResourceGroupName: storageResourceGroupName
     storageSecretName: 'ddc-storage-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
     subject: 'system:serviceaccount:horde-tests:workload-identity-sa'
-    storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[index+1] : ''
-  }
+    storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[index] : ''
+    useDnsZone: useDnsZone
+    dnsZoneName: dnsZoneName
+    dnsZoneResourceGroupName: dnsZoneResourceGroupName
+    dnsRecordNameSuffix: shortHostname
+    }
 }]
 
-module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && enableCert) {
-  name: 'akvCert-${location}'
+module kvCert 'modules/keyvault/create-kv-certificates.bicep' = [for spec in locationSpecs: if (assignRole && enableCert) {
+  name: 'akvCert-${spec.location}'
   dependsOn: [
-    deployResources
-    secondaryResources
+    allRegionalResources
   ]
   params: {
-    akvName: take('${location}-${keyVaultName}', 24)
-    location: location
-    certificateName: certificateName
-    certificateCommonName: hostname
+    akvName: take('${spec.location}-${keyVaultName}', 24)
+    location: spec.location
+    certificateNames: [certificateName, spec.locationCertName]
+    certificateCommonNames: [fullHostname, spec.fullLocationHostName]
     issuerName: certificateIssuer
     issuerProvider: issuerProvider
     useExistingManagedIdentity: useExistingManagedIdentity
-    managedIdentityName: '${managedIdentityPrefix}${location}'
+    managedIdentityName: '${managedIdentityPrefix}${spec.location}'
     rbacRolesNeededOnKV: '00482a5a-887f-4fb3-b363-3b7fe8e74483' // Key Vault Admin
     isApp: isApp
   }
@@ -262,8 +281,7 @@ module kvCert 'modules/keyvault/create-kv-certificate.bicep' = [for location in 
 module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
   name: 'build-app-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
-    deployResources
-    secondaryResources
+    allRegionalResources
   ]
   params: {
     keyVaultName: take('${location}-${keyVaultName}', 24)
@@ -275,8 +293,7 @@ module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for location in union
 module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCosmosDB == 'new') {
   name: 'cosmosDB-${uniqueString(location, resourceGroup().id, deployment().name)}-key'
   dependsOn: [
-    deployResources
-    secondaryResources
+    allRegionalResources
   ]
   params: {
     location: location
@@ -307,18 +324,17 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
   ]
   params: {
     aksName: aksName
-    location: location
-    secondaryLocations: secondaryLocations
+    locationSpecs: locationSpecs
     resourceGroupName: resourceGroup().name
     publicIpName: publicIpName
     keyVaultName: keyVaultName
     servicePrincipalClientID: servicePrincipalClientID
     workerServicePrincipalClientID: workerServicePrincipalClientID
-    hostname: hostname
+    hostname: fullHostname
+    certificateName: certificateName
     azureTenantID: azureTenantID
     keyVaultTenantID: keyVaultTenantID
     loginTenantID: loginTenantID
-    namespace: namespace
     CleanOldRefRecords: CleanOldRefRecords
     CleanOldBlobs: CleanOldBlobs
     helmVersion: helmVersion
@@ -327,8 +343,25 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
     isApp: isApp
+    namespacesToReplicate: namespacesToReplicate
   }
 }
+
+// Add CNAME record for traffic manager only after all regional resources are created
+module dnsRecords 'modules/network/dnsZoneCnameRecord.bicep' = if(useDnsZone) {
+  name: 'dns-${uniqueString(dnsZoneName, resourceGroup().id, deployment().name)}'
+  scope: resourceGroup(dnsZoneResourceGroupName)
+  dependsOn: [
+    trafficManager
+    allRegionalResources
+  ]
+  params: {
+    dnsZoneName: dnsZoneName
+    recordName: shortHostname
+    targetFQDN: trafficManager.outputs.fqdn
+  }
+}
+
 // End
 
 @description('Location of required artifacts.')

@@ -19,7 +19,8 @@ do
             --issuer-name $issuerName \
             --provider-name $issuerProvider
         policy=$(az keyvault certificate get-default-policy \
-            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g )
+            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g \
+            | sed -e s/\"name\":\ \"Self\"/\"name\":\ \"${issuerName}\"/g )
     fi
     az keyvault certificate create \
         --vault-name $akvName \

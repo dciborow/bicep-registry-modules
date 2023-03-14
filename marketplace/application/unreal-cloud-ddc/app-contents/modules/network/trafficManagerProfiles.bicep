@@ -10,8 +10,6 @@ param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, sub
 ])
 param newOrExisting string = 'new'
 
-@description('An array of objects that represent the endpoints in the Traffic Manager profile. {name: string, target: string, endpointStatus: string, endpointLocation: string}')
-param endpoints array = []
 param monitorConfig object = {
   protocol: 'HTTPS'
   port: 443
@@ -56,26 +54,9 @@ resource trafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08
   }
 }
 
-resource trafficManagerEndpoints 'Microsoft.Network/TrafficManagerProfiles/ExternalEndpoints@2018-08-01' = [for endpoint in endpoints: if (newOrExisting == 'new' && !empty(endpoint)) {
-  parent: trafficManagerProfile
-  name: endpoint.name
-  properties: {
-    target: endpoint.target
-    endpointStatus: contains(endpoint, 'endpointStatus') ? endpoint.endpointStatus : 'Enabled'
-    endpointLocation: endpoint.endpointLocation
-  }
-}]
-
 resource existingTrafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08-01' existing = { name: name }
 
-// resource existingTrafficManagerEndpoints 'Microsoft.Network/TrafficManagerProfiles/ExternalEndpoints@2018-08-01' = [for endpoint in endpoints: if (!empty(endpoint)) {
-//   parent: existingTrafficManagerProfile
-//   name: endpoint.name
-//   properties: {
-//     target: endpoint.target
-//     endpointStatus: endpoint.endpointStatus
-//     endpointLocation: endpoint.endpointLocation
-//   }
-// }]
+var relativeDnsName = newOrExisting == 'new' ? trafficManagerProfile.properties.dnsConfig.relativeName : existingTrafficManagerProfile.properties.dnsConfig.relativeName
 
 output name string = newOrExisting == 'new' ? trafficManagerProfile.name : existingTrafficManagerProfile.name
+output fqdn string = '${relativeDnsName}.trafficmanager.net'

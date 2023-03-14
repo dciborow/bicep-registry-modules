@@ -7,6 +7,7 @@ param enableWorkloadIdentity bool = true
 #disable-next-line secure-secrets-in-params 
 param enableSecretStore bool = true
 param enableIngress bool = true
+param enableLocalProvisioner bool = true
 param azureTenantID string = subscription().tenantId
 
 param managedIdentityName string = 'id-ddc-storage-${location}'
@@ -41,7 +42,17 @@ module helmInstallIngress 'nginx-ingress.bicep' = if(enableIngress) {
   params: { staticIP: publicIP.properties.ipAddress }
 }
 
-var helmCharts = union(enableWorkloadIdentity ? [helmInstallWorkloadID.outputs.helmChart] : [], enableIngress ? [helmInstallIngress.outputs.helmChart] : [], enableSecretStore ? [helmInstallSecretStore.outputs.helmChart] : [], additionalCharts)
+module helmInstallLocalProvisioner 'local-pv-provisioner.bicep' = if(enableLocalProvisioner) {
+  name: 'helmInstallProvisioner-${uniqueString(aksName, location, resourceGroup().name)}'
+}
+
+var helmCharts = union(
+  enableWorkloadIdentity ? [helmInstallWorkloadID.outputs.helmChart] : [], 
+  enableIngress ? [helmInstallIngress.outputs.helmChart] : [],
+  enableSecretStore ? [helmInstallSecretStore.outputs.helmChart] : [],
+  enableLocalProvisioner ? [helmInstallLocalProvisioner.outputs.helmChart] : [],
+  additionalCharts
+  )
 
 module combo 'helmChartInstall.bicep' = {
   name: 'helmInstallCombo-${uniqueString(aksName, location, resourceGroup().name)}'
