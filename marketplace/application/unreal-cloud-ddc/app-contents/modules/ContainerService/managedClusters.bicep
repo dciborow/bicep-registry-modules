@@ -27,10 +27,22 @@ param subject string = ''
 
 param clusterUserName string = 'k8-${take(uniqueString(location, name), 15)}'
 
+@description('Azure Monitor Log Analytics Resource ID. Leave empty to disable container insights')
+param workspaceResourceId string = ''
+
 resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = if (newOrExisting == 'new') {
   name: clusterUserName
   location: location
 }
+
+var addonProfiles = (workspaceResourceId != '') ? {
+  omsagent: {
+    enabled: true
+    config: {
+      logAnalyticsWorkspaceResourceID: workspaceResourceId
+    }
+  }
+} : {}
 
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-preview' = if (newOrExisting == 'new') {
   name: take(name, 80)
@@ -69,6 +81,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-previ
         objectId: clusterUser.properties.principalId
       }
     }
+    addonProfiles: addonProfiles
   }
 }
 

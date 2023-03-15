@@ -174,6 +174,9 @@ param keyVaultTags object = {}
 @description('Array of ddc namespaces to replicate if there are secondary regions') 
 param namespacesToReplicate array = []
 
+@description('Whether to enable container insights using a log analytics workspace per region') 
+param enableContainerInsights bool = true
+
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'
 
@@ -256,6 +259,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     dnsZoneName: dnsZoneName
     dnsZoneResourceGroupName: dnsZoneResourceGroupName
     dnsRecordNameSuffix: shortHostname
+    enableContainerInsights: enableContainerInsights
     }
 }]
 
