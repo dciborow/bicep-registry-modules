@@ -175,7 +175,7 @@ param keyVaultTags object = {}
 param namespacesToReplicate array = []
 
 @description('Whether to enable container insights using a log analytics workspace per region') 
-param enableContainerInsights bool = true
+param enableContainerInsights bool = false
 
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'

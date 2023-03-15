@@ -35,14 +35,14 @@ resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-3
   location: location
 }
 
-var addonProfiles = (workspaceResourceId != '') ? {
+var addonProfiles = workspaceResourceId == '' ? {} : {
   omsagent: {
     enabled: true
     config: {
       logAnalyticsWorkspaceResourceID: workspaceResourceId
     }
   }
-} : {}
+}
 
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-preview' = if (newOrExisting == 'new') {
   name: take(name, 80)
