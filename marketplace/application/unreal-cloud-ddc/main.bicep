@@ -1,4 +1,3 @@
-//  Parameters
 @description('Deployment Location')
 param location string = resourceGroup().location
 
@@ -10,11 +9,11 @@ param secondaryLocations array = []
 @allowed([ 'new', 'existing' ])
 param newOrExistingKubernetes string = 'new'
 param prefix string = uniqueString(location, resourceGroup().id, deployment().name)
-param name string = 'horde-storage'
+param name string = 'ddc-storage'
 param agentPoolCount int = 2
 param agentPoolName string = 'k8agent'
 param vmSize string = 'Standard_L8s_v3'
-param hostname string = 'deploy1.horde-storage.gaming.azure.com'
+param hostname string = '${prefix}.ddc-storage.gaming.azure.com'
 param isZoneRedundant bool = false
 
 @description('Running this template requires roleAssignment permission on the Resource Group, which require an Owner role. Set this to false to deploy some of the resources')
@@ -27,7 +26,9 @@ param storageAccountTier string = 'Standard'
 @description('Storage Account Type. Use Zonal Redundant Storage when able.')
 param storageAccountType string = isZoneRedundant ? '${storageAccountTier}_ZRS' : '${storageAccountTier}_LRS'
 
-param storageAccountName string = string('hordestore${uniqueString(resourceGroup().id, subscription().subscriptionId, location, storageAccountType)}')
+@allowed([ 'new', 'existing' ])
+param newOrExistingStorageAccount string = 'new'
+param storageAccountName string = 'ddcstore${uniqueString(resourceGroup().id, subscription().subscriptionId, location, storageAccountType, seperateResources ? '' : publishers[publisher].version)}'
 
 @allowed([ 'new', 'existing' ])
 param newOrExistingKeyVault string = 'new'
@@ -35,21 +36,22 @@ param keyVaultName string = take('${uniqueString(resourceGroup().id, subscriptio
 
 @allowed([ 'new', 'existing' ])
 param newOrExistingPublicIp string = 'new'
-param publicIpName string = string('hordePublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId, publishers[publisher].version, location)}')
+param publicIpName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId, publishers[publisher].version, location)}'
 
 @allowed([ 'new', 'existing' ])
 param newOrExistingTrafficManager string = 'new'
-param trafficManagerName string = string('hordePublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId, publishers[publisher].version, location)}')
+param trafficManagerName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId, publishers[publisher].version, location)}'
+
 @description('Relative DNS name for the traffic manager profile, must be globally unique.')
-param trafficManagerDnsName string = string('tmp-${uniqueString(resourceGroup().id, subscription().id)}')
+param trafficManagerDnsPrefix string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
 
 @allowed([ 'new', 'existing' ])
 param newOrExistingCosmosDB string = 'new'
-param cosmosDBName string = string('hordeDB-${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}')
+param cosmosDBName string = 'ddcDB-${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}'
+
 param servicePrincipalClientID string = ''
+
 param workerServicePrincipalClientID string = servicePrincipalClientID
-param managedResourceGroupName string = 'mrg'
-param marketplace bool = true
 
 @secure()
 param workerServicePrincipalSecret string = ''
@@ -62,6 +64,14 @@ param certificateName string = 'unreal-cloud-ddc-cert'
 
 @description('Set to true to agree to the terms and conditions of the Epic Games EULA found here: https://store.epicgames.com/en-US/eula')
 param epicEULA bool = false
+
+param managedResourceGroupName string = 'mrg'
+
+param seperateResources bool = true
+
+param trafficManagerDnsName string = '${prefix}preview.unreal-cloud-ddc'
+
+param marketplace bool = true
 
 @allowed([ 'dev', 'prod' ])
 param publisher string = 'prod'
@@ -76,26 +86,18 @@ param publishers object = {
     name: 'preview'
     product: 'unreal-cloud-ddc-preview'
     publisher: 'microsoft-azure-gaming'
-    version: '0.1.28'
+    version: '0.1.55'
   }
 }
+param isCrossTenant bool = true
 
-@description('The base URI where artifacts required by this template are located including a trailing \'/\'')
-param _artifactsLocation string = deployment().properties.templateLink.uri
-
-@description('The sasToken required to access _artifactsLocation.')
-@secure()
-param _artifactsLocationSasToken string = ''
-// End
-
-//  Variables
 var certificateIssuer = 'Subscription-Issuer'
 var issuerProvider = 'OneCertV2-PublicCA'
-var managedResourceGroupId = '${subscription().id}/resourceGroups/${resourceGroup().name}-${managedResourceGroupName}-${replace(publishers[publisher].version,'.','-')}'
+var managedResourceGroup = '${resourceGroup().name}-${managedResourceGroupName}-${replace(publishers[publisher].version,'.','-')}'
+var managedResourceGroupId = '${subscription().id}/resourceGroups/${managedResourceGroup}'
 var appName = '${prefix}${name}-${replace(publishers[publisher].version,'.','-')}'
-// End
 
-module cassandra 'app-contents/modules/documentDB/databaseAccounts.bicep' = {
+module cassandra 'modules/documentDB/databaseAccounts.bicep' = if(seperateResources) {
   name: 'cassandra-${uniqueString(location, resourceGroup().name)}'
   params: {
     location: location
@@ -105,49 +107,62 @@ module cassandra 'app-contents/modules/documentDB/databaseAccounts.bicep' = {
   }
 }
 
-var secondaryRegions = [for (region, i) in secondaryLocations: {
-  locationName: contains(region, 'locationName') ? region.locationName : region
-  failoverPriority: contains(region, 'failoverPriority') ? region.failoverPriority : i + 1
-  isZoneRedundant: contains(region, 'isZoneRedundant') ? region.isZoneRedundant : isZoneRedundant
-}]
-
-var locations = union([
-    {
-      locationName: location
-      failoverPriority: 0
-      isZoneRedundant: isZoneRedundant
-    }
-  ], secondaryRegions)
-
-resource cassandraDB 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = {
-  name: cassandra.name
-}
-
-var unwind = [for location in locations: '${toLower(name)}-${location.locationName}.cassandra.cosmos.azure.com']
-var locationString = replace(substring(string(unwind), 1, length(string(unwind))-2), '"', '')
-var cassandraConnectionString = 'Contact Points=${toLower(name)}.cassandra.cosmos.azure.com,${locationString};Username=${toLower(name)};Password=${cassandraDB.listKeys().primaryMasterKey};Port=10350'
-
-module storageAccount 'app-contents/modules/storage/storageAccounts.bicep' = [for location in union([ location ], secondaryLocations): {
-  name: 'storageAccount-${uniqueString(location, resourceGroup().id, deployment().name)}'
-  params: {
-    location: location
-    name: take('${take(location, 8)}${storageAccountName}',24)
-    storageAccountTier: storageAccountTier
-    storageAccountType: storageAccountType
-  }
-}]
-
-module trafficManager 'app-contents/modules/network/trafficManagerProfiles.bicep' = {
-  name: 'trafficManager-${uniqueString(location, resourceGroup().id, deployment().name)}'
-  params: {
-    name: '${prefix}ddc'
-    newOrExisting: 'new'
-    trafficManagerDnsName: '${prefix}preview.unreal-cloud-ddc'
-  }
-}
-
-resource hordeStorage 'Microsoft.Solutions/applications@2021-07-01' = if(marketplace) {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' = [for location in union([ location ], secondaryLocations): {
+  name: take('${take(location, 8)}${storageAccountName}',24)
   location: location
+  sku: {
+    name: storageAccountType
+  }
+  kind: 'StorageV2'
+  properties: {
+    encryption: {
+      keySource: 'Microsoft.Storage'
+      services: {
+        blob: {
+          enabled: true
+        }
+        file: {
+          enabled: true
+        }
+      }
+    }
+    supportsHttpsTrafficOnly: true
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+  }
+}]
+
+resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+  name: '${prefix}id'
+  location: location
+}
+
+// https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#all
+var rbacRolesNeeded = [
+  'b24988ac-6180-42a0-ab88-20f7382dd24c' // Contributor
+  '18d7d88d-d35e-4fb5-a5c3-7773c20a72d9' // User Access Administrator
+]
+
+resource rbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleDefId in rbacRolesNeeded: {
+  name: guid(resourceGroup().name, roleDefId, userAssignedIdentity.id)
+  properties: {
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', roleDefId)
+    principalId: userAssignedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}]
+
+resource ddcStorage 'Microsoft.Solutions/applications@2017-09-01' = {
+  location: location
+  dependsOn: [
+    rbac
+  ]
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentity.id}': {}
+    }
+  }
   kind: 'MarketPlace'
   name: appName
   plan: publishers[publisher]
@@ -188,14 +203,17 @@ resource hordeStorage 'Microsoft.Solutions/applications@2021-07-01' = if(marketp
         value: assignRole
       }
       newOrExistingStorageAccount: {
-        value: 'existing'
+        value: seperateResources ? 'existing' : newOrExistingStorageAccount
       }
       storageAccountName: {
         value: storageAccountName
       }
       storageResourceGroupName: {
-        value: resourceGroupName
-      }      
+        value: seperateResources ? resourceGroupName : managedResourceGroup
+      }
+      storageConnectionStrings: {
+        value: [for (location, index) in union([ location ], secondaryLocations): 'DefaultEndpointsProtocol=https;AccountName=${take('${take(location, 8)}${storageAccountName}',24)};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(storageAccount[index].id, storageAccount[index].apiVersion).keys[0].value}']
+      }
       newOrExistingKeyVault: {
         value: newOrExistingKeyVault
       }
@@ -215,16 +233,19 @@ resource hordeStorage 'Microsoft.Solutions/applications@2021-07-01' = if(marketp
         value: trafficManagerName
       }
       trafficManagerDnsName: {
-        value: '${trafficManagerDnsName}-${replace(publishers[publisher].version,'.','-')}'
+        value: '${trafficManagerDnsPrefix}-${replace(publishers[publisher].version,'.','-')}'
       }
       newOrExistingCosmosDB: {
-        value: 'existing'
+        value: seperateResources ? 'existing' : newOrExistingCosmosDB
       }
       cosmosDBName: {
         value: 'ddc${cosmosDBName}'
       }
       cosmosDBRG: {
-        value: resourceGroupName
+        value: seperateResources ? resourceGroupName : managedResourceGroup
+      }
+      cassandraConnectionString: {
+        value: seperateResources ? cassandra.outputs.cassandraConnectionString : ''
       }
       servicePrincipalClientID: {
         value: servicePrincipalClientID
@@ -247,11 +268,8 @@ resource hordeStorage 'Microsoft.Solutions/applications@2021-07-01' = if(marketp
       enableCert: {
         value: enableCert
       }
-      cassandraConnectionString: {
-        value: cassandraConnectionString
-      }
-      storageConnectionStrings: {
-        value: [for i in range(0, length(locations)): [listKeys(storageAccount[i].outputs.id, storageAccount[i].outputs.apiVersion)]]
+      isApp: {
+        value: isCrossTenant
       }
     }
     jitAccessPolicy: null
@@ -295,6 +313,15 @@ module ucDDC 'app-contents/mainTemplate.bicep' = if (!marketplace) {
     storageConnectionStrings: [for i in range(0, length(locations)): [listKeys(storageAccount[i].outputs.id, storageAccount[i].outputs.apiVersion)]]
     _artifactsLocation: _artifactsLocation
     _artifactsLocationSasToken:_artifactsLocationSasToken
+  }
+}
+
+module trafficManager 'modules/network/trafficManagerProfiles.bicep' = {
+  name: 'trafficManager-${uniqueString(location, resourceGroup().id, deployment().name)}'
+  params: {
+    name: '${prefix}ddc'
+    newOrExisting: 'new'
+    trafficManagerDnsName: trafficManagerDnsName
   }
 }
 
