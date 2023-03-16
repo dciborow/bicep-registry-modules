@@ -35,7 +35,12 @@ resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-3
   location: location
 }
 
-var addonProfiles = workspaceResourceId == '' ? {} : {
+var addonProfiles = workspaceResourceId == '' ? {
+  omsagent: {
+    enabled: false
+    config: {}
+  }
+} : {
   omsagent: {
     enabled: true
     config: {

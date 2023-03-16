@@ -4,6 +4,13 @@ param workspaceName string
 @description('Specify the location for the workspace.')
 param location string
 
+@description('Create new or use existing workspace')
+@allowed([ 'new', 'existing' ])
+param newOrExistingWorkspace string = 'new'
+
+@description('The resource group containing an existing logAnalyticsWorkspaceName')
+param existingLogAnalyticsWorkspaceResourceGroupName string = ''
+
 @description('Specify the pricing tier: PerGB2018 or legacy tiers (Free, Standalone, PerNode, Standard or Premium) which are not available to all customers.')
 @allowed([
   'CapacityReservation'
@@ -23,7 +30,9 @@ param retentionInDays int = 30
 @description('Specify true to use resource or workspace permissions, or false to require workspace permissions.')
 param resourcePermissions bool = true
 
-resource workspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = {
+var newWorkspace = (newOrExistingWorkspace == 'new')
+
+resource workspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = if (newWorkspace) {
   name: workspaceName
   location: location
   properties: {
@@ -36,4 +45,11 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview'
     }
   }
 }
-output workspaceId string = workspace.id
+
+resource existingWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = if (!newWorkspace) {
+  name: workspaceName
+  scope: resourceGroup(existingLogAnalyticsWorkspaceResourceGroupName)
+}
+
+output workspaceId string = newWorkspace ? workspace.id : existingWorkspace.id
+

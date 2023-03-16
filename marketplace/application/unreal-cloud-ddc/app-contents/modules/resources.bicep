@@ -47,7 +47,7 @@ param dnsZoneName string = ''
 param dnsZoneResourceGroupName string = ''
 param dnsRecordNameSuffix string = ''
 
-param enableContainerInsights bool = true
+param logAnalyticsWorkspaceResourceId string = ''
 
 var newOrExisting = {
   new: 'new'
@@ -83,16 +83,6 @@ var noAvailabilityZones = [
 
 var clusterName = contains(kubernetesParams, 'name') ? kubernetesParams.name : 'aks-${uniqueString(resourceGroup().id)}'
 
-module logAnalytics 'insights/logAnalytics.bicep' = if (enableContainerInsights) {
-  name: 'logAnalytics-${uniqueString(location, resourceGroup().id, deployment().name)}'
-  params: {
-    workspaceName: take('law-${clusterName}', 80)
-    location: location
-  }
-}
-
-var logAnalyticsResourceId = enableContainerInsights ? logAnalytics.outputs.workspaceId : ''
-
 module clusterModule 'ContainerService/managedClusters.bicep' = if (enableKubernetes) {
   name: 'create_cluster-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
@@ -107,7 +97,7 @@ module clusterModule 'ContainerService/managedClusters.bicep' = if (enableKubern
     subject: subject
     clusterUserName: kubernetesParams.clusterUserName
     nodeLabels: kubernetesParams.nodeLabels
-    workspaceResourceId: logAnalyticsResourceId
+    workspaceResourceId: logAnalyticsWorkspaceResourceId
   }
 }
 var rbacPolicies = [

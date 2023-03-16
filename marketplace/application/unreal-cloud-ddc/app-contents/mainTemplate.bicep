@@ -174,14 +174,26 @@ param keyVaultTags object = {}
 @description('Array of ddc namespaces to replicate if there are secondary regions') 
 param namespacesToReplicate array = []
 
-@description('Whether to enable container insights using a log analytics workspace per region') 
-param enableContainerInsights bool = false
+@description('If new or existing, this will enable container insights on the AKS cluster. If new, will create one log analytics workspace per location') 
+@allowed(['new', 'existing', 'none'])
+param newOrExistingWorkspaceForContainerInsights string = 'none'
+
+@description('The name of the log analytics workspace to use for container insights')
+param logAnalyticsWorkspaceName string = 'law-ddc-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+
+@description('The resource group corresponding to an existing logAnalyticsWorkspaceName')
+param existingLogAnalyticsWorkspaceResourceGroupName string = ''
 
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'
 
 var useDnsZone = (dnsZoneName != '') && (dnsZoneResourceGroupName != '')
 var fullHostname =  useDnsZone ? '${shortHostname}.${dnsZoneName}' : hostname
+
+var newOrExisting = {
+  new: 'new'
+  existing: 'existing'
+}
 
 //  Resources
 resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
@@ -198,6 +210,8 @@ resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
 
 var enableTrafficManager = newOrExistingTrafficManager != 'none'
 
+// Traffic Manager Profile
+
 module trafficManager 'modules/network/trafficManagerProfiles.bicep' = if (enableTrafficManager) {
   name: 'trafficManager-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
@@ -208,6 +222,22 @@ module trafficManager 'modules/network/trafficManagerProfiles.bicep' = if (enabl
 }
 
 var trafficManagerNameForEndpoints = enableTrafficManager ? trafficManager.outputs.name : ''
+
+var enableContainerInsights = (newOrExistingWorkspaceForContainerInsights != 'none')
+
+// Log Analytics Workspace
+
+module logAnalytics 'modules/insights/logAnalytics.bicep' = if (enableContainerInsights) {
+  name: 'logAnalytics-${uniqueString(location, resourceGroup().id, deployment().name)}'
+  params: {
+    workspaceName: logAnalyticsWorkspaceName
+    location: location
+    newOrExistingWorkspace: newOrExisting[newOrExistingWorkspaceForContainerInsights]
+    existingLogAnalyticsWorkspaceResourceGroupName: existingLogAnalyticsWorkspaceResourceGroupName
+  }
+}
+
+var logAnalyticsWorkspaceResourceId = enableContainerInsights ? logAnalytics.outputs.workspaceId : ''
 
 var allLocations = concat([location], secondaryLocations)
 
@@ -259,7 +289,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     dnsZoneName: dnsZoneName
     dnsZoneResourceGroupName: dnsZoneResourceGroupName
     dnsRecordNameSuffix: shortHostname
-    enableContainerInsights: enableContainerInsights
+    logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
     }
 }]
 
