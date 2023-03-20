@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish App'     
-        required: true
+        description: 'Publish App'
         default: true
+        type: boolean
   push:
     branches: [ main ]
     paths: 
@@ -86,7 +86,7 @@ jobs:
 
       - name: Publish Offer - Preview
         uses: ./.github/actions/commercial-marketplace
-        if: github.event.action == "push" || github.event.inputs.publish
+        if: github.event_name == 'push' || github.event.inputs.publish
         with:
           azureCredentials: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
           offerType: ma
