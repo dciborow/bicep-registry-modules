@@ -78,6 +78,7 @@ jobs:
           planName: ${{ env.PLAN_NAME }}
           applicationDirectory: ${{ env.APPLICATION_DIRECTORY }}
         timeout-minutes: 5
+
       - name: Publish Offer - Preview
         uses: ./.github/actions/commercial-marketplace
         with:
@@ -86,7 +87,7 @@ jobs:
           command: publish
           applicationName: ${{ env.APPLICATION_NAME }}
         timeout-minutes: 5
-        continue-on-error: true
+
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: steps.tag_version.outputs.release_type
         with:
