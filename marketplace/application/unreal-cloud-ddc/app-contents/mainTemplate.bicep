@@ -13,10 +13,7 @@ param _artifactsLocation string = deployment().properties.templateLink.uri
 param _artifactsLocationSasToken string = ''
 
 @description('New or Existing Kubernentes Resources')
-@allowed([
-  'new'
-  'existing'
-])
+@allowed([ 'new', 'existing' ])
 param newOrExistingKubernetes string = 'new'
 
 @description('Name of Kubernetes Resource')
@@ -59,10 +56,7 @@ param assignRole bool = true
 param isZoneRedundant bool = true
 
 @description('Create new or use existing Storage Account.')
-@allowed([
-  'new'
-  'existing'
-])
+@allowed([ 'new', 'existing' ])
 param newOrExistingStorageAccount string = 'new'
 
 @description('Name of Storage Account resource')
@@ -72,30 +66,21 @@ param storageAccountName string = 'ddc${uniqueString(resourceGroup().id, subscri
 param storageResourceGroupName string = resourceGroup().name
 
 @description('Create new or use existing Key Vault')
-@allowed([
-  'new'
-  'existing'
-])
+@allowed([ 'new', 'existing' ])
 param newOrExistingKeyVault string = 'new'
 
 @description('Name of Key Vault resource')
 param keyVaultName string = take('ddcKeyVault${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
 
 @description('Create new or use existing Public IP resource')
-@allowed([
-  'new'
-  'existing'
-])
+@allowed([ 'new', 'existing' ])
 param newOrExistingPublicIp string = 'new'
 
 @description('Name of Public IP Resource')
 param publicIpName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
 
 @description('Create new or use existing Traffic Manager Profile.')
-@allowed([
-  'new'
-  'existing'
-])
+@allowed([ 'new', 'existing' ])
 param newOrExistingTrafficManager string = 'new'
 
 @description('New or existing Traffic Manager Profile.')
@@ -104,10 +89,7 @@ param trafficManagerName string = 'traffic-mp-${uniqueString(resourceGroup().id)
 param trafficManagerDnsName string = 'tmp-${uniqueString(resourceGroup().id, subscription().id)}'
 
 @description('Create new or use existing CosmosDB for Cassandra.')
-@allowed([
-  'new'
-  'existing'
-])
+@allowed([ 'new', 'existing' ])
 param newOrExistingCosmosDB string = 'new'
 
 @description('Name of Cosmos DB resource.')
@@ -148,12 +130,16 @@ param CleanOldRefRecords bool = true
 param CleanOldBlobs bool = true
 
 @secure()
+@description('Connection String of User Provided Cassandra Database')
 param cassandraConnectionString string = ''
 
+@description('Connection Strings of User Provided Storage Accounts')
 param storageConnectionStrings array = []
 
+@description('Helm Chart Version')
 param helmVersion string = '0.2.3'
 
+@description('Prefix of Managed Identity used during deployment')
 param managedIdentityPrefix string = 'id-ddc-storage-'
 
 @description('Does the Managed Identity already exists, or should be created')
