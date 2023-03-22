@@ -40,28 +40,28 @@ param publicIpAllocationMethod string = 'Static'
 param publicIpDns string = 'dns-${uniqueString(resourceGroup().id, name)}'
 
 @description('The subscription containing an existing dns zone')
-param existingSubscriptionId string = subscription().subscriptionId
+param subscriptionId string = subscription().subscriptionId
 
-resource newPublicIP 'Microsoft.Network/publicIPAddresses@2021-03-01' = if (newOrExisting == 'new') {
-  name: name
-  sku: publicIpSku
-  location: location
-  properties: {
-    publicIPAllocationMethod: publicIpAllocationMethod
-    dnsSettings: {
-      domainNameLabel: toLower(publicIpDns)
-    }
+module newPublicIP 'modules/publicIPAddresses.bicep' = if (newOrExisting == 'new') {
+  name: 'new-pip-${uniqueString(location, resourceGroup().id, deployment().name)}'
+  scope: resourceGroup(subscriptionId, resourceGroupName)
+  params: {
+    location: location
+    name: name
+    publicIpSku: publicIpSku
+    publicIpAllocationMethod: publicIpAllocationMethod
+    publicIpDns: publicIpDns
   }
 }
 
 resource publicIP 'Microsoft.Network/publicIPAddresses@2021-03-01' existing = {
   name: name
-  scope: resourceGroup(existingSubscriptionId, resourceGroupName)
+  scope: resourceGroup(subscriptionId, resourceGroupName)
 }
 
 module dnsRecord 'modules/dnsZoneARecord.bicep' = if (useDnsZone) {
   name: 'dns-ip-${uniqueString(location, resourceGroup().id, deployment().name)}'
-  scope: resourceGroup(existingSubscriptionId, dnsZoneResourceGroupName)
+  scope: resourceGroup(subscriptionId, dnsZoneResourceGroupName)
   params: {
     dnsZoneName: dnsZoneName
     recordName: '${location}.${dnsRecordNameSuffix}'
