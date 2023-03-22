@@ -23,7 +23,7 @@ The public IP address resource provides a static, publicly routable IP address t
 | `publicIpSku`              | `object` | No       | Specifies the SKU (stock-keeping unit) of the public IP address.                                                                                                                                                    |
 | `publicIpAllocationMethod` | `string` | No       | Specifies the allocation method of the public IP address. Possible values are Static or Dynamic.                                                                                                                    |
 | `publicIpDns`              | `string` | No       | Specifies the domain name label for the public IP address.                                                                                                                                                          |
-| `existingSubscriptionId`   | `string` | No       | The subscription containing an existing dns zone                                                                                                                                                                    |
+| `subscriptionId`           | `string` | No       | The subscription containing an existing dns zone                                                                                                                                                                    |
 
 ## Outputs
 

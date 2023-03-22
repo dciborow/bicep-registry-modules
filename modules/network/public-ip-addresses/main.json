@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.10.61.36676",
-      "templateHash": "14855965869836257809"
+      "version": "0.15.31.15270",
+      "templateHash": "12808186109872225711"
     }
   },
   "parameters": {
@@ -103,7 +103,7 @@
         "description": "Specifies the domain name label for the public IP address."
       }
     },
-    "existingSubscriptionId": {
+    "subscriptionId": {
       "type": "string",
       "defaultValue": "[subscription().subscriptionId]",
       "metadata": {
@@ -114,15 +114,127 @@
   "resources": [
     {
       "condition": "[equals(parameters('newOrExisting'), 'new')]",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2021-03-01",
-      "name": "[parameters('name')]",
-      "sku": "[parameters('publicIpSku')]",
-      "location": "[parameters('location')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('new-pip-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))]",
+      "subscriptionId": "[parameters('subscriptionId')]",
+      "resourceGroup": "[parameters('resourceGroupName')]",
       "properties": {
-        "publicIPAllocationMethod": "[parameters('publicIpAllocationMethod')]",
-        "dnsSettings": {
-          "domainNameLabel": "[toLower(parameters('publicIpDns'))]"
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "name": {
+            "value": "[parameters('name')]"
+          },
+          "publicIpSku": {
+            "value": "[parameters('publicIpSku')]"
+          },
+          "publicIpAllocationMethod": {
+            "value": "[parameters('publicIpAllocationMethod')]"
+          },
+          "publicIpDns": {
+            "value": "[parameters('publicIpDns')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.15.31.15270",
+              "templateHash": "3481566156387204144"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Deployment Location"
+              }
+            },
+            "resourceGroupName": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().name]",
+              "metadata": {
+                "description": "Resource Group Name"
+              }
+            },
+            "prefix": {
+              "type": "string",
+              "defaultValue": "pip",
+              "metadata": {
+                "description": "Public IP Resource Prefix"
+              }
+            },
+            "name": {
+              "type": "string",
+              "defaultValue": "[format('{0}{1}', parameters('prefix'), uniqueString(resourceGroup().id))]",
+              "metadata": {
+                "description": "PublicIP Resource Name"
+              }
+            },
+            "newOrExisting": {
+              "type": "string",
+              "defaultValue": "new",
+              "metadata": {
+                "description": "Create new or use existing resource selection. new/existing"
+              },
+              "allowedValues": [
+                "new",
+                "existing"
+              ]
+            },
+            "publicIpSku": {
+              "type": "object",
+              "defaultValue": {
+                "name": "Standard",
+                "tier": "Regional"
+              },
+              "metadata": {
+                "description": "Specifies the SKU (stock-keeping unit) of the public IP address."
+              }
+            },
+            "publicIpAllocationMethod": {
+              "type": "string",
+              "defaultValue": "Static",
+              "metadata": {
+                "description": "Specifies the allocation method of the public IP address. Possible values are Static or Dynamic."
+              },
+              "allowedValues": [
+                "Static",
+                "Dynamic"
+              ]
+            },
+            "publicIpDns": {
+              "type": "string",
+              "defaultValue": "[format('dns-{0}', uniqueString(resourceGroup().id, parameters('name')))]",
+              "metadata": {
+                "description": "Specifies the domain name label for the public IP address."
+              }
+            }
+          },
+          "resources": [
+            {
+              "condition": "[equals(parameters('newOrExisting'), 'new')]",
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2021-03-01",
+              "name": "[parameters('name')]",
+              "sku": "[parameters('publicIpSku')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publicIPAllocationMethod": "[parameters('publicIpAllocationMethod')]",
+                "dnsSettings": {
+                  "domainNameLabel": "[toLower(parameters('publicIpDns'))]"
+                }
+              }
+            }
+          ]
         }
       }
     },
@@ -131,7 +243,7 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2020-10-01",
       "name": "[format('dns-ip-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))]",
-      "subscriptionId": "[parameters('existingSubscriptionId')]",
+      "subscriptionId": "[parameters('subscriptionId')]",
       "resourceGroup": "[parameters('dnsZoneResourceGroupName')]",
       "properties": {
         "expressionEvaluationOptions": {
@@ -146,7 +258,7 @@
             "value": "[format('{0}.{1}', parameters('location'), parameters('dnsRecordNameSuffix'))]"
           },
           "ipAddress": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('subscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress]"
           }
         },
         "template": {
@@ -155,8 +267,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.10.61.36676",
-              "templateHash": "14116511557328507962"
+              "version": "0.15.31.15270",
+              "templateHash": "13837079787879581028"
             }
           },
           "parameters": {
@@ -201,7 +313,7 @@
   "outputs": {
     "id": {
       "type": "string",
-      "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name'))]",
+      "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('subscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name'))]",
       "metadata": {
         "description": "Public IP Id"
       }
@@ -215,7 +327,7 @@
     },
     "ipAddress": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress]",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('subscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress]",
       "metadata": {
         "description": "Public IP Address"
       }
