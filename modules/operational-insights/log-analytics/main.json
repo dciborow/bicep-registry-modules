@@ -1,0 +1,123 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.10.61.36676",
+      "templateHash": "13151256087300399777"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify the location for the workspace."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "log",
+      "metadata": {
+        "description": "Log Analytics Workspace Name Prefix"
+      }
+    },
+    "name": {
+      "type": "string",
+      "defaultValue": "[format('{0}-{1}}}', parameters('prefix'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "Specify the name of the workspace."
+      }
+    },
+    "newOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Create new or use existing workspace"
+      }
+    },
+    "existingSubscriptionId": {
+      "type": "string",
+      "defaultValue": "[subscription().subscriptionId]",
+      "metadata": {
+        "description": "The subscription containing an existing log analytics workspace"
+      }
+    },
+    "existingLogAnalyticsWorkspaceResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "The resource group containing an existing logAnalyticsWorkspaceName"
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "PerGB2018",
+      "allowedValues": [
+        "CapacityReservation",
+        "Free",
+        "LACluster",
+        "PerGB2018",
+        "PerNode",
+        "Premium",
+        "Standalone",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Specify the pricing tier: PerGB2018 or legacy tiers (Free, Standalone, PerNode, Standard or Premium) which are not available to all customers."
+      }
+    },
+    "retentionInDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": {
+        "description": "Specify the number of days to retain data."
+      }
+    },
+    "resourcePermissions": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Specify true to use resource or workspace permissions, or false to require workspace permissions."
+      }
+    }
+  },
+  "resources": [
+    {
+      "condition": "[equals(parameters('newOrExisting'), 'new')]",
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2021-06-01",
+      "name": "[parameters('name')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "[parameters('sku')]"
+        },
+        "retentionInDays": "[parameters('retentionInDays')]",
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": "[parameters('resourcePermissions')]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "id": {
+      "type": "string",
+      "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('existingLogAnalyticsWorkspaceResourceGroupName')), 'Microsoft.OperationalInsights/workspaces', parameters('name'))]",
+      "metadata": {
+        "description": "The Log Analytics Workspace ID."
+      }
+    },
+    "name": {
+      "type": "string",
+      "value": "[parameters('name')]",
+      "metadata": {
+        "description": "The Log Analytics Workspace Name."
+      }
+    }
+  }
+}
