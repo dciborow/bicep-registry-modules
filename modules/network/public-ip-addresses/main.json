@@ -1,0 +1,224 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.10.61.36676",
+      "templateHash": "14855965869836257809"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Deployment Location"
+      }
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource Group Name"
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "pip",
+      "metadata": {
+        "description": "Public IP Resource Prefix"
+      }
+    },
+    "name": {
+      "type": "string",
+      "defaultValue": "[format('{0}{1}', parameters('prefix'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "PublicIP Resource Name"
+      }
+    },
+    "useDnsZone": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "If this is true, dnsZoneName, etc. should be specified"
+      }
+    },
+    "dnsZoneName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Specifies the name of the DNS zone to be used for the DNS record."
+      }
+    },
+    "dnsZoneResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Specifies the name of the resource group containing the DNS zone."
+      }
+    },
+    "dnsRecordNameSuffix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Specifies the suffix to be used for the DNS record name. For example, if this parameter is set to \"frontend\", and the DNS zone name is \"example.com\", the resulting DNS record name will be \"frontend.example.com\"."
+      }
+    },
+    "newOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "metadata": {
+        "description": "Create new or use existing resource selection. new/existing"
+      },
+      "allowedValues": [
+        "new",
+        "existing"
+      ]
+    },
+    "publicIpSku": {
+      "type": "object",
+      "defaultValue": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "metadata": {
+        "description": "Specifies the SKU (stock-keeping unit) of the public IP address."
+      }
+    },
+    "publicIpAllocationMethod": {
+      "type": "string",
+      "defaultValue": "Static",
+      "metadata": {
+        "description": "Specifies the allocation method of the public IP address. Possible values are Static or Dynamic."
+      },
+      "allowedValues": [
+        "Static",
+        "Dynamic"
+      ]
+    },
+    "publicIpDns": {
+      "type": "string",
+      "defaultValue": "[format('dns-{0}', uniqueString(resourceGroup().id, parameters('name')))]",
+      "metadata": {
+        "description": "Specifies the domain name label for the public IP address."
+      }
+    },
+    "existingSubscriptionId": {
+      "type": "string",
+      "defaultValue": "[subscription().subscriptionId]",
+      "metadata": {
+        "description": "The subscription containing an existing dns zone"
+      }
+    }
+  },
+  "resources": [
+    {
+      "condition": "[equals(parameters('newOrExisting'), 'new')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2021-03-01",
+      "name": "[parameters('name')]",
+      "sku": "[parameters('publicIpSku')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "[parameters('publicIpAllocationMethod')]",
+        "dnsSettings": {
+          "domainNameLabel": "[toLower(parameters('publicIpDns'))]"
+        }
+      }
+    },
+    {
+      "condition": "[parameters('useDnsZone')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[format('dns-ip-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))]",
+      "subscriptionId": "[parameters('existingSubscriptionId')]",
+      "resourceGroup": "[parameters('dnsZoneResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "dnsZoneName": {
+            "value": "[parameters('dnsZoneName')]"
+          },
+          "recordName": {
+            "value": "[format('{0}.{1}', parameters('location'), parameters('dnsRecordNameSuffix'))]"
+          },
+          "ipAddress": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.10.61.36676",
+              "templateHash": "14116511557328507962"
+            }
+          },
+          "parameters": {
+            "dnsZoneName": {
+              "type": "string",
+              "metadata": {
+                "description": "An existing DNS Zone resource name"
+              }
+            },
+            "recordName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of A record to add to dnsZoneName"
+              }
+            },
+            "ipAddress": {
+              "type": "string",
+              "metadata": {
+                "description": "IP Address to add as A record"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/dnsZones/A",
+              "apiVersion": "2018-05-01",
+              "name": "[format('{0}/{1}', parameters('dnsZoneName'), parameters('recordName'))]",
+              "properties": {
+                "TTL": 3600,
+                "ARecords": [
+                  {
+                    "ipv4Address": "[parameters('ipAddress')]"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "id": {
+      "type": "string",
+      "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name'))]",
+      "metadata": {
+        "description": "Public IP Id"
+      }
+    },
+    "name": {
+      "type": "string",
+      "value": "[parameters('name')]",
+      "metadata": {
+        "description": "Public IP Name"
+      }
+    },
+    "ipAddress": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress]",
+      "metadata": {
+        "description": "Public IP Address"
+      }
+    }
+  }
+}

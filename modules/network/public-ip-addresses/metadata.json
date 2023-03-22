@@ -1,0 +1,6 @@
+{
+  "$schema": "https://aka.ms/bicep-registry-module-metadata-file-schema-v2#",
+  "name": "Public IP Address",
+  "summary": "This Bicep template deploys a public IP address resource in Azure and can associate a DNS zone with the IP address.",
+  "owner": "dciborow"
+}
