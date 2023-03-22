@@ -305,13 +305,15 @@ module kvCert 'br/public:deployment-scripts/create-kv-certificate:3.0.1' = [for 
   }
 }]
 
-module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
+module buildApp 'modules/keyvault/vaults.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
   name: 'build-app-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     allRegionalResources
   ]
   params: {
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    name: take('${location}-${keyVaultName}', 24)
+    location: location
+    newOrExisting: 'existing'
     secrets: [{ secretName: 'build-app-secret', secretValue: workerServicePrincipalSecret }]
   }
 }]

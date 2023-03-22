@@ -104,15 +104,14 @@ var rbacPolicies = [
   enableKubernetes ? { objectId: clusterModule.outputs.clusterUserObjectId } : {}
 ]
 
-module keyVault 'keyvault/vaults.bicep' = if (enableKeyVault) {
+module keyVault 'keyvault/vaults.bicep' = if (enableKeyVault && assignRole) {
   name: 'keyVault-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     location: location
     name: keyVaultName
     newOrExisting: newOrExisting[newOrExistingKeyVault]
-    tags: keyVaultTags
     rbacPolicies: rbacPolicies
-    assignRole: assignRole
+    tags: keyVaultTags
   }
 }
 
@@ -155,10 +154,12 @@ module trafficManagerEndpoint 'network/trafficManagerEndpoints.bicep' = if (enab
   }
 }
 
-module secrets 'keyvault/vaults/secrets.bicep' = if (assignRole && enableKeyVault ) {
+module secrets 'keyvault/vaults.bicep' = if (assignRole && enableKeyVault ) {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
-    keyVaultName: keyVault.outputs.name
+    name: keyVault.outputs.name
+    location: location
+    newOrExisting: 'existing'
     secrets: [ { secretName: storageSecretName, secretValue: newOrExistingStorageAccount == 'new' ? storageAccount.outputs.blobStorageConnectionString : storageAccountSecret } ]
   }
 }

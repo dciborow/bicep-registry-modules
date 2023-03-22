@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.15.31.15270",
-      "templateHash": "4057145463197865920"
+      "templateHash": "16142691249687925550"
     }
   },
   "parameters": {
@@ -811,7 +811,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.15.31.15270",
-              "templateHash": "14314763825365333821"
+              "templateHash": "16324499643219491524"
             }
           },
           "parameters": {
@@ -1220,7 +1220,7 @@
               }
             },
             {
-              "condition": "[variables('enableKeyVault')]",
+              "condition": "[and(variables('enableKeyVault'), parameters('assignRole'))]",
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2020-10-01",
               "name": "[format('keyVault-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))]",
@@ -1239,16 +1239,13 @@
                   "newOrExisting": {
                     "value": "[variables('newOrExisting')[parameters('newOrExistingKeyVault')]]"
                   },
-                  "tags": {
-                    "value": "[parameters('keyVaultTags')]"
-                  },
                   "rbacPolicies": {
                     "value": [
                       "[if(variables('enableKubernetes'), createObject('objectId', reference(resourceId('Microsoft.Resources/deployments', format('create_cluster-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))), '2020-10-01').outputs.clusterUserObjectId.value), createObject())]"
                     ]
                   },
-                  "assignRole": {
-                    "value": "[parameters('assignRole')]"
+                  "tags": {
+                    "value": "[parameters('keyVaultTags')]"
                   }
                 },
                 "template": {
@@ -1258,7 +1255,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.15.31.15270",
-                      "templateHash": "17155228047418593770"
+                      "templateHash": "14013620136423313340"
                     }
                   },
                   "parameters": {
@@ -1268,46 +1265,142 @@
                         "description": "Deployment Location"
                       }
                     },
+                    "prefix": {
+                      "type": "string",
+                      "defaultValue": "kv",
+                      "metadata": {
+                        "description": "Prefix of Cosmos DB Resource Name"
+                      }
+                    },
                     "name": {
                       "type": "string",
-                      "defaultValue": "[format('keyvault-{0}', uniqueString(resourceGroup().id))]"
+                      "defaultValue": "[format('{0}-{1}', parameters('prefix'), uniqueString(resourceGroup().id))]",
+                      "metadata": {
+                        "description": "Name of the Key Vault"
+                      }
                     },
                     "subnetID": {
                       "type": "string",
-                      "defaultValue": ""
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Subnet ID for the Key Vault"
+                      }
                     },
                     "tenantId": {
                       "type": "string",
-                      "defaultValue": "[subscription().tenantId]"
+                      "defaultValue": "[subscription().tenantId]",
+                      "metadata": {
+                        "description": "The tenant ID where the Key Vault is deployed"
+                      }
                     },
                     "enableVNet": {
                       "type": "bool",
-                      "defaultValue": false
+                      "defaultValue": false,
+                      "metadata": {
+                        "description": "Enable VNet Service Endpoints for Key Vault"
+                      }
                     },
                     "rbacPolicies": {
                       "type": "array",
-                      "defaultValue": []
+                      "defaultValue": [],
+                      "metadata": {
+                        "description": "List of RBAC policies to assign to the Key Vault"
+                      }
+                    },
+                    "roleAssignments": {
+                      "type": "array",
+                      "defaultValue": [
+                        "4633458b-17de-408a-b874-0445c86b69e6",
+                        "a4417e6f-fecd-4de8-b567-7b0420556985"
+                      ],
+                      "metadata": {
+                        "description": "RBAC Role Assignments to apply to each RBAC policy"
+                      }
                     },
                     "newOrExisting": {
                       "type": "string",
                       "defaultValue": "new",
+                      "metadata": {
+                        "description": "Whether to create a new Key Vault or use an existing one"
+                      },
                       "allowedValues": [
                         "new",
                         "existing"
                       ]
                     },
-                    "assignRole": {
+                    "secrets": {
+                      "type": "array",
+                      "defaultValue": [],
+                      "metadata": {
+                        "description": "List of secrets to create in the Key Vault [ { secretName: string, secretValue: string }]"
+                      }
+                    },
+                    "existingSubscriptionId": {
+                      "type": "string",
+                      "defaultValue": "[subscription().subscriptionId]",
+                      "metadata": {
+                        "description": "For an existing Managed Identity, the Subscription Id it is located in"
+                      }
+                    },
+                    "existingResourceGroupName": {
+                      "type": "string",
+                      "defaultValue": "[resourceGroup().name]",
+                      "metadata": {
+                        "description": "For an existing Managed Identity, the Resource Group it is located in"
+                      }
+                    },
+                    "enableSoftDelete": {
                       "type": "bool",
-                      "defaultValue": true
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Specifies whether soft delete should be enabled for the Key Vault."
+                      }
+                    },
+                    "softDeleteRetentionInDays": {
+                      "type": "int",
+                      "defaultValue": 7,
+                      "metadata": {
+                        "description": "The number of days to retain deleted data in the Key Vault."
+                      }
+                    },
+                    "skuName": {
+                      "type": "string",
+                      "defaultValue": "standard",
+                      "metadata": {
+                        "description": "The SKU name of the Key Vault."
+                      },
+                      "allowedValues": [
+                        "standard",
+                        "premium"
+                      ]
+                    },
+                    "skuFamily": {
+                      "type": "string",
+                      "defaultValue": "A",
+                      "metadata": {
+                        "description": "The SKU family of the Key Vault."
+                      },
+                      "allowedValues": [
+                        "A",
+                        "B"
+                      ]
+                    },
+                    "enableRbacAuthorization": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Specifies whether RBAC authorization should be enabled for the Key Vault."
+                      }
                     },
                     "tags": {
                       "type": "object",
-                      "defaultValue": {}
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Tags for the Key Vault"
+                      }
                     }
                   },
                   "variables": {
-                    "rbacSecretsReaderRole": "4633458b-17de-408a-b874-0445c86b69e6",
-                    "rbacCertificateOfficerRole": "a4417e6f-fecd-4de8-b567-7b0420556985",
                     "networkAcls": "[if(parameters('enableVNet'), createObject('defaultAction', 'Deny', 'virtualNetworkRules', createArray(createObject('action', 'Allow', 'id', parameters('subnetID')))), createObject())]"
                   },
                   "resources": [
@@ -1319,67 +1412,152 @@
                       "location": "[parameters('location')]",
                       "tags": "[parameters('tags')]",
                       "properties": {
-                        "enableSoftDelete": true,
-                        "softDeleteRetentionInDays": 7,
+                        "enableSoftDelete": "[parameters('enableSoftDelete')]",
+                        "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
                         "sku": {
-                          "family": "A",
-                          "name": "standard"
+                          "family": "[parameters('skuFamily')]",
+                          "name": "[parameters('skuName')]"
                         },
-                        "enableRbacAuthorization": true,
+                        "enableRbacAuthorization": "[parameters('enableRbacAuthorization')]",
                         "tenantId": "[parameters('tenantId')]",
                         "networkAcls": "[variables('networkAcls')]"
                       }
                     },
                     {
                       "copy": {
-                        "name": "identityRoleAssignDeployment",
-                        "count": "[length(parameters('rbacPolicies'))]"
+                        "name": "rbacRoleAssignments",
+                        "count": "[length(parameters('roleAssignments'))]"
                       },
-                      "condition": "[parameters('assignRole')]",
-                      "type": "Microsoft.Authorization/roleAssignments",
-                      "apiVersion": "2022-04-01",
-                      "scope": "[format('Microsoft.KeyVault/vaults/{0}', take(parameters('name'), 24))]",
-                      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', take(parameters('name'), 24)), variables('rbacSecretsReaderRole'), parameters('rbacPolicies')[copyIndex()].objectId)]",
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2020-10-01",
+                      "name": "[guid(take(parameters('name'), 24), parameters('roleAssignments')[copyIndex()])]",
                       "properties": {
-                        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('rbacSecretsReaderRole'))]",
-                        "principalId": "[parameters('rbacPolicies')[copyIndex()].objectId]",
-                        "principalType": "ServicePrincipal"
-                      },
-                      "dependsOn": [
-                        "[resourceId('Microsoft.KeyVault/vaults', take(parameters('name'), 24))]"
-                      ]
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "keyVaultName": {
+                            "value": "[take(parameters('name'), 24)]"
+                          },
+                          "rbacPolicies": {
+                            "value": "[parameters('rbacPolicies')]"
+                          },
+                          "rbacRole": {
+                            "value": "[parameters('roleAssignments')[copyIndex()]]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.15.31.15270",
+                              "templateHash": "17993802942098338021"
+                            }
+                          },
+                          "parameters": {
+                            "keyVaultName": {
+                              "type": "string"
+                            },
+                            "rbacPolicies": {
+                              "type": "array"
+                            },
+                            "rbacRole": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "rbac_certs_reader",
+                                "count": "[length(parameters('rbacPolicies'))]"
+                              },
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2020-04-01-preview",
+                              "scope": "[format('Microsoft.KeyVault/vaults/{0}', parameters('keyVaultName'))]",
+                              "name": "[guid(parameters('rbacRole'), parameters('rbacPolicies')[copyIndex()].objectId)]",
+                              "properties": {
+                                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', parameters('rbacRole'))]",
+                                "principalId": "[parameters('rbacPolicies')[copyIndex()].objectId]",
+                                "principalType": "ServicePrincipal"
+                              }
+                            }
+                          ]
+                        }
+                      }
                     },
                     {
-                      "copy": {
-                        "name": "rbacCertsReader",
-                        "count": "[length(parameters('rbacPolicies'))]"
-                      },
-                      "condition": "[parameters('assignRole')]",
-                      "type": "Microsoft.Authorization/roleAssignments",
-                      "apiVersion": "2022-04-01",
-                      "scope": "[format('Microsoft.KeyVault/vaults/{0}', take(parameters('name'), 24))]",
-                      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', take(parameters('name'), 24)), variables('rbacCertificateOfficerRole'), parameters('rbacPolicies')[copyIndex()].objectId)]",
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2020-10-01",
+                      "name": "[guid(take(parameters('name'), 24), 'secrets')]",
                       "properties": {
-                        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('rbacCertificateOfficerRole'))]",
-                        "principalId": "[parameters('rbacPolicies')[copyIndex()].objectId]",
-                        "principalType": "ServicePrincipal"
-                      },
-                      "dependsOn": [
-                        "[resourceId('Microsoft.KeyVault/vaults', take(parameters('name'), 24))]"
-                      ]
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "keyVaultName": {
+                            "value": "[take(parameters('name'), 24)]"
+                          },
+                          "secrets": {
+                            "value": "[parameters('secrets')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.15.31.15270",
+                              "templateHash": "13849631961526341763"
+                            }
+                          },
+                          "parameters": {
+                            "keyVaultName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "Specifies the name of the key vault."
+                              }
+                            },
+                            "secrets": {
+                              "type": "array",
+                              "metadata": {
+                                "description": "Specifies the name of the secret that you want to create."
+                              }
+                            }
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "secret",
+                                "count": "[length(parameters('secrets'))]"
+                              },
+                              "type": "Microsoft.KeyVault/vaults/secrets",
+                              "apiVersion": "2022-07-01",
+                              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].secretName)]",
+                              "properties": {
+                                "value": "[parameters('secrets')[copyIndex()].secretValue]"
+                              }
+                            }
+                          ]
+                        }
+                      }
                     }
                   ],
                   "outputs": {
                     "id": {
                       "type": "string",
-                      "value": "[if(equals(parameters('newOrExisting'), 'new'), resourceId('Microsoft.KeyVault/vaults', take(parameters('name'), 24)), resourceId('Microsoft.KeyVault/vaults', parameters('name')))]",
+                      "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('existingResourceGroupName')), 'Microsoft.KeyVault/vaults', take(parameters('name'), 24))]",
                       "metadata": {
                         "description": "Key Vault Id"
                       }
                     },
                     "name": {
                       "type": "string",
-                      "value": "[if(equals(parameters('newOrExisting'), 'new'), take(parameters('name'), 24), parameters('name'))]",
+                      "value": "[take(parameters('name'), 24)]",
                       "metadata": {
                         "description": "Key Vault Name"
                       }
@@ -1832,8 +2010,14 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
-                  "keyVaultName": {
+                  "name": {
                     "value": "[reference(resourceId('Microsoft.Resources/deployments', format('keyVault-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))), '2020-10-01').outputs.name.value]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "newOrExisting": {
+                    "value": "existing"
                   },
                   "secrets": {
                     "value": [
@@ -1851,37 +2035,314 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.15.31.15270",
-                      "templateHash": "13849631961526341763"
+                      "templateHash": "14013620136423313340"
                     }
                   },
                   "parameters": {
-                    "keyVaultName": {
+                    "location": {
                       "type": "string",
                       "metadata": {
-                        "description": "Specifies the name of the key vault."
+                        "description": "Deployment Location"
                       }
+                    },
+                    "prefix": {
+                      "type": "string",
+                      "defaultValue": "kv",
+                      "metadata": {
+                        "description": "Prefix of Cosmos DB Resource Name"
+                      }
+                    },
+                    "name": {
+                      "type": "string",
+                      "defaultValue": "[format('{0}-{1}', parameters('prefix'), uniqueString(resourceGroup().id))]",
+                      "metadata": {
+                        "description": "Name of the Key Vault"
+                      }
+                    },
+                    "subnetID": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Subnet ID for the Key Vault"
+                      }
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "defaultValue": "[subscription().tenantId]",
+                      "metadata": {
+                        "description": "The tenant ID where the Key Vault is deployed"
+                      }
+                    },
+                    "enableVNet": {
+                      "type": "bool",
+                      "defaultValue": false,
+                      "metadata": {
+                        "description": "Enable VNet Service Endpoints for Key Vault"
+                      }
+                    },
+                    "rbacPolicies": {
+                      "type": "array",
+                      "defaultValue": [],
+                      "metadata": {
+                        "description": "List of RBAC policies to assign to the Key Vault"
+                      }
+                    },
+                    "roleAssignments": {
+                      "type": "array",
+                      "defaultValue": [
+                        "4633458b-17de-408a-b874-0445c86b69e6",
+                        "a4417e6f-fecd-4de8-b567-7b0420556985"
+                      ],
+                      "metadata": {
+                        "description": "RBAC Role Assignments to apply to each RBAC policy"
+                      }
+                    },
+                    "newOrExisting": {
+                      "type": "string",
+                      "defaultValue": "new",
+                      "metadata": {
+                        "description": "Whether to create a new Key Vault or use an existing one"
+                      },
+                      "allowedValues": [
+                        "new",
+                        "existing"
+                      ]
                     },
                     "secrets": {
                       "type": "array",
+                      "defaultValue": [],
                       "metadata": {
-                        "description": "Specifies the name of the secret that you want to create."
+                        "description": "List of secrets to create in the Key Vault [ { secretName: string, secretValue: string }]"
+                      }
+                    },
+                    "existingSubscriptionId": {
+                      "type": "string",
+                      "defaultValue": "[subscription().subscriptionId]",
+                      "metadata": {
+                        "description": "For an existing Managed Identity, the Subscription Id it is located in"
+                      }
+                    },
+                    "existingResourceGroupName": {
+                      "type": "string",
+                      "defaultValue": "[resourceGroup().name]",
+                      "metadata": {
+                        "description": "For an existing Managed Identity, the Resource Group it is located in"
+                      }
+                    },
+                    "enableSoftDelete": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Specifies whether soft delete should be enabled for the Key Vault."
+                      }
+                    },
+                    "softDeleteRetentionInDays": {
+                      "type": "int",
+                      "defaultValue": 7,
+                      "metadata": {
+                        "description": "The number of days to retain deleted data in the Key Vault."
+                      }
+                    },
+                    "skuName": {
+                      "type": "string",
+                      "defaultValue": "standard",
+                      "metadata": {
+                        "description": "The SKU name of the Key Vault."
+                      },
+                      "allowedValues": [
+                        "standard",
+                        "premium"
+                      ]
+                    },
+                    "skuFamily": {
+                      "type": "string",
+                      "defaultValue": "A",
+                      "metadata": {
+                        "description": "The SKU family of the Key Vault."
+                      },
+                      "allowedValues": [
+                        "A",
+                        "B"
+                      ]
+                    },
+                    "enableRbacAuthorization": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "Specifies whether RBAC authorization should be enabled for the Key Vault."
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "Tags for the Key Vault"
                       }
                     }
                   },
+                  "variables": {
+                    "networkAcls": "[if(parameters('enableVNet'), createObject('defaultAction', 'Deny', 'virtualNetworkRules', createArray(createObject('action', 'Allow', 'id', parameters('subnetID')))), createObject())]"
+                  },
                   "resources": [
                     {
-                      "copy": {
-                        "name": "secret",
-                        "count": "[length(parameters('secrets'))]"
-                      },
-                      "type": "Microsoft.KeyVault/vaults/secrets",
+                      "condition": "[equals(parameters('newOrExisting'), 'new')]",
+                      "type": "Microsoft.KeyVault/vaults",
                       "apiVersion": "2022-07-01",
-                      "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].secretName)]",
+                      "name": "[take(parameters('name'), 24)]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
                       "properties": {
-                        "value": "[parameters('secrets')[copyIndex()].secretValue]"
+                        "enableSoftDelete": "[parameters('enableSoftDelete')]",
+                        "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
+                        "sku": {
+                          "family": "[parameters('skuFamily')]",
+                          "name": "[parameters('skuName')]"
+                        },
+                        "enableRbacAuthorization": "[parameters('enableRbacAuthorization')]",
+                        "tenantId": "[parameters('tenantId')]",
+                        "networkAcls": "[variables('networkAcls')]"
+                      }
+                    },
+                    {
+                      "copy": {
+                        "name": "rbacRoleAssignments",
+                        "count": "[length(parameters('roleAssignments'))]"
+                      },
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2020-10-01",
+                      "name": "[guid(take(parameters('name'), 24), parameters('roleAssignments')[copyIndex()])]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "keyVaultName": {
+                            "value": "[take(parameters('name'), 24)]"
+                          },
+                          "rbacPolicies": {
+                            "value": "[parameters('rbacPolicies')]"
+                          },
+                          "rbacRole": {
+                            "value": "[parameters('roleAssignments')[copyIndex()]]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.15.31.15270",
+                              "templateHash": "17993802942098338021"
+                            }
+                          },
+                          "parameters": {
+                            "keyVaultName": {
+                              "type": "string"
+                            },
+                            "rbacPolicies": {
+                              "type": "array"
+                            },
+                            "rbacRole": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "rbac_certs_reader",
+                                "count": "[length(parameters('rbacPolicies'))]"
+                              },
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2020-04-01-preview",
+                              "scope": "[format('Microsoft.KeyVault/vaults/{0}', parameters('keyVaultName'))]",
+                              "name": "[guid(parameters('rbacRole'), parameters('rbacPolicies')[copyIndex()].objectId)]",
+                              "properties": {
+                                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', parameters('rbacRole'))]",
+                                "principalId": "[parameters('rbacPolicies')[copyIndex()].objectId]",
+                                "principalType": "ServicePrincipal"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2020-10-01",
+                      "name": "[guid(take(parameters('name'), 24), 'secrets')]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "keyVaultName": {
+                            "value": "[take(parameters('name'), 24)]"
+                          },
+                          "secrets": {
+                            "value": "[parameters('secrets')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.15.31.15270",
+                              "templateHash": "13849631961526341763"
+                            }
+                          },
+                          "parameters": {
+                            "keyVaultName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "Specifies the name of the key vault."
+                              }
+                            },
+                            "secrets": {
+                              "type": "array",
+                              "metadata": {
+                                "description": "Specifies the name of the secret that you want to create."
+                              }
+                            }
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "secret",
+                                "count": "[length(parameters('secrets'))]"
+                              },
+                              "type": "Microsoft.KeyVault/vaults/secrets",
+                              "apiVersion": "2022-07-01",
+                              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].secretName)]",
+                              "properties": {
+                                "value": "[parameters('secrets')[copyIndex()].secretValue]"
+                              }
+                            }
+                          ]
+                        }
                       }
                     }
-                  ]
+                  ],
+                  "outputs": {
+                    "id": {
+                      "type": "string",
+                      "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('existingResourceGroupName')), 'Microsoft.KeyVault/vaults', take(parameters('name'), 24))]",
+                      "metadata": {
+                        "description": "Key Vault Id"
+                      }
+                    },
+                    "name": {
+                      "type": "string",
+                      "value": "[take(parameters('name'), 24)]",
+                      "metadata": {
+                        "description": "Key Vault Name"
+                      }
+                    }
+                  }
                 }
               },
               "dependsOn": [
@@ -2282,8 +2743,14 @@
         },
         "mode": "Incremental",
         "parameters": {
-          "keyVaultName": {
+          "name": {
             "value": "[take(format('{0}-{1}', union(createArray(parameters('location')), parameters('secondaryLocations'))[copyIndex()], parameters('keyVaultName')), 24)]"
+          },
+          "location": {
+            "value": "[union(createArray(parameters('location')), parameters('secondaryLocations'))[copyIndex()]]"
+          },
+          "newOrExisting": {
+            "value": "existing"
           },
           "secrets": {
             "value": [
@@ -2301,37 +2768,314 @@
             "_generator": {
               "name": "bicep",
               "version": "0.15.31.15270",
-              "templateHash": "13849631961526341763"
+              "templateHash": "14013620136423313340"
             }
           },
           "parameters": {
-            "keyVaultName": {
+            "location": {
               "type": "string",
               "metadata": {
-                "description": "Specifies the name of the key vault."
+                "description": "Deployment Location"
               }
+            },
+            "prefix": {
+              "type": "string",
+              "defaultValue": "kv",
+              "metadata": {
+                "description": "Prefix of Cosmos DB Resource Name"
+              }
+            },
+            "name": {
+              "type": "string",
+              "defaultValue": "[format('{0}-{1}', parameters('prefix'), uniqueString(resourceGroup().id))]",
+              "metadata": {
+                "description": "Name of the Key Vault"
+              }
+            },
+            "subnetID": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Subnet ID for the Key Vault"
+              }
+            },
+            "tenantId": {
+              "type": "string",
+              "defaultValue": "[subscription().tenantId]",
+              "metadata": {
+                "description": "The tenant ID where the Key Vault is deployed"
+              }
+            },
+            "enableVNet": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable VNet Service Endpoints for Key Vault"
+              }
+            },
+            "rbacPolicies": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "List of RBAC policies to assign to the Key Vault"
+              }
+            },
+            "roleAssignments": {
+              "type": "array",
+              "defaultValue": [
+                "4633458b-17de-408a-b874-0445c86b69e6",
+                "a4417e6f-fecd-4de8-b567-7b0420556985"
+              ],
+              "metadata": {
+                "description": "RBAC Role Assignments to apply to each RBAC policy"
+              }
+            },
+            "newOrExisting": {
+              "type": "string",
+              "defaultValue": "new",
+              "metadata": {
+                "description": "Whether to create a new Key Vault or use an existing one"
+              },
+              "allowedValues": [
+                "new",
+                "existing"
+              ]
             },
             "secrets": {
               "type": "array",
+              "defaultValue": [],
               "metadata": {
-                "description": "Specifies the name of the secret that you want to create."
+                "description": "List of secrets to create in the Key Vault [ { secretName: string, secretValue: string }]"
+              }
+            },
+            "existingSubscriptionId": {
+              "type": "string",
+              "defaultValue": "[subscription().subscriptionId]",
+              "metadata": {
+                "description": "For an existing Managed Identity, the Subscription Id it is located in"
+              }
+            },
+            "existingResourceGroupName": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().name]",
+              "metadata": {
+                "description": "For an existing Managed Identity, the Resource Group it is located in"
+              }
+            },
+            "enableSoftDelete": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Specifies whether soft delete should be enabled for the Key Vault."
+              }
+            },
+            "softDeleteRetentionInDays": {
+              "type": "int",
+              "defaultValue": 7,
+              "metadata": {
+                "description": "The number of days to retain deleted data in the Key Vault."
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "standard",
+              "metadata": {
+                "description": "The SKU name of the Key Vault."
+              },
+              "allowedValues": [
+                "standard",
+                "premium"
+              ]
+            },
+            "skuFamily": {
+              "type": "string",
+              "defaultValue": "A",
+              "metadata": {
+                "description": "The SKU family of the Key Vault."
+              },
+              "allowedValues": [
+                "A",
+                "B"
+              ]
+            },
+            "enableRbacAuthorization": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Specifies whether RBAC authorization should be enabled for the Key Vault."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags for the Key Vault"
               }
             }
           },
+          "variables": {
+            "networkAcls": "[if(parameters('enableVNet'), createObject('defaultAction', 'Deny', 'virtualNetworkRules', createArray(createObject('action', 'Allow', 'id', parameters('subnetID')))), createObject())]"
+          },
           "resources": [
             {
-              "copy": {
-                "name": "secret",
-                "count": "[length(parameters('secrets'))]"
-              },
-              "type": "Microsoft.KeyVault/vaults/secrets",
+              "condition": "[equals(parameters('newOrExisting'), 'new')]",
+              "type": "Microsoft.KeyVault/vaults",
               "apiVersion": "2022-07-01",
-              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].secretName)]",
+              "name": "[take(parameters('name'), 24)]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
               "properties": {
-                "value": "[parameters('secrets')[copyIndex()].secretValue]"
+                "enableSoftDelete": "[parameters('enableSoftDelete')]",
+                "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
+                "sku": {
+                  "family": "[parameters('skuFamily')]",
+                  "name": "[parameters('skuName')]"
+                },
+                "enableRbacAuthorization": "[parameters('enableRbacAuthorization')]",
+                "tenantId": "[parameters('tenantId')]",
+                "networkAcls": "[variables('networkAcls')]"
+              }
+            },
+            {
+              "copy": {
+                "name": "rbacRoleAssignments",
+                "count": "[length(parameters('roleAssignments'))]"
+              },
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2020-10-01",
+              "name": "[guid(take(parameters('name'), 24), parameters('roleAssignments')[copyIndex()])]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "keyVaultName": {
+                    "value": "[take(parameters('name'), 24)]"
+                  },
+                  "rbacPolicies": {
+                    "value": "[parameters('rbacPolicies')]"
+                  },
+                  "rbacRole": {
+                    "value": "[parameters('roleAssignments')[copyIndex()]]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.15.31.15270",
+                      "templateHash": "17993802942098338021"
+                    }
+                  },
+                  "parameters": {
+                    "keyVaultName": {
+                      "type": "string"
+                    },
+                    "rbacPolicies": {
+                      "type": "array"
+                    },
+                    "rbacRole": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "copy": {
+                        "name": "rbac_certs_reader",
+                        "count": "[length(parameters('rbacPolicies'))]"
+                      },
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2020-04-01-preview",
+                      "scope": "[format('Microsoft.KeyVault/vaults/{0}', parameters('keyVaultName'))]",
+                      "name": "[guid(parameters('rbacRole'), parameters('rbacPolicies')[copyIndex()].objectId)]",
+                      "properties": {
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', parameters('rbacRole'))]",
+                        "principalId": "[parameters('rbacPolicies')[copyIndex()].objectId]",
+                        "principalType": "ServicePrincipal"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2020-10-01",
+              "name": "[guid(take(parameters('name'), 24), 'secrets')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "keyVaultName": {
+                    "value": "[take(parameters('name'), 24)]"
+                  },
+                  "secrets": {
+                    "value": "[parameters('secrets')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.15.31.15270",
+                      "templateHash": "13849631961526341763"
+                    }
+                  },
+                  "parameters": {
+                    "keyVaultName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Specifies the name of the key vault."
+                      }
+                    },
+                    "secrets": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "Specifies the name of the secret that you want to create."
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "copy": {
+                        "name": "secret",
+                        "count": "[length(parameters('secrets'))]"
+                      },
+                      "type": "Microsoft.KeyVault/vaults/secrets",
+                      "apiVersion": "2022-07-01",
+                      "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].secretName)]",
+                      "properties": {
+                        "value": "[parameters('secrets')[copyIndex()].secretValue]"
+                      }
+                    }
+                  ]
+                }
               }
             }
-          ]
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingSubscriptionId'), parameters('existingResourceGroupName')), 'Microsoft.KeyVault/vaults', take(parameters('name'), 24))]",
+              "metadata": {
+                "description": "Key Vault Id"
+              }
+            },
+            "name": {
+              "type": "string",
+              "value": "[take(parameters('name'), 24)]",
+              "metadata": {
+                "description": "Key Vault Name"
+              }
+            }
+          }
         }
       },
       "dependsOn": [

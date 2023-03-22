@@ -1,20 +1,62 @@
 @description('Deployment Location')
 param location string
-param name string = 'keyvault-${uniqueString(resourceGroup().id)}'
-param subnetID string = ''
-param tenantId string = subscription().tenantId
-param enableVNet bool = false
-param rbacPolicies array = []
-@allowed([
-  'new'
-  'existing'
-])
-param newOrExisting string = 'new'
-param assignRole bool = true
-param tags object = {}
 
-var rbacSecretsReaderRole = '4633458b-17de-408a-b874-0445c86b69e6'
-var rbacCertificateOfficerRole = 'a4417e6f-fecd-4de8-b567-7b0420556985'
+@description('Prefix of Cosmos DB Resource Name')
+param prefix string = 'kv'
+
+@description('Name of the Key Vault')
+param name string = '${prefix}-${uniqueString(resourceGroup().id)}'
+
+@description('Subnet ID for the Key Vault')
+param subnetID string = ''
+
+@description('The tenant ID where the Key Vault is deployed')
+param tenantId string = subscription().tenantId
+
+@description('Enable VNet Service Endpoints for Key Vault')
+param enableVNet bool = false
+
+@description('List of RBAC policies to assign to the Key Vault')
+param rbacPolicies array = []
+
+@description('RBAC Role Assignments to apply to each RBAC policy')
+param roleAssignments array = [
+  '4633458b-17de-408a-b874-0445c86b69e6' // rbacSecretsReaderRole
+  'a4417e6f-fecd-4de8-b567-7b0420556985' // rbacCertificateOfficerRole
+]
+
+@allowed([ 'new', 'existing' ])
+@description('Whether to create a new Key Vault or use an existing one')
+param newOrExisting string = 'new'
+
+@description('List of secrets to create in the Key Vault [ { secretName: string, secretValue: string }]')
+param secrets array = []
+
+@description('For an existing Managed Identity, the Subscription Id it is located in')
+param existingSubscriptionId string = subscription().subscriptionId
+
+@description('For an existing Managed Identity, the Resource Group it is located in')
+param existingResourceGroupName string = resourceGroup().name
+
+@description('Specifies whether soft delete should be enabled for the Key Vault.')
+param enableSoftDelete bool = true
+
+@description('The number of days to retain deleted data in the Key Vault.')
+param softDeleteRetentionInDays int = 7
+
+@allowed(['standard', 'premium'])
+@description('The SKU name of the Key Vault.')
+param skuName string = 'standard'
+
+@allowed(['A', 'B'])
+@description('The SKU family of the Key Vault.')
+param skuFamily string = 'A'
+
+@description('Specifies whether RBAC authorization should be enabled for the Key Vault.')
+param enableRbacAuthorization bool = true
+
+@description('Tags for the Key Vault')
+param tags object = {}
 
 var networkAcls = enableVNet ? {
   defaultAction: 'Deny'
@@ -26,49 +68,49 @@ var networkAcls = enableVNet ? {
   ]
 } : {}
 
-resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = if (newOrExisting == 'new') {
+resource newKeyVault 'Microsoft.KeyVault/vaults@2022-07-01' = if (newOrExisting == 'new') {
   name: take(name, 24)
   location: location
   tags: tags
   properties: {
-    enableSoftDelete: true
-    softDeleteRetentionInDays: 7
+    enableSoftDelete: enableSoftDelete
+    softDeleteRetentionInDays: softDeleteRetentionInDays
     sku: {
-      family: 'A'
-      name: 'standard'
+      family: skuFamily
+      name: skuName
     }
-    enableRbacAuthorization: true
+    enableRbacAuthorization: enableRbacAuthorization
     tenantId: tenantId
     networkAcls: networkAcls
   }
 }
 
-resource existingKeyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = if (newOrExisting == 'existing') {
-  name: name
+resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+  name: newOrExisting == 'new' ? newKeyVault.name : take(name, 24)
+  scope: resourceGroup(existingSubscriptionId, existingResourceGroupName)
 }
 
-resource identityRoleAssignDeployment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for rbacPolicy in rbacPolicies: if (assignRole) {
-  name: guid(keyVault.id, rbacSecretsReaderRole, rbacPolicy.objectId)
-  scope: keyVault
-  properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', rbacSecretsReaderRole)
-    principalId: rbacPolicy.objectId
-    principalType: 'ServicePrincipal'
+module rbacRoleAssignments 'vaults/roleAssignment.bicep' = [for rbacRole in roleAssignments: {
+  name: guid(keyVault.name, rbacRole)
+  scope: resourceGroup(existingSubscriptionId, existingResourceGroupName)
+  params: {
+    keyVaultName: keyVault.name
+    rbacPolicies: rbacPolicies
+    rbacRole: rbacRole
   }
 }]
 
-resource rbacCertsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for rbacPolicy in rbacPolicies: if (assignRole) {
-  name: guid(keyVault.id, rbacCertificateOfficerRole, rbacPolicy.objectId)
-  scope: keyVault
-  properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', rbacCertificateOfficerRole)
-    principalId: rbacPolicy.objectId
-    principalType: 'ServicePrincipal'
+module secret 'vaults/secrets.bicep' = {
+  name: guid(keyVault.name, 'secrets')
+  scope: resourceGroup(existingSubscriptionId, existingResourceGroupName)
+  params: {
+    keyVaultName: keyVault.name
+    secrets: secrets
   }
-}]
+}
 
 @description('Key Vault Id')
-output id string = newOrExisting == 'new' ? keyVault.id : existingKeyVault.id
+output id string = keyVault.id
 
 @description('Key Vault Name')
-output name string = newOrExisting == 'new' ? keyVault.name : existingKeyVault.name
+output name string = keyVault.name
