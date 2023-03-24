@@ -66,7 +66,8 @@ var helmName = 'myhordetest'
 var helmNamespace = 'horde-tests'
 var siteName = 'ddc-${location}'
 
-var imageVersion = '0.38.1'
+var containerImageRepo = 'azuregamingdev.azurecr.io/unreal-cloud-ddc'
+var containerImageVersion = '0.2.0'
 
 var secretStore = {
   enabled: true
@@ -91,7 +92,7 @@ var global = {
   authMethod: 'JWTBearer'
   jwtAuthority: 'https://login.${loginDomain}.com/${loginTenantID}'
   jwtAudience: 'api://${servicePrincipalClientID}'
-  OverrideAppVersion: imageVersion
+  OverrideAppVersion: containerImageVersion
   ServiceCredentials: serviceCreds
 }
 
@@ -161,6 +162,7 @@ var workerEnvValues = [for suffix in sharedEnvValueSuffixes: '${workerPrefix}.${
 
 var workerOtherValues = [
   '${workerPrefix}.enabled=true'
+  '${workerPrefix}.image.repository=${containerImageRepo}'
   '${workerConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
   '${workerConfigPrefix}.GC.CleanOldRefRecords=${CleanOldRefRecords}'
   '${workerConfigPrefix}.GC.CleanOldBlobs=${CleanOldBlobs}'
@@ -180,6 +182,7 @@ var globalValues = [
   'global.ServiceCredentials.OAuthClientSecret=${serviceCreds.OAuthClientSecret}'
   'global.ServiceCredentials.OAuthLoginUrl=${serviceCreds.OAuthLoginUrl}'
   'global.ServiceCredentials.OAuthScope=${serviceCreds.OAuthScope}'
+  'global.OverrideAppVersion=${global.OverrideAppVersion}'
 ]
 
 var locationTlsSecretName = '${ingress.tlsSecretName}-${location}'
@@ -228,6 +231,7 @@ var mainConfigPrefix = '${mainChartName}.config'
 var mainScyllaValues = [for suffix in scyllaValueSuffixes: '${mainConfigPrefix}.Scylla.${suffix}' ]
 
 var mainOtherValues = [
+  '${mainChartName}.image.repository=${containerImageRepo}'
   '${mainConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
   '${mainConfigPrefix}.GC.CleanOldBlobs=false'
   '${mainChartName}.serviceAccount.annotations.azure\\.workload\\.identity/client-id=${federatedId}'

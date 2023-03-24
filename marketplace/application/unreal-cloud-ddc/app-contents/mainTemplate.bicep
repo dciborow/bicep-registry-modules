@@ -279,7 +279,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     }
 }]
 
-module kvCert 'br/public:deployment-scripts/create-kv-certificate:3.0.1' = [for spec in locationSpecs: if (assignRole && enableCert) {
+module kvCert 'modules/create-kv-certificate/main.bicep' = [for spec in locationSpecs: if (assignRole && enableCert) {
   name: 'akvCert-${spec.location}'
   dependsOn: [
     allRegionalResources
@@ -295,6 +295,7 @@ module kvCert 'br/public:deployment-scripts/create-kv-certificate:3.0.1' = [for 
     managedIdentityName: '${managedIdentityPrefix}${spec.location}'
     rbacRolesNeededOnKV: '00482a5a-887f-4fb3-b363-3b7fe8e74483' // Key Vault Admin
     isCrossTenant: isApp
+    reuseKey: false
   }
 }]
 
