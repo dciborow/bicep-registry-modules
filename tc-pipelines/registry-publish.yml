@@ -14,7 +14,7 @@ variables:
   - name: acrName
     value: tchordestoragecontainerregistry
   - name: bicepFilePath
-    value: ../marketplace/application/unreal-cloud-ddc/app-contents/mainTemplate.bicep
+    value: marketplace/application/unreal-cloud-ddc/app-contents/mainTemplate.bicep
 
 steps:
 - task: AzureCLI@2
