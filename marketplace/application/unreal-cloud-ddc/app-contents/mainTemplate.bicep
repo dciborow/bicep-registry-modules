@@ -284,7 +284,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     newOrExistingPublicIp: newOrExistingPublicIp
     newOrExistingStorageAccount: newOrExistingStorageAccount
     kubernetesParams: {
-      name: '${aksName}-${take(location, 8)}'
+      name: '${aksName}-${locationSpecs[index].regionCode}'
       agentPoolCount: agentPoolCount
       agentPoolName: agentPoolName
       vmSize: vmSize
