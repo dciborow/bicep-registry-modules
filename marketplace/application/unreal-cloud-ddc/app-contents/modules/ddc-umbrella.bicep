@@ -244,7 +244,7 @@ var persistenceSuffixes = [
 	'volume.ephemeral.volumeClaimTemplate.spec.resources.requests.storage=${localStorageSize}'
 ]
 
-var mainPersistenceValues = useLocalPVProvisioner ? [for suffix in localPVProvisionerSuffixes: '${mainConfigPrefix}.persistence.${suffix}'] : []
+var mainPersistenceValues = useLocalPVProvisioner ? [for suffix in persistenceSuffixes: '${mainConfigPrefix}.persistence.${suffix}'] : []
 
 var mainOtherValues = [
   '${mainChartName}.image.repository=${containerImageRepo}'
