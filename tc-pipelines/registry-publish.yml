@@ -1,5 +1,5 @@
 # Pipeline to publish Helm charts for Horde Storage and dependencies.
-name: 'Publish-0.1.$(Rev:r)'
+name: '0.1.$(Rev:r)'
 
 trigger: none
 
