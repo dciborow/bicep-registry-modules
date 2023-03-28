@@ -67,7 +67,7 @@ module configAKS 'ContainerService/configure-aks.bicep' = [for (spec, index) in 
   name: 'configAKS-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
   params: {
     location: spec.location
-    aksName: '${aksName}-${take(spec.location, 8)}'
+    aksName: '${aksName}-${spec.regionCode}'
     additionalCharts: [ ddcSetup[index].outputs.helmChart ]
     staticIP: '${publicIpName}-${spec.location}'
     azureTenantID: azureTenantID
