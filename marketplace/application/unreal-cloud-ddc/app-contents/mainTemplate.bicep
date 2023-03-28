@@ -269,6 +269,7 @@ var locationSpecs = [for (location, index) in allLocations: {
   fullLocationHostName: '${regionCodes[location]}.${fullHostname}'
   fullSourceLocationHostName: '${sourceLocations[index]}.${fullHostname}'
   keyVaultName: take('${regionCodes[location]}-${keyVaultName}', 24)
+  regionCode: regionCodes[location]
 }]
 
 module allRegionalResources 'modules/resources.bicep' = [for (location, index) in allLocations: if (epicEULA) {
@@ -294,7 +295,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     keyVaultTags: keyVaultTags
     publicIpName: '${publicIpName}-${location}'
     trafficManagerNameForEndpoints: trafficManagerNameForEndpoints
-    storageAccountName: '${take(location, 8)}${storageAccountName}'
+    storageAccountName: '${locationSpecs[index].regionCode}${storageAccountName}'
     storageResourceGroupName: storageResourceGroupName
     storageSecretName: 'ddc-storage-connection-string'
     assignRole: assignRole
