@@ -70,7 +70,7 @@ param storageResourceGroupName string = resourceGroup().name
 param newOrExistingKeyVault string = 'new'
 
 @description('Name of Key Vault resource')
-param keyVaultName string = take('ddcKeyVault${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
+param keyVaultName string = take('kv-${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
 
 @description('Create new or use existing Public IP resource')
 @allowed([ 'new', 'existing' ])
@@ -181,6 +181,35 @@ var newOrExisting = {
   existing: 'existing'
 }
 
+// When we need a short string for the region.
+// Keys correspond to the "locationMapping" object in ddc-umbrella.bicep
+var regionCodes = {
+  eastus: 'eus'
+  eastus2: 'eus2'
+  westus: 'wus'
+  westus2: 'wus2'
+  westus3: 'wus3'
+  centralus: 'cus'
+  northcentralus: 'ncus'
+  southcentralus: 'scus'
+  northeurope: 'neu'
+  westeurope: 'weu'
+  southeastasia: 'seas'
+  eastasia: 'eas'
+  japaneast: 'jpe'
+  japanwest: 'jpw'
+  australiaeast: 'aue'
+  australiasoutheast: 'ause'
+  brazilsouth: 'brs'
+  canadacentral: 'cnc'
+  canadaeast: 'cne'
+  centralindia: 'cin'
+  southafricanorth: 'san'
+  uaenorth: 'uaen'
+  koreacentral: 'krc'
+  chinanorth3: 'cnn3'
+}
+
 //  Resources
 resource partnercenter 'Microsoft.Resources/deployments@2021-04-01' = {
   name: 'pid-7837dd60-4ba8-419a-a26f-237bbe170773-partnercenter'
@@ -237,8 +266,9 @@ var locationSpecs = [for (location, index) in allLocations: {
   location: location
   sourceLocation: sourceLocations[index]
   locationCertName: '${certificateName}-${location}'
-  fullLocationHostName: '${location}.${fullHostname}'
+  fullLocationHostName: '${regionCodes[location]}.${fullHostname}'
   fullSourceLocationHostName: '${sourceLocations[index]}.${fullHostname}'
+  keyVaultName: take('${regionCodes[location]}-${keyVaultName}', 24)
 }]
 
 module allRegionalResources 'modules/resources.bicep' = [for (location, index) in allLocations: if (epicEULA) {
