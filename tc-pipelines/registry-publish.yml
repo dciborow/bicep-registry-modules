@@ -25,7 +25,7 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      az bicep install \
+      az bicep install
       az bicep publish \
         --file $(bicepFilePath) \
         --target 'br:$(acrName).azurecr.io/mymodules/myqueue:$(Build.BuildNumber)'
