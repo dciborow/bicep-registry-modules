@@ -48,7 +48,7 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
     aksName: aksName
     location: spec.location
     resourceGroupName: resourceGroupName
-    keyVaultName: take('${spec.location}-${keyVaultName}', 24)
+    keyVaultName: spec.keyVaultName
     servicePrincipalClientID: servicePrincipalClientID
     workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: hostname
