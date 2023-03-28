@@ -39,6 +39,9 @@ param isApp bool = true
 @description('Array of ddc namespaces to replicate if there are secondary regions') 
 param namespacesToReplicate array = []
 
+@description('This is used to scale up the number of pods (replicas) for the main deployment, so that there is one replica per node on the agent') 
+param agentPoolCount int
+
 module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
   name: 'helmInstall-ddc-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
   params: {
@@ -60,6 +63,8 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
     CleanOldBlobs: CleanOldBlobs
     namespacesToReplicate: namespacesToReplicate
     helmVersion: helmVersion
+    mainReplicaCount: agentPoolCount
+    workerReplicaCount: 1
   }
 }]
 

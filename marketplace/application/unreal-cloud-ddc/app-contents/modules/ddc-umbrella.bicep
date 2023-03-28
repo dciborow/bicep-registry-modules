@@ -14,6 +14,9 @@ param loginTenantID string = subscription().tenantId
 param enableWorker bool = false
 param helmVersion string = 'latest'
 
+param mainReplicaCount int 
+param workerReplicaCount int 
+
 @description('this should be enabled in one region - it will delete old ref records no longer in use across the entire system')
 param CleanOldRefRecords bool = false
 
@@ -168,6 +171,7 @@ var workerEnvValues = [for suffix in sharedEnvValueSuffixes: '${workerPrefix}.${
 
 var workerOtherValues = [
   '${workerPrefix}.enabled=true'
+  '${workerPrefix}.replicaCount=${workerReplicaCount}'
   '${workerPrefix}.image.repository=${containerImageRepo}'
   '${workerConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
   '${workerConfigPrefix}.GC.CleanOldRefRecords=${CleanOldRefRecords}'
@@ -249,6 +253,7 @@ var mainPersistenceValuesConditional = [for suffix in persistenceSuffixes: '${ma
 var mainPersistenceValues = useLocalPVProvisioner ? mainPersistenceValuesConditional : []
 
 var mainOtherValues = [
+  '${mainChartName}.replicaCount=${mainReplicaCount}'
   '${mainChartName}.image.repository=${containerImageRepo}'
   '${mainConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
   '${mainConfigPrefix}.GC.CleanOldBlobs=false'

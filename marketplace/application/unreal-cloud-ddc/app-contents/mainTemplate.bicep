@@ -396,6 +396,7 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
     isApp: isApp
     namespacesToReplicate: namespacesToReplicate
+    agentPoolCount: agentPoolCount
   }
 }
 
