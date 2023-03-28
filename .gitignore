@@ -10,3 +10,5 @@ scripts/temp_*
 
 parameters.json
 **.pyc
+
+.vs/*

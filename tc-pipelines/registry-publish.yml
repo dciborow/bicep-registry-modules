@@ -1,0 +1,30 @@
+# Pipeline to publish Helm charts for Horde Storage and dependencies.
+name: 'Publish-0.1.$(Rev:r)'
+
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - name: serviceConnectionName
+    value: Horde Pipeline RG Service Connection
+  - name: azureResourceGroupForACR
+    value: TC-Unreal-Horde-Pipeline
+  - name: acrName
+    value: tchordestoragecontainerregistry
+  - name: bicepFilePath
+    value: ../marketplace/application/unreal-cloud-ddc/app-contents/mainTemplate.bicep
+
+steps:
+- task: AzureCLI@2
+  name: Publish
+  displayName: Publish TC Bicep module for Unreal Cloud DDC
+  inputs:
+    azureSubscription: $(serviceConnectionName)
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      az bicep publish \
+        --file $(bicepFilePath) \
+        --target 'br:$(acrName).azurecr.io/mymodules/myqueue:2'
