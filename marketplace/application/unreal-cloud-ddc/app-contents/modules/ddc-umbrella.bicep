@@ -28,6 +28,12 @@ param podRollMeSeed string = utcNow()
 @description('If this is non-empty, an open telemetry collector will be set up to send data to Application Insights')
 param appInsightsKey string = ''
 
+@description('This will use an ephemeral volume claim template to make use of local NVMe disk(s)')
+param useLocalPVProvisioner bool = true
+
+@description('Amount of local storage to claim if useLocalPVProvisioner is true')
+param localStorageSize string = '512Gi'
+
 resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: 'id-${aksName}-${location}'
 }
@@ -230,6 +236,16 @@ var mainEnvValues = [for suffix in mainEnvValueSuffixes: '${mainChartName}.${suf
 var mainConfigPrefix = '${mainChartName}.config'
 var mainScyllaValues = [for suffix in scyllaValueSuffixes: '${mainConfigPrefix}.Scylla.${suffix}' ]
 
+var persistenceSuffixes = [
+	'enabled=false'
+	'size=${localStorageSize}'
+	'volume.ephemeral.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce'
+	'volume.ephemeral.volumeClaimTemplate.spec.storageClassName=local-disk'
+	'volume.ephemeral.volumeClaimTemplate.spec.resources.requests.storage=${localStorageSize}'
+]
+
+var mainPersistenceValues = useLocalPVProvisioner ? [for suffix in localPVProvisionerSuffixes: '${mainConfigPrefix}.persistence.${suffix}'] : []
+
 var mainOtherValues = [
   '${mainChartName}.image.repository=${containerImageRepo}'
   '${mainConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
@@ -239,7 +255,7 @@ var mainOtherValues = [
 
 var mainRestartValues = restartPods ? [ '${mainChartName}.podAnnotations.rollme=${uniqueString(podRollMeSeed)}' ] : []
 
-var mainValues = concat(mainEnvValues, mainScyllaValues, mainOtherValues, mainRestartValues)
+var mainValues = concat(mainEnvValues, mainScyllaValues, mainPersistenceValues, mainOtherValues, mainRestartValues)
 
 var ingressAksValues = [
   'ingressAks.enabled=true'
