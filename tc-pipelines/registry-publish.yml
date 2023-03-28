@@ -15,6 +15,8 @@ variables:
     value: tchordestoragecontainerregistry
   - name: bicepFilePath
     value: marketplace/application/unreal-cloud-ddc/app-contents/mainTemplate.bicep
+  - name: bicepModuleName
+    value: unreal-cloud-ddc
 
 steps:
 - task: AzureCLI@2
@@ -28,4 +30,4 @@ steps:
       az bicep install
       az bicep publish \
         --file $(bicepFilePath) \
-        --target 'br:$(acrName).azurecr.io/mymodules/myqueue:$(Build.BuildNumber)'
+        --target 'br:$(acrName).azurecr.io/bicep/$(bicepModuleName):$(Build.BuildNumber)'
