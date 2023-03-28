@@ -290,7 +290,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
       clusterUserName: 'id-${aksName}-${location}'
       nodeLabels: nodeLabels
     }
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: locationSpecs[index].keyVaultName
     keyVaultTags: keyVaultTags
     publicIpName: '${publicIpName}-${location}'
     trafficManagerNameForEndpoints: trafficManagerNameForEndpoints
@@ -315,7 +315,7 @@ module kvCert 'modules/create-kv-certificate/main.bicep' = [for spec in location
     allRegionalResources
   ]
   params: {
-    akvName: take('${spec.location}-${keyVaultName}', 24)
+    akvName: spec.keyVaultName
     location: spec.location
     certificateNames: [certificateName, spec.locationCertName]
     certificateCommonNames: [fullHostname, spec.fullLocationHostName]
@@ -329,13 +329,13 @@ module kvCert 'modules/create-kv-certificate/main.bicep' = [for spec in location
   }
 }]
 
-module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
+module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for (location, index) in allLocations: if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
   name: 'build-app-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     allRegionalResources
   ]
   params: {
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: locationSpecs[index].keyVaultName
     secretName: 'build-app-secret'
     secretValue: workerServicePrincipalSecret
   }
@@ -355,13 +355,13 @@ module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCo
   }
 }
 
-module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
+module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for (location, index) in allLocations): if (assignRole && epicEULA) {
   name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
   ]
   params: {
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: locationSpecs[index].keyVaultName
     secretName: 'ddc-db-connection-string'
     secretValue: newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : cassandraConnectionString
   }
