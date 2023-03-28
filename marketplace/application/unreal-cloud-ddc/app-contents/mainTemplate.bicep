@@ -355,7 +355,7 @@ module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCo
   }
 }
 
-module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for (location, index) in allLocations): if (assignRole && epicEULA) {
+module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for (location, index) in allLocations: if (assignRole && epicEULA) {
   name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
