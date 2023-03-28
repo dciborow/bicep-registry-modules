@@ -269,8 +269,9 @@ var locationSpecs = [for (location, index) in allLocations: {
   location: location
   sourceLocation: sourceLocations[index]
   locationCertName: '${certificateName}-${location}'
-  fullLocationHostName: '${location}${locationSpecSeperator}${fullHostname}'
+  fullLocationHostName: '${regionCodes[location]}${locationSpecSeperator}${fullHostname}'
   fullSourceLocationHostName: '${sourceLocations[index]}${locationSpecSeperator}${fullHostname}'
+  keyVaultName: take('${regionCodes[location]}-${keyVaultName}', 24)
 }]
 
 module allRegionalResources 'modules/resources.bicep' = [for (location, index) in allLocations: if (epicEULA) {
