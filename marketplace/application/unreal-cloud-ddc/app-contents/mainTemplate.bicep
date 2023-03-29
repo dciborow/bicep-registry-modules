@@ -279,6 +279,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
   ]
   params: {
     location: location
+    regionCode: regionCodes[location]
     newOrExistingKubernetes: newOrExistingKubernetes
     newOrExistingKeyVault: newOrExistingKeyVault
     newOrExistingPublicIp: newOrExistingPublicIp
