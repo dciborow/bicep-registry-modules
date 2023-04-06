@@ -37,6 +37,11 @@ param storageSecretName string = ''
 @secure()
 param storageAccountConnectionString string = ''
 
+param primaryConnectionString bool = true
+param secondaryConnectionString bool = false
+param primaryKey bool = false
+param secondaryKey bool = false
+
 resource cassandraDB 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = if(newOrExistingCassandraDB == 'new') {
   name: cassandraDBName
 }
