@@ -15,7 +15,6 @@ module prereq 'prereq.test.bicep' = {
   }
 }
 
-//Test 0.
 module test0 '../main2.bicep' = {
   name: 'test0'
   params: {
