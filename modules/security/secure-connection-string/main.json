@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.16.1.55165",
-      "templateHash": "6911734045204967910"
+      "templateHash": "15937972149492914767"
     }
   },
   "parameters": {
@@ -23,7 +23,10 @@
     },
     "primaryConnectionString": {
       "type": "bool",
-      "defaultValue": true
+      "defaultValue": true,
+      "metadata": {
+        "description": "Primary connection string"
+      }
     },
     "newOrExistingCassandraDB": {
       "type": "string",
@@ -36,19 +39,31 @@
     },
     "cassandraDBName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Cassandra DB"
+      }
     },
     "cassandraDBSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Cassandra DB"
+      }
     },
     "locationString": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Custom Location String for Cassandra DB"
+      }
     },
     "cassandraConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Cassandra DB"
+      }
     },
     "newOrExistingCosmosDB": {
       "type": "string",
@@ -61,15 +76,24 @@
     },
     "cosmosDBName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Cosmos DB"
+      }
     },
     "cosmosDBSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Cosmos DB"
+      }
     },
     "cosmosConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Cosmos DB"
+      }
     },
     "newOrExistingEventHub": {
       "type": "string",
@@ -82,23 +106,38 @@
     },
     "eventHubNamespaceName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Event Hub Namespace"
+      }
     },
     "eventHubName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Event Hub"
+      }
     },
     "eventHubAuthorizationRulesName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Event Hub"
+      }
     },
     "eventHubSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Event Hub"
+      }
     },
     "eventhubConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Event Hub"
+      }
     },
     "newOrExistingStorageAccount": {
       "type": "string",
@@ -111,15 +150,24 @@
     },
     "storageAccountName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Storage Account"
+      }
     },
     "storageSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Storage Account"
+      }
     },
     "storageAccountConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Storage Account"
+      }
     },
     "newOrExistingCognitiveServices": {
       "type": "string",
@@ -132,15 +180,24 @@
     },
     "cognitiveServicesName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Cognitive Services Account"
+      }
     },
     "cognitiveServicesSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Cognitive Services Account"
+      }
     },
     "cognitiveServicesConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Cognitive Services Account"
+      }
     },
     "newOrExistingBatchAccount": {
       "type": "string",
@@ -153,15 +210,24 @@
     },
     "batchAccountName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Batch Account"
+      }
     },
     "batchAccountSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Batch Account"
+      }
     },
     "batchAccountConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Batch Account"
+      }
     },
     "newOrExistingRedis": {
       "type": "string",
@@ -174,15 +240,24 @@
     },
     "redisName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Redis Account"
+      }
     },
     "redisSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Redis Account"
+      }
     },
     "redisConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Redis Account"
+      }
     },
     "newOrExistingMapsAccount": {
       "type": "string",
@@ -195,15 +270,24 @@
     },
     "mapsAccountName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Maps Account"
+      }
     },
     "mapsAccountSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Maps Account"
+      }
     },
     "mapsAccountConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Maps Account"
+      }
     },
     "newOrExistingOpertionalInsightsWorkspace": {
       "type": "string",
@@ -216,15 +300,24 @@
     },
     "opertionalInsightsWorkspaceName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Operational Insights Workspace"
+      }
     },
     "opertionalInsightsWorkspaceSecretName": {
       "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the secret for the Operational Insights Workspace"
+      }
     },
     "opertionalInsightsWorkspaceConnectionString": {
       "type": "securestring",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "Connection string for the Operational Insights Workspace"
+      }
     }
   },
   "resources": [

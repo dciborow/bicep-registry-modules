@@ -1,4 +1,4 @@
-#
+# 
 
 ## Description
 
@@ -6,50 +6,50 @@
 
 ## Parameters
 
-| Name                                          | Type           | Required | Description           |
-| :-------------------------------------------- | :------------: | :------: | :-------------------- |
-| `location`                                    | `string`       | Yes      | Deployment Location   |
-| `keyVaultName`                                | `string`       | Yes      | Name of the Key Vault |
-| `primaryConnectionString`                     | `bool`         | No       |                       |
-| `newOrExistingCassandraDB`                    | `string`       | No       |                       |
-| `cassandraDBName`                             | `string`       | No       |                       |
-| `cassandraDBSecretName`                       | `string`       | No       |                       |
-| `locationString`                              | `string`       | No       |                       |
-| `cassandraConnectionString`                   | `securestring` | No       |                       |
-| `newOrExistingCosmosDB`                       | `string`       | No       |                       |
-| `cosmosDBName`                                | `string`       | No       |                       |
-| `cosmosDBSecretName`                          | `string`       | No       |                       |
-| `cosmosConnectionString`                      | `securestring` | No       |                       |
-| `newOrExistingEventHub`                       | `string`       | No       |                       |
-| `eventHubNamespaceName`                       | `string`       | No       |                       |
-| `eventHubName`                                | `string`       | No       |                       |
-| `eventHubAuthorizationRulesName`              | `string`       | No       |                       |
-| `eventHubSecretName`                          | `string`       | No       |                       |
-| `eventhubConnectionString`                    | `securestring` | No       |                       |
-| `newOrExistingStorageAccount`                 | `string`       | No       |                       |
-| `storageAccountName`                          | `string`       | No       |                       |
-| `storageSecretName`                           | `string`       | No       |                       |
-| `storageAccountConnectionString`              | `securestring` | No       |                       |
-| `newOrExistingCognitiveServices`              | `string`       | No       |                       |
-| `cognitiveServicesName`                       | `string`       | No       |                       |
-| `cognitiveServicesSecretName`                 | `string`       | No       |                       |
-| `cognitiveServicesConnectionString`           | `securestring` | No       |                       |
-| `newOrExistingBatchAccount`                   | `string`       | No       |                       |
-| `batchAccountName`                            | `string`       | No       |                       |
-| `batchAccountSecretName`                      | `string`       | No       |                       |
-| `batchAccountConnectionString`                | `securestring` | No       |                       |
-| `newOrExistingRedis`                          | `string`       | No       |                       |
-| `redisName`                                   | `string`       | No       |                       |
-| `redisSecretName`                             | `string`       | No       |                       |
-| `redisConnectionString`                       | `securestring` | No       |                       |
-| `newOrExistingMapsAccount`                    | `string`       | No       |                       |
-| `mapsAccountName`                             | `string`       | No       |                       |
-| `mapsAccountSecretName`                       | `string`       | No       |                       |
-| `mapsAccountConnectionString`                 | `securestring` | No       |                       |
-| `newOrExistingOpertionalInsightsWorkspace`    | `string`       | No       |                       |
-| `opertionalInsightsWorkspaceName`             | `string`       | No       |                       |
-| `opertionalInsightsWorkspaceSecretName`       | `string`       | No       |                       |
-| `opertionalInsightsWorkspaceConnectionString` | `securestring` | No       |                       |
+| Name                                          | Type           | Required | Description                                               |
+| :-------------------------------------------- | :------------: | :------: | :-------------------------------------------------------- |
+| `location`                                    | `string`       | Yes      | Deployment Location                                       |
+| `keyVaultName`                                | `string`       | Yes      | Name of the Key Vault                                     |
+| `primaryConnectionString`                     | `bool`         | No       | Primary connection string                                 |
+| `newOrExistingCassandraDB`                    | `string`       | No       |                                                           |
+| `cassandraDBName`                             | `string`       | No       | Name of the Cassandra DB                                  |
+| `cassandraDBSecretName`                       | `string`       | No       | Name of the secret for the Cassandra DB                   |
+| `locationString`                              | `string`       | No       | Custom Location String for Cassandra DB                   |
+| `cassandraConnectionString`                   | `securestring` | No       | Connection string for the Cassandra DB                    |
+| `newOrExistingCosmosDB`                       | `string`       | No       |                                                           |
+| `cosmosDBName`                                | `string`       | No       | Name of the Cosmos DB                                     |
+| `cosmosDBSecretName`                          | `string`       | No       | Name of the secret for the Cosmos DB                      |
+| `cosmosConnectionString`                      | `securestring` | No       | Connection string for the Cosmos DB                       |
+| `newOrExistingEventHub`                       | `string`       | No       |                                                           |
+| `eventHubNamespaceName`                       | `string`       | No       | Name of the Event Hub Namespace                           |
+| `eventHubName`                                | `string`       | No       | Name of the Event Hub                                     |
+| `eventHubAuthorizationRulesName`              | `string`       | No       | Name of the secret for the Event Hub                      |
+| `eventHubSecretName`                          | `string`       | No       | Name of the secret for the Event Hub                      |
+| `eventhubConnectionString`                    | `securestring` | No       | Connection string for the Event Hub                       |
+| `newOrExistingStorageAccount`                 | `string`       | No       |                                                           |
+| `storageAccountName`                          | `string`       | No       | Name of the Storage Account                               |
+| `storageSecretName`                           | `string`       | No       | Name of the secret for the Storage Account                |
+| `storageAccountConnectionString`              | `securestring` | No       | Connection string for the Storage Account                 |
+| `newOrExistingCognitiveServices`              | `string`       | No       |                                                           |
+| `cognitiveServicesName`                       | `string`       | No       | Name of the Cognitive Services Account                    |
+| `cognitiveServicesSecretName`                 | `string`       | No       | Name of the secret for the Cognitive Services Account     |
+| `cognitiveServicesConnectionString`           | `securestring` | No       | Connection string for the Cognitive Services Account      |
+| `newOrExistingBatchAccount`                   | `string`       | No       |                                                           |
+| `batchAccountName`                            | `string`       | No       | Name of the Batch Account                                 |
+| `batchAccountSecretName`                      | `string`       | No       | Name of the secret for the Batch Account                  |
+| `batchAccountConnectionString`                | `securestring` | No       | Connection string for the Batch Account                   |
+| `newOrExistingRedis`                          | `string`       | No       |                                                           |
+| `redisName`                                   | `string`       | No       | Name of the Redis Account                                 |
+| `redisSecretName`                             | `string`       | No       | Name of the secret for the Redis Account                  |
+| `redisConnectionString`                       | `securestring` | No       | Connection string for the Redis Account                   |
+| `newOrExistingMapsAccount`                    | `string`       | No       |                                                           |
+| `mapsAccountName`                             | `string`       | No       | Name of the Maps Account                                  |
+| `mapsAccountSecretName`                       | `string`       | No       | Name of the secret for the Maps Account                   |
+| `mapsAccountConnectionString`                 | `securestring` | No       | Connection string for the Maps Account                    |
+| `newOrExistingOpertionalInsightsWorkspace`    | `string`       | No       |                                                           |
+| `opertionalInsightsWorkspaceName`             | `string`       | No       | Name of the Operational Insights Workspace                |
+| `opertionalInsightsWorkspaceSecretName`       | `string`       | No       | Name of the secret for the Operational Insights Workspace |
+| `opertionalInsightsWorkspaceConnectionString` | `securestring` | No       | Connection string for the Operational Insights Workspace  |
 
 ## Outputs
 
