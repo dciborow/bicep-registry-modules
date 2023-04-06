@@ -1,12 +1,17 @@
-// Azure Bicep
-// Microsoft.DocumentDB/databaseAccounts
-// Microsoft.EventHub/namespaces/eventhubs/authorizationRules
-// Microsoft.Storage/storageAccounts
-// Microsoft.CognitiveServices/accounts
-// Microsoft.Batch/batchAccounts
-// Microsoft.Cache/redis
-// Microsoft.Maps/accounts
-// Microsoft.OperationalInsights/workspaces
+/*
+Azure Bicep
+
+This module simplifies placing the conneciton strings for the following resources into a Key Vault.
+  Microsoft.DocumentDB/databaseAccounts
+  Microsoft.EventHub/namespaces/eventhubs/authorizationRules
+  Microsoft.Storage/storageAccounts
+  Microsoft.CognitiveServices/accounts
+  Microsoft.Batch/batchAccounts
+  Microsoft.Cache/redis
+  Microsoft.Maps/accounts
+  Microsoft.OperationalInsights/workspaces
+*/
+
 @description('Deployment Location')
 param location string
 param keyVaultName string
@@ -191,7 +196,7 @@ var secrets = [
   operationalInsightSecret
 ]
 
-module secretsBatch 'vaults/secretsBatch.bicep' = {
+module secretsBatch 'secretsBatch.bicep' = {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVaultName
