@@ -18,6 +18,8 @@ param location string
 @description('Name of the Key Vault')
 param keyVaultName string
 
+param primaryConnectionString bool = true
+
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingCassandraDB string = cassandraDBName == '' ? 'none' : cassandraConnectionString == '' ? 'new' : 'existing'
 param cassandraDBName string = ''
@@ -196,7 +198,7 @@ var secrets = [
   operationalInsightSecret
 ]
 
-module secretsBatch 'secretsBatch.bicep' = {
+module secretsBatch 'modules/secretsBatch.bicep' = {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVaultName
