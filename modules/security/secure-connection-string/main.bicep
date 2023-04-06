@@ -18,15 +18,20 @@ param location string
 @description('Name of the Key Vault')
 param keyVaultName string
 
+@description('Primary connection string')
 param primaryConnectionString bool = true
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingCassandraDB string = cassandraDBName == '' ? 'none' : cassandraConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Cassandra DB')
 param cassandraDBName string = ''
+@description('Name of the secret for the Cassandra DB')
 param cassandraDBSecretName string = ''
+@description('Custom Location String for Cassandra DB')
 param locationString string = ''
 
 @secure()
+@description('Connection string for the Cassandra DB')
 param cassandraConnectionString string = ''
 
 resource cassandraDB 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = if (newOrExistingCassandraDB == 'new') {
@@ -40,10 +45,13 @@ var cassandraSecret = newOrExistingCassandraDB == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingCosmosDB string = cosmosDBName == '' ? 'none' : cosmosConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Cosmos DB')
 param cosmosDBName string = ''
+@description('Name of the secret for the Cosmos DB')
 param cosmosDBSecretName string = ''
 
 @secure()
+@description('Connection string for the Cosmos DB')
 param cosmosConnectionString string = ''
 
 resource cosmosDB 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = if (newOrExistingCosmosDB == 'new') {
@@ -57,12 +65,17 @@ var cosmosDBSecret = newOrExistingCosmosDB == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingEventHub string = eventHubNamespaceName == '' ? 'none' : eventhubConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Event Hub Namespace')
 param eventHubNamespaceName string = ''
+@description('Name of the Event Hub')
 param eventHubName string = ''
+@description('Name of the secret for the Event Hub')
 param eventHubAuthorizationRulesName string = ''
+@description('Name of the secret for the Event Hub')
 param eventHubSecretName string = ''
 
 @secure()
+@description('Connection string for the Event Hub')
 param eventhubConnectionString string = ''
 
 resource eventHubNamespace 'Microsoft.EventHub/namespaces@2021-01-01-preview' existing = if (newOrExistingEventHub == 'new') {
@@ -86,10 +99,13 @@ var eventHubSecret = newOrExistingEventHub == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingStorageAccount string = storageAccountName == '' ? 'none' : storageAccountConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Storage Account')
 param storageAccountName string = ''
+@description('Name of the secret for the Storage Account')
 param storageSecretName string = ''
 
 @secure()
+@description('Connection string for the Storage Account')
 param storageAccountConnectionString string = ''
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' existing = if (newOrExistingStorageAccount == 'new') {
@@ -103,10 +119,13 @@ var storageSecret = newOrExistingStorageAccount == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingCognitiveServices string = cognitiveServicesName == '' ? 'none' : cognitiveServicesConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Cognitive Services Account')
 param cognitiveServicesName string = ''
+@description('Name of the secret for the Cognitive Services Account')
 param cognitiveServicesSecretName string = ''
 
 @secure()
+@description('Connection string for the Cognitive Services Account')
 param cognitiveServicesConnectionString string = ''
 
 resource cognitiveServices 'Microsoft.CognitiveServices/accounts@2017-04-18' existing = if (newOrExistingCognitiveServices == 'new') {
@@ -120,10 +139,13 @@ var cognitiveServicesSecret = newOrExistingCognitiveServices == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingBatchAccount string = batchAccountName == '' ? 'none' : batchAccountConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Batch Account')
 param batchAccountName string = ''
+@description('Name of the secret for the Batch Account')
 param batchAccountSecretName string = ''
 
 @secure()
+@description('Connection string for the Batch Account')
 param batchAccountConnectionString string = ''
 
 resource batchAccount 'Microsoft.Batch/batchAccounts@2019-08-01' existing = if (newOrExistingBatchAccount == 'new') {
@@ -137,10 +159,13 @@ var batchAccountSecret = newOrExistingBatchAccount == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingRedis string = redisName == '' ? 'none' : redisConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Redis Account')
 param redisName string = ''
+@description('Name of the secret for the Redis Account')
 param redisSecretName string = ''
 
 @secure()
+@description('Connection string for the Redis Account')
 param redisConnectionString string = ''
 
 resource redis 'Microsoft.Cache/redis@2018-03-01' existing = if (newOrExistingRedis == 'new') {
@@ -154,10 +179,13 @@ var redisSecret = newOrExistingRedis == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingMapsAccount string = mapsAccountName == '' ? 'none' : mapsAccountConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Maps Account')
 param mapsAccountName string = ''
+@description('Name of the secret for the Maps Account')
 param mapsAccountSecretName string = ''
 
 @secure()
+@description('Connection string for the Maps Account')
 param mapsAccountConnectionString string = ''
 
 resource mapsAccount 'Microsoft.Maps/accounts@2021-02-01' existing = if (newOrExistingMapsAccount == 'new') {
@@ -171,10 +199,13 @@ var mapSecret = newOrExistingMapsAccount == 'none' ? {} : {
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingOpertionalInsightsWorkspace string = opertionalInsightsWorkspaceName == '' ? 'none' : opertionalInsightsWorkspaceConnectionString == '' ? 'new' : 'existing'
+@description('Name of the Operational Insights Workspace')
 param opertionalInsightsWorkspaceName string = ''
+@description('Name of the secret for the Operational Insights Workspace')
 param opertionalInsightsWorkspaceSecretName string = ''
 
 @secure()
+@description('Connection string for the Operational Insights Workspace')
 param opertionalInsightsWorkspaceConnectionString string = ''
 
 resource opertionalInsightsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = if (newOrExistingOpertionalInsightsWorkspace == 'new') {

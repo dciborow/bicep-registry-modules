@@ -15,7 +15,7 @@ module prereq 'prereq.test.bicep' = {
   }
 }
 
-module test0 '../main2.bicep' = {
+module test0 '../main.bicep' = {
   name: 'test0'
   params: {
     location: location
@@ -25,7 +25,7 @@ module test0 '../main2.bicep' = {
 
 var cassandraDBName = 'test-cassandra-db'
 
-module test1 '../main2.bicep' = {
+module test1 '../main.bicep' = {
   name: 'test1'
   params: {
     location: location
@@ -38,7 +38,7 @@ module test1 '../main2.bicep' = {
 
 var cosmosDBName = 'test-cosmos-db'
 
-module test2 '../main2.bicep' = {
+module test2 '../main.bicep' = {
   name: 'test2'
   params: {
     location: location
@@ -52,7 +52,7 @@ var eventHubNamespaceName = 'test-eventhub-namespace'
 var eventHubName = 'test-eventhub'
 var eventHubAuthorizationRulesName = 'test-eventhub-authorizationrules'
 
-module test3 '../main2.bicep' = {
+module test3 '../main.bicep' = {
   name: 'test3'
   params: {
     location: location
@@ -66,7 +66,7 @@ module test3 '../main2.bicep' = {
 
 var storageAccountName = 'test-storage-account'
 
-module test4 '../main2.bicep' = {
+module test4 '../main.bicep' = {
   name: 'test4'
   params: {
     location: location
@@ -78,7 +78,7 @@ module test4 '../main2.bicep' = {
 
 var cognitiveServicesName = 'test-cognitive-services'
 
-module test5 '../main2.bicep' = {
+module test5 '../main.bicep' = {
   name: 'test5'
   params: {
     location: location
@@ -90,7 +90,7 @@ module test5 '../main2.bicep' = {
 
 var batchAccountName = 'test-batch-account'
 
-module test6 '../main2.bicep' = {
+module test6 '../main.bicep' = {
   name: 'test6'
   params: {
     location: location
@@ -102,7 +102,7 @@ module test6 '../main2.bicep' = {
 
 var redisName = 'test-redis'
 
-module test7 '../main2.bicep' = {
+module test7 '../main.bicep' = {
   name: 'test7'
   params: {
     location: location
@@ -115,7 +115,7 @@ module test7 '../main2.bicep' = {
 
 var mapsAccountName = 'test-maps-account'
 
-module test8 '../main2.bicep' = {
+module test8 '../main.bicep' = {
   name: 'test8'
   params: {
     location: location
@@ -127,7 +127,7 @@ module test8 '../main2.bicep' = {
 
 var opertionalInsightsWorkspace = 'test-operationalinsightworkspace'
 
-module test9 '../main2.bicep' = {
+module test9 '../main.bicep' = {
   name: 'test9'
   params: {
     location: location
