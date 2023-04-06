@@ -1,0 +1,187 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.16.1.55165",
+      "templateHash": "7848039937786116495"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Deployment Location"
+      }
+    },
+    "keyVaultName": {
+      "type": "string"
+    },
+    "primaryConnectionString": {
+      "type": "bool",
+      "defaultValue": true
+    },
+    "newOrExistingCassandraDB": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('cassandraDBName'), ''), 'none', if(equals(parameters('cassandraConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "cassandraDBName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "cassandraDBSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "locationString": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "newOrExistingCosmosDB": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('cosmosDBName'), ''), 'none', if(equals(parameters('cosmosConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "cosmosDBName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "cosmosDBSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "newOrExistingEventHub": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('eventHubNamespaceName'), ''), 'none', if(equals(parameters('eventhubConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "eventHubNamespaceName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "eventHubName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "eventHubAuthorizationRulesName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "eventHubSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "newOrExistingStorageAccount": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('storageAccountName'), ''), 'none', if(equals(parameters('storageAccountConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "storageSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "cassandraConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "cosmosConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "eventhubConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "storageAccountConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('secrets-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "secrets": {
+            "value": [
+              "[if(equals(parameters('newOrExistingCassandraDB'), 'none'), createObject(), createObject('secretName', parameters('cassandraDBSecretName'), 'secretValue', if(equals(parameters('newOrExistingCassandraDB'), 'new'), format('Contact Points={0}.cassandra.cosmos.azure.com,{1};Username={2};Password={3};Port=10350', parameters('cassandraDBName'), parameters('locationString'), parameters('cassandraDBName'), listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cassandraDBName')), '2022-05-15').primaryMasterKey), parameters('cassandraConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingCosmosDB'), 'none'), createObject(), createObject('secretName', parameters('cosmosDBSecretName'), 'secretValue', if(equals(parameters('newOrExistingCosmosDB'), 'new'), format('AccountEndpoint=https://{0}.documents.azure.com:443/;AccountKey={1}', parameters('cosmosDBName'), listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDBName')), '2022-05-15').primaryMasterKey), parameters('cosmosConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingEventHub'), 'none'), createObject(), createObject('secretName', parameters('eventHubSecretName'), 'secretValue', if(equals(parameters('newOrExistingEventHub'), 'new'), if(parameters('primaryConnectionString'), listKeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', parameters('eventHubNamespaceName'), parameters('eventHubName'), parameters('eventHubAuthorizationRulesName')), '2021-01-01-preview').primaryConnectionString, listKeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', parameters('eventHubNamespaceName'), parameters('eventHubName'), parameters('eventHubAuthorizationRulesName')), '2021-01-01-preview').secondaryConnectionString), parameters('eventhubConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingStorageAccount'), 'none'), createObject(), createObject('secretName', parameters('storageSecretName'), 'secretValue', if(equals(parameters('newOrExistingStorageAccount'), 'new'), format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2022-05-01').keys[0].value), parameters('storageAccountConnectionString'))))]"
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.16.1.55165",
+              "templateHash": "15149908080309518367"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Specifies the name of the key vault."
+              }
+            },
+            "secrets": {
+              "type": "array",
+              "metadata": {
+                "description": "Specifies the name of the secret that you want to create."
+              }
+            }
+          },
+          "resources": [
+            {
+              "copy": {
+                "name": "secret",
+                "count": "[length(parameters('secrets'))]"
+              },
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secrets')[copyIndex()].secretName)]",
+              "properties": {
+                "value": "[parameters('secrets')[copyIndex()].secretValue]"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
