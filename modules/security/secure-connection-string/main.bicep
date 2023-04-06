@@ -84,7 +84,7 @@ var secrets = [
   }
 ]
 
-module secretsBatch 'vaults/secretsBatch.bicep' = {
+module secretsBatch 'secretsBatch.bicep' = {
   name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     keyVaultName: keyVaultName

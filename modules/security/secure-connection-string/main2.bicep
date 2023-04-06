@@ -158,7 +158,7 @@ param mapsAccountSecretName string = ''
 @secure()
 param mapsAccountConnectionString string = ''
 
-resource mapsAccount 'Microsoft.Maps/accounts@2020-02-01' existing = if (newOrExistingMapsAccount == 'new') {
+resource mapsAccount 'Microsoft.Maps/accounts@2021-02-01' existing = if (newOrExistingMapsAccount == 'new') {
   name: mapsAccountName
 }
 
@@ -175,7 +175,7 @@ param opertionalInsightsWorkspaceSecretName string = ''
 @secure()
 param opertionalInsightsWorkspaceConnectionString string = ''
 
-resource opertionalInsightsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-03-01' existing = if (newOrExistingOpertionalInsightsWorkspace == 'new') {
+resource opertionalInsightsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = if (newOrExistingOpertionalInsightsWorkspace == 'new') {
   name: opertionalInsightsWorkspaceName
 }
 
