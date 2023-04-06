@@ -14,9 +14,9 @@ This module simplifies placing the conneciton strings for the following resource
 
 @description('Deployment Location')
 param location string
-param keyVaultName string
 
-param primaryConnectionString bool = true
+@description('Name of the Key Vault')
+param keyVaultName string
 
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingCassandraDB string = cassandraDBName == '' ? 'none' : cassandraConnectionString == '' ? 'new' : 'existing'
