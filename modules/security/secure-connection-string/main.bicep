@@ -1,6 +1,10 @@
 @description('Deployment Location')
 param location string
 param keyVaultName string
+param primaryConnectionString bool = true
+param secondaryConnectionString bool = false
+param primaryKey bool = false
+param secondaryKey bool = false
 
 @allowed([ 'new', 'existing', 'none'])
 param newOrExistingCassandraDB string = cassandraDBName == '' ? 'none' : cassandraConnectionString == '' ? 'new' : 'existing'
@@ -8,16 +12,10 @@ param cassandraDBName string = ''
 param cassandraDBSecretName string = ''
 param locationString string = ''
 
-@secure()
-param cassandraConnectionString string = ''
-
 @allowed([ 'new', 'existing', 'none'])
 param newOrExistingCosmosDB string = cosmosDBName == '' ? 'none' : cosmosConnectionString == '' ? 'new' : 'existing'
-param cosmosDBName string
-param cosmosDBSecretName string
-
-@secure()
-param cosmosConnectionString string = ''
+param cosmosDBName string = ''
+param cosmosDBSecretName string = ''
 
 @allowed([ 'new', 'existing', 'none'])
 param newOrExistingEventHub string = eventHubNamespaceName == '' ? 'none' : eventhubConnectionString == '' ? 'new' : 'existing'
@@ -26,21 +24,22 @@ param eventHubName string = ''
 param eventHubAuthorizationRules string = ''
 param eventHubSecretName string = ''
 
-@secure()
-param eventhubConnectionString string = ''
-
 @allowed([ 'new', 'existing', 'none'])
 param newOrExistingStorageAccount string = storageAccountName == '' ? 'none' : storageAccountConnectionString == '' ? 'new' : 'existing'
 param storageAccountName string = ''
 param storageSecretName string = ''
 
 @secure()
-param storageAccountConnectionString string = ''
+param cassandraConnectionString string = ''
 
-param primaryConnectionString bool = true
-param secondaryConnectionString bool = false
-param primaryKey bool = false
-param secondaryKey bool = false
+@secure()
+param cosmosConnectionString string = ''
+
+@secure()
+param eventhubConnectionString string = ''
+
+@secure()
+param storageAccountConnectionString string = ''
 
 resource cassandraDB 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = if(newOrExistingCassandraDB == 'new') {
   name: cassandraDBName
