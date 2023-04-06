@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.16.1.55165",
-      "templateHash": "7848039937786116495"
+      "templateHash": "14084865653791362684"
     }
   },
   "parameters": {
@@ -43,6 +43,10 @@
       "type": "string",
       "defaultValue": ""
     },
+    "cassandraConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
     "newOrExistingCosmosDB": {
       "type": "string",
       "defaultValue": "[if(equals(parameters('cosmosDBName'), ''), 'none', if(equals(parameters('cosmosConnectionString'), ''), 'new', 'existing'))]",
@@ -58,6 +62,10 @@
     },
     "cosmosDBSecretName": {
       "type": "string",
+      "defaultValue": ""
+    },
+    "cosmosConnectionString": {
+      "type": "securestring",
       "defaultValue": ""
     },
     "newOrExistingEventHub": {
@@ -85,6 +93,10 @@
       "type": "string",
       "defaultValue": ""
     },
+    "eventhubConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
     "newOrExistingStorageAccount": {
       "type": "string",
       "defaultValue": "[if(equals(parameters('storageAccountName'), ''), 'none', if(equals(parameters('storageAccountConnectionString'), ''), 'new', 'existing'))]",
@@ -102,19 +114,112 @@
       "type": "string",
       "defaultValue": ""
     },
-    "cassandraConnectionString": {
-      "type": "securestring",
-      "defaultValue": ""
-    },
-    "cosmosConnectionString": {
-      "type": "securestring",
-      "defaultValue": ""
-    },
-    "eventhubConnectionString": {
-      "type": "securestring",
-      "defaultValue": ""
-    },
     "storageAccountConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "newOrExistingCognitiveServices": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('cognitiveServicesName'), ''), 'none', if(equals(parameters('cognitiveServicesConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "cognitiveServicesName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "cognitiveServicesSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "cognitiveServicesConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "newOrExistingBatchAccount": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('batchAccountName'), ''), 'none', if(equals(parameters('batchAccountConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "batchAccountName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "batchAccountSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "batchAccountConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "newOrExistingRedis": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('redisName'), ''), 'none', if(equals(parameters('redisConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "redisName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "redisSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "redisConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "newOrExistingMapsAccount": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('mapsAccountName'), ''), 'none', if(equals(parameters('mapsAccountConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "mapsAccountName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "mapsAccountSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "mapsAccountConnectionString": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "newOrExistingOpertionalInsightsWorkspace": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('opertionalInsightsWorkspaceName'), ''), 'none', if(equals(parameters('opertionalInsightsWorkspaceConnectionString'), ''), 'new', 'existing'))]",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "opertionalInsightsWorkspaceName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "opertionalInsightsWorkspaceSecretName": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "opertionalInsightsWorkspaceConnectionString": {
       "type": "securestring",
       "defaultValue": ""
     }
@@ -138,7 +243,12 @@
               "[if(equals(parameters('newOrExistingCassandraDB'), 'none'), createObject(), createObject('secretName', parameters('cassandraDBSecretName'), 'secretValue', if(equals(parameters('newOrExistingCassandraDB'), 'new'), format('Contact Points={0}.cassandra.cosmos.azure.com,{1};Username={2};Password={3};Port=10350', parameters('cassandraDBName'), parameters('locationString'), parameters('cassandraDBName'), listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cassandraDBName')), '2022-05-15').primaryMasterKey), parameters('cassandraConnectionString'))))]",
               "[if(equals(parameters('newOrExistingCosmosDB'), 'none'), createObject(), createObject('secretName', parameters('cosmosDBSecretName'), 'secretValue', if(equals(parameters('newOrExistingCosmosDB'), 'new'), format('AccountEndpoint=https://{0}.documents.azure.com:443/;AccountKey={1}', parameters('cosmosDBName'), listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDBName')), '2022-05-15').primaryMasterKey), parameters('cosmosConnectionString'))))]",
               "[if(equals(parameters('newOrExistingEventHub'), 'none'), createObject(), createObject('secretName', parameters('eventHubSecretName'), 'secretValue', if(equals(parameters('newOrExistingEventHub'), 'new'), if(parameters('primaryConnectionString'), listKeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', parameters('eventHubNamespaceName'), parameters('eventHubName'), parameters('eventHubAuthorizationRulesName')), '2021-01-01-preview').primaryConnectionString, listKeys(resourceId('Microsoft.EventHub/namespaces/eventhubs/authorizationRules', parameters('eventHubNamespaceName'), parameters('eventHubName'), parameters('eventHubAuthorizationRulesName')), '2021-01-01-preview').secondaryConnectionString), parameters('eventhubConnectionString'))))]",
-              "[if(equals(parameters('newOrExistingStorageAccount'), 'none'), createObject(), createObject('secretName', parameters('storageSecretName'), 'secretValue', if(equals(parameters('newOrExistingStorageAccount'), 'new'), format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2022-05-01').keys[0].value), parameters('storageAccountConnectionString'))))]"
+              "[if(equals(parameters('newOrExistingStorageAccount'), 'none'), createObject(), createObject('secretName', parameters('storageSecretName'), 'secretValue', if(equals(parameters('newOrExistingStorageAccount'), 'new'), format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2022-05-01').keys[0].value), parameters('storageAccountConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingCognitiveServices'), 'none'), createObject(), createObject('secretName', parameters('cognitiveServicesSecretName'), 'secretValue', if(equals(parameters('newOrExistingCognitiveServices'), 'new'), format('Endpoint=https://{0}.cognitiveservices.azure.com/;ApiKey={1}', parameters('cognitiveServicesName'), listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('cognitiveServicesName')), '2017-04-18').key1), parameters('cognitiveServicesConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingBatchAccount'), 'none'), createObject(), createObject('secretName', parameters('batchAccountSecretName'), 'secretValue', if(equals(parameters('newOrExistingBatchAccount'), 'new'), format('AccountEndpoint=https://{0}.{1}.batch.azure.com;AccountKey={2}', parameters('batchAccountName'), parameters('locationString'), listKeys(resourceId('Microsoft.Batch/batchAccounts', parameters('batchAccountName')), '2019-08-01').key1), parameters('batchAccountConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingRedis'), 'none'), createObject(), createObject('secretName', parameters('redisSecretName'), 'secretValue', if(equals(parameters('newOrExistingRedis'), 'new'), format('RedisEndpoint={0}.redis.cache.windows.net;Password={1}', parameters('redisName'), listKeys(resourceId('Microsoft.Cache/Redis', parameters('redisName')), '2018-03-01').primaryMasterKey), parameters('redisConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingMapsAccount'), 'none'), createObject(), createObject('secretName', parameters('mapsAccountSecretName'), 'secretValue', if(equals(parameters('newOrExistingMapsAccount'), 'new'), format('Key={0}', listKeys(resourceId('Microsoft.Maps/accounts', parameters('mapsAccountName')), '2021-02-01').primaryKey), parameters('mapsAccountConnectionString'))))]",
+              "[if(equals(parameters('newOrExistingOpertionalInsightsWorkspace'), 'none'), createObject(), createObject('secretName', parameters('opertionalInsightsWorkspaceSecretName'), 'secretValue', if(equals(parameters('newOrExistingOpertionalInsightsWorkspace'), 'new'), format('Key={0}', listKeys(resourceId('Microsoft.OperationalInsights/workspaces', parameters('opertionalInsightsWorkspaceName')), '2022-10-01').primaryKey), parameters('opertionalInsightsWorkspaceConnectionString'))))]"
             ]
           }
         },
