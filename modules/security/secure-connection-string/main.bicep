@@ -3,7 +3,7 @@ param location string
 param keyVaultName string
 
 @allowed([ 'new', 'existing', 'none'])
-param newOrExistingCassandraDB string = 'none'
+param newOrExistingCassandraDB string = cassandraDBName == '' ? 'none' : cassandraConnectionString == '' ? 'new' : 'existing'
 param cassandraDBName string = ''
 param cassandraDBSecretName string = ''
 param locationString string = ''
@@ -12,7 +12,7 @@ param locationString string = ''
 param cassandraConnectionString string = ''
 
 @allowed([ 'new', 'existing', 'none'])
-param newOrExistingCosmosDB string = 'none'
+param newOrExistingCosmosDB string = cosmosDBName == '' ? 'none' : cosmosConnectionString == '' ? 'new' : 'existing'
 param cosmosDBName string
 param cosmosDBSecretName string
 
@@ -20,7 +20,7 @@ param cosmosDBSecretName string
 param cosmosConnectionString string = ''
 
 @allowed([ 'new', 'existing', 'none'])
-param newOrExistingEventHub string = 'none'
+param newOrExistingEventHub string = eventHubNamespaceName == '' ? 'none' : eventhubConnectionString == '' ? 'new' : 'existing'
 param eventHubNamespaceName string = ''
 param eventHubName string = ''
 param eventHubAuthorizationRules string = ''
@@ -30,7 +30,7 @@ param eventHubSecretName string = ''
 param eventhubConnectionString string = ''
 
 @allowed([ 'new', 'existing', 'none'])
-param newOrExistingStorageAccount string = 'none'
+param newOrExistingStorageAccount string = storageAccountName == '' ? 'none' : storageAccountConnectionString == '' ? 'new' : 'existing'
 param storageAccountName string = ''
 param storageSecretName string = ''
 
