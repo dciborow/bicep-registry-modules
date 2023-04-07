@@ -26,7 +26,7 @@ param newOrExistingCassandraDB string = cassandraDBName == '' ? 'none' : cassand
 @description('Name of the Cassandra DB')
 param cassandraDBName string = ''
 @description('Name of the secret for the Cassandra DB')
-param cassandraDBSecretName string = ''
+param cassandraDBSecretName string = 'cassandra-db-secret'
 @description('Custom Location String for Cassandra DB')
 param locationString string = ''
 
@@ -48,7 +48,7 @@ param newOrExistingCosmosDB string = cosmosDBName == '' ? 'none' : cosmosConnect
 @description('Name of the Cosmos DB')
 param cosmosDBName string = ''
 @description('Name of the secret for the Cosmos DB')
-param cosmosDBSecretName string = ''
+param cosmosDBSecretName string = 'cosmos-db-secret'
 
 @secure()
 @description('Connection string for the Cosmos DB')
@@ -72,7 +72,7 @@ param eventHubName string = ''
 @description('Name of the secret for the Event Hub')
 param eventHubAuthorizationRulesName string = ''
 @description('Name of the secret for the Event Hub')
-param eventHubSecretName string = ''
+param eventHubSecretName string = 'eventhub-secret'
 
 @secure()
 @description('Connection string for the Event Hub')
@@ -102,7 +102,7 @@ param newOrExistingStorageAccount string = storageAccountName == '' ? 'none' : s
 @description('Name of the Storage Account')
 param storageAccountName string = ''
 @description('Name of the secret for the Storage Account')
-param storageSecretName string = ''
+param storageSecretName string = 'storage-secret'
 
 @secure()
 @description('Connection string for the Storage Account')
@@ -122,7 +122,7 @@ param newOrExistingCognitiveServices string = cognitiveServicesName == '' ? 'non
 @description('Name of the Cognitive Services Account')
 param cognitiveServicesName string = ''
 @description('Name of the secret for the Cognitive Services Account')
-param cognitiveServicesSecretName string = ''
+param cognitiveServicesSecretName string = 'cognitive-services-secret'
 
 @secure()
 @description('Connection string for the Cognitive Services Account')
@@ -142,7 +142,7 @@ param newOrExistingBatchAccount string = batchAccountName == '' ? 'none' : batch
 @description('Name of the Batch Account')
 param batchAccountName string = ''
 @description('Name of the secret for the Batch Account')
-param batchAccountSecretName string = ''
+param batchAccountSecretName string = 'batch-account-secret'
 
 @secure()
 @description('Connection string for the Batch Account')
@@ -162,7 +162,7 @@ param newOrExistingRedis string = redisName == '' ? 'none' : redisConnectionStri
 @description('Name of the Redis Account')
 param redisName string = ''
 @description('Name of the secret for the Redis Account')
-param redisSecretName string = ''
+param redisSecretName string = 'redis-secret'
 
 @secure()
 @description('Connection string for the Redis Account')
@@ -182,7 +182,7 @@ param newOrExistingMapsAccount string = mapsAccountName == '' ? 'none' : mapsAcc
 @description('Name of the Maps Account')
 param mapsAccountName string = ''
 @description('Name of the secret for the Maps Account')
-param mapsAccountSecretName string = ''
+param mapsAccountSecretName string = 'maps-account-secret'
 
 @secure()
 @description('Connection string for the Maps Account')
@@ -202,7 +202,7 @@ param newOrExistingOpertionalInsightsWorkspace string = opertionalInsightsWorksp
 @description('Name of the Operational Insights Workspace')
 param opertionalInsightsWorkspaceName string = ''
 @description('Name of the secret for the Operational Insights Workspace')
-param opertionalInsightsWorkspaceSecretName string = ''
+param opertionalInsightsWorkspaceSecretName string = 'opertional-insights-workspace-secret'
 
 @secure()
 @description('Connection string for the Operational Insights Workspace')
