@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.16.1.55165",
-      "templateHash": "15937972149492914767"
+      "templateHash": "9129809710914026450"
     }
   },
   "parameters": {
@@ -46,7 +46,7 @@
     },
     "cassandraDBSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "cassandra-db-secret",
       "metadata": {
         "description": "Name of the secret for the Cassandra DB"
       }
@@ -83,7 +83,7 @@
     },
     "cosmosDBSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "cosmos-db-secret",
       "metadata": {
         "description": "Name of the secret for the Cosmos DB"
       }
@@ -127,7 +127,7 @@
     },
     "eventHubSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "eventhub-secret",
       "metadata": {
         "description": "Name of the secret for the Event Hub"
       }
@@ -157,7 +157,7 @@
     },
     "storageSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "storage-secret",
       "metadata": {
         "description": "Name of the secret for the Storage Account"
       }
@@ -187,7 +187,7 @@
     },
     "cognitiveServicesSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "cognitive-services-secret",
       "metadata": {
         "description": "Name of the secret for the Cognitive Services Account"
       }
@@ -217,7 +217,7 @@
     },
     "batchAccountSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "batch-account-secret",
       "metadata": {
         "description": "Name of the secret for the Batch Account"
       }
@@ -247,7 +247,7 @@
     },
     "redisSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "redis-secret",
       "metadata": {
         "description": "Name of the secret for the Redis Account"
       }
@@ -277,7 +277,7 @@
     },
     "mapsAccountSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "maps-account-secret",
       "metadata": {
         "description": "Name of the secret for the Maps Account"
       }
@@ -307,7 +307,7 @@
     },
     "opertionalInsightsWorkspaceSecretName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue": "opertional-insights-workspace-secret",
       "metadata": {
         "description": "Name of the secret for the Operational Insights Workspace"
       }

@@ -1,4 +1,4 @@
-#
+# 
 
 ## Description
 
@@ -57,7 +57,9 @@
 | :--- | :--: | :---------- |
 
 ## Examples
+
 ### Example 0
+
 Create a Key Vault and a Storage Account.
 Then, insert the primaryConnectionString for the Storage Account into the Key Vault.
 
@@ -93,6 +95,7 @@ module storageAccountSecrets 'br/public:security/secure-connection-string:0.0.1'
 ```
 
 ### Example 1
+
 Create a Key Vault and a Storage Account.
 Then, insert the primaryConnectionString for the Storage Account into the Key Vault.
 
@@ -128,6 +131,7 @@ module storageAccountSecrets 'br/public:security/secure-connection-string:0.0.1'
 ```
 
 ### Example 2a
+
 Insert the secret of a newly created resource using Bicep modules.
 
 ```bicep
@@ -166,6 +170,7 @@ module cassandraDBSecrets 'br/public:security/secure-connection-string:0.0.1' = 
 ```
 
 ### Example 2b
+
 Insert the secret of a newly created resource using Bicep resources.
 
 ```bicep
@@ -203,8 +208,8 @@ module cassandraDBSecrets 'br/public:security/secure-connection-string:0.0.1' = 
 
 ```
 
-
 ### Example 3
+
 Insert a secret manually.
 
 ```bicep
@@ -229,6 +234,7 @@ module cassandraDBSecrets 'br/public:security/secure-connection-string:0.0.1' = 
 ```
 
 ### Example 4
+
 Insert the secret of using a previously created resource.
 
 ```bicep
@@ -255,7 +261,6 @@ module cassandraDBSecrets 'br/public:security/secure-connection-string:0.0.1' = 
 }
 
 ```
-
 
 ### Example 5
 
@@ -287,4 +292,3 @@ module eventHubSecrets 'br/public:security/secure-connection-string:0.0.1' = {
   }
 }
 ```
-
