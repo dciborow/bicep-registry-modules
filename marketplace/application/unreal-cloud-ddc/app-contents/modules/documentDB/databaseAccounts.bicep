@@ -84,9 +84,6 @@ var locations = union([
 var unwind = [for location in locations: '${toLower(name)}-${location.locationName}.cassandra.cosmos.azure.com']
 var locationString = replace(substring(string(unwind), 1, length(string(unwind))-2), '"', '')
 
-var keys = newOrExisting == 'new' ? newAccount.listKeys() : account.listKeys()
-var cassandraConnectionString = 'Contact Points=${toLower(name)}.cassandra.cosmos.azure.com,${locationString};Username=${toLower(name)};Password=${keys.primaryMasterKey};Port=10350'
-
 resource newAccount 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = if (newOrExisting == 'new') {
   name: toLower(name)
   location: location
@@ -100,12 +97,12 @@ resource newAccount 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' = if (new
     capabilities: union([ { name: 'EnableCassandra' } ], EnableServerless ? [ { name: 'EnableServerless' } ] : [])
   }
 }
+
 resource account 'Microsoft.DocumentDB/databaseAccounts@2022-05-15' existing = {
   scope: resourceGroup(cosmosDBRG)
   name: toLower(name)
 }
 
-@description('Key to connect with Cosmos DB')
-output cassandraConnectionString string = cassandraConnectionString
-
+output id string = account.id
 output name string = name
+output locationString string = locationString

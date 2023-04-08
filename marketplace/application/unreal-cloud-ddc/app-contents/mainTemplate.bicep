@@ -357,15 +357,20 @@ module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCo
   }
 }
 
-module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for (location, index) in allLocations: if (assignRole && epicEULA) {
+module cassandraKeys 'modules/keyvault/addCassandraSecrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
   name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
   ]
   params: {
-    keyVaultName: locationSpecs[index].keyVaultName
-    secretName: 'ddc-db-connection-string'
-    secretValue: newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : cassandraConnectionString
+    location: location
+    keyVaultName: take('${location}-${keyVaultName}', 24)
+    cosmosDBName: cosmosDBName
+    cosmosDBRG: cosmosDBRG
+    newOrExistingCosmosDB: newOrExistingCosmosDB
+    cassandraConnectionString: cassandraConnectionString
+    cosmosDBSecretName: 'ddc-db-connection-string'
+    locationString: cosmosDB.outputs.locationString
   }
 }]
 
