@@ -93,7 +93,8 @@
       "d2956983-4e08-43e1-a91a-74e8c5b5c5f2",
       "e74bd998-360d-41b9-9abf-5ac6347fb78a",
       "6c35e400-126e-40ec-9b16-74b1e3305ee3",
-      "a7fff94b-e36b-48f0-92f6-916281b16fa4"
+      "a7fff94b-e36b-48f0-92f6-916281b16fa4",
+      "312b7a65-e06a-47d2-bf8e-91f774c65d6a"
     ]
   },
   "technical_configuration": {
@@ -170,6 +171,9 @@
           },
           {
             "ID": "a7fff94b-e36b-48f0-92f6-916281b16fa4"
+          },
+          {
+            "ID": "312b7a65-e06a-47d2-bf8e-91f774c65d6a"
           }
         ]
       },
