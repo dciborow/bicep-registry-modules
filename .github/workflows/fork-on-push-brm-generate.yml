@@ -71,7 +71,7 @@ jobs:
           MODULE: "${{ steps.branch.outputs._1 }}/${{ steps.branch.outputs._2 }}"
         run: |
           cd $SAMPLEFOLDER_PATH
-
+          NEW_VERSION=${VERSION%%-*}
           # The following sed command searches for the specified module in README.md and replaces its version number
           # (in formats X.Y.Z, X.Y, X, or a single lowercase letter) or adds a version number if it's not present.
           REGEX=$(echo "s|($MODULE:)([0-9]+(\.[0-9]+){0,2})?|\1$NEW_VERSION|")
