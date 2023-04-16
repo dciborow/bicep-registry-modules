@@ -62,7 +62,7 @@ jobs:
           SAMPLEFOLDER_PATH: ${{ needs.get-module-to-validate.outputs.module_dir }}
         run: |
           cd $SAMPLEFOLDER_PATH
-          sed -ri "s/$OLD_VERSION/$VERSION/" "$SAMPLEFOLDER_PATH/README.md" || exit 1
+          sed -ri "s/$OLD_VERSION/$VERSION/" "README.md" || exit 1
 
       - name: Run brm generate
         env:
