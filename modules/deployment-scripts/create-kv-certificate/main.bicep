@@ -62,9 +62,7 @@ param isCrossTenant bool = false
 @description('Optional. Override default validityInMonths 12 value')
 param validity int = 12
 
-resource akv 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
-  name: akvName
-}
+resource akv 'Microsoft.KeyVault/vaults@2022-07-01' existing = { name: akvName }
 
 @description('A new managed identity that will be created in this Resource Group, this is the default option')
 resource newDepScriptId 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = if (!useExistingManagedIdentity) {
