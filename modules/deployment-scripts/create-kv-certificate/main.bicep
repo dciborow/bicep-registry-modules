@@ -31,11 +31,7 @@ param certificateCommonNames array = certificateNames
 @description('A delay before the script import operation starts. Primarily to allow Azure AAD Role Assignments to propagate')
 param initialScriptDelay string = '0'
 
-@allowed([
-  'OnSuccess'
-  'OnExpiration'
-  'Always'
-])
+@allowed([ 'OnSuccess', 'OnExpiration', 'Always'])
 @description('When the script resource is cleaned up')
 param cleanupPreference string = 'OnSuccess'
 
