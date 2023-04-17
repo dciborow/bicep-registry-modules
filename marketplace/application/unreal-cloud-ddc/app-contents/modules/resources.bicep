@@ -159,21 +159,14 @@ module trafficManagerEndpoint 'network/trafficManagerEndpoints.bicep' = if (enab
   }
 }
 
-module secretsBatch 'keyvault/addStorageSecrets.bicep' = if (assignRole && enableKeyVault ) {
-  name: 'storagesecrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
-  dependsOn: [
-    storageAccount
-  ]
+module secretsBatch 'keyvault/vaults/secretsBatch.bicep' = if (assignRole && enableKeyVault ) {
+  name: 'secrets-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
-    location: location
     keyVaultName: keyVault.outputs.name
-    storageAccountName: storageAccountName
-    storageResourceGroupName: storageResourceGroupName
-    newOrExistingStorageAccount: newOrExistingStorageAccount
-    storageAccountSecret: storageAccountSecret
-    storageSecretName: storageSecretName
+    secrets: [ { secretName: storageSecretName, secretValue: newOrExistingStorageAccount == 'new' ? storageAccount.outputs.blobStorageConnectionString : storageAccountSecret } ]
   }
 }
 
 output keyVaultName string = enableKeyVault ? keyVault.outputs.name : ''
+output blobStorageConnectionString string = newOrExistingStorageAccount == 'new' ? storageAccount.outputs.blobStorageConnectionString : ''
 output ipAddress string = enablePublicIP ? publicIp.outputs.ipAddress : ''

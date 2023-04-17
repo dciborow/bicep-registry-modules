@@ -170,6 +170,9 @@ param logAnalyticsWorkspaceName string = 'law-ddc-${uniqueString(resourceGroup()
 @description('The resource group corresponding to an existing logAnalyticsWorkspaceName')
 param existingLogAnalyticsWorkspaceResourceGroupName string = ''
 
+@description('Seperator to use for regional DNS URLs. By default, subdomains will be created for each region.')
+param locationSpecSeperator string = '.'
+
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'
 
@@ -266,10 +269,8 @@ var locationSpecs = [for (location, index) in allLocations: {
   location: location
   sourceLocation: sourceLocations[index]
   locationCertName: '${certificateName}-${location}'
-  fullLocationHostName: '${regionCodes[location]}.${fullHostname}'
-  fullSourceLocationHostName: '${sourceLocations[index]}.${fullHostname}'
-  keyVaultName: take('${regionCodes[location]}-${keyVaultName}', 24)
-  regionCode: regionCodes[location]
+  fullLocationHostName: '${location}${locationSpecSeperator}${fullHostname}'
+  fullSourceLocationHostName: '${sourceLocations[index]}${locationSpecSeperator}${fullHostname}'
 }]
 
 module allRegionalResources 'modules/resources.bicep' = [for (location, index) in allLocations: if (epicEULA) {
@@ -357,20 +358,15 @@ module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCo
   }
 }
 
-module cassandraKeys 'modules/keyvault/addCassandraSecrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
+module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
   name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
   ]
   params: {
-    location: location
     keyVaultName: take('${location}-${keyVaultName}', 24)
-    cosmosDBName: cosmosDBName
-    cosmosDBRG: cosmosDBRG
-    newOrExistingCosmosDB: newOrExistingCosmosDB
-    cassandraConnectionString: cassandraConnectionString
-    cosmosDBSecretName: 'ddc-db-connection-string'
-    locationString: cosmosDB.outputs.locationString
+    secretName: 'ddc-db-connection-string'
+    secretValue: newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : cassandraConnectionString
   }
 }]
 
