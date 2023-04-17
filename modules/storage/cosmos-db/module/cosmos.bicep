@@ -94,7 +94,8 @@ type _schemaType = 'FullFidelity' | 'WellDefined'
 
 @description('API specific properties. Currently, supported only for MongoDB API.')
 type _apiProperties = {
-  serverVersion: _serverVersion
+  @description('Describes the ServerVersion of an a MongoDB account.')
+  serverVersion: '3.2' | '3.6' | '4.0' | '4.2'
 }
 
 @description('Describes the ServerVersion of an a MongoDB account.')
