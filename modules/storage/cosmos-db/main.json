@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.16.2.56959",
-      "templateHash": "11367073346350573661"
+      "templateHash": "3304392998004631403"
     }
   },
   "parameters": {
@@ -291,7 +291,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.16.2.56959",
-              "templateHash": "4410539128391034453"
+              "templateHash": "12535015756671126934"
             }
           },
           "definitions": {
@@ -564,7 +564,16 @@
               "type": "object",
               "properties": {
                 "serverVersion": {
-                  "$ref": "#/definitions/_serverVersion"
+                  "type": "string",
+                  "allowedValues": [
+                    "3.2",
+                    "3.6",
+                    "4.0",
+                    "4.2"
+                  ],
+                  "metadata": {
+                    "description": "Describes the ServerVersion of an a MongoDB account."
+                  }
                 }
               },
               "metadata": {
