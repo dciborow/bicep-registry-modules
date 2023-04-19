@@ -39,6 +39,7 @@ do
         | sed -e s/\"validityInMonths\":\ 12/\"validityInMonths\":\ "${validity}"/g \
         | sed -e s/CN=CLIGetDefaultPolicy/CN="${certCommonName}"/g \
         | sed -e s/\"name\":\ \"Self\"/\"name\":\ \""${issuerName}"\"/g )
+        | sed -e s/\"reuseKey\":\ true/\"reuseKey\":\ "${reuseKey}"/g )
     fi
     az keyvault certificate create \
         --vault-name "$akvName" \
