@@ -264,6 +264,11 @@ var mainRestartValues = restartPods ? [ '${mainChartName}.podAnnotations.rollme=
 
 var mainValues = concat(mainEnvValues, mainScyllaValues, mainPersistenceValues, mainOtherValues, mainRestartValues)
 
+var helmStringArgs = [
+  '${mainChartName}.podLabels.azure\\.workload\\.identity/use=true'
+]
+var helmStringValues = '"${join(helmStringArgs, '","')}"'
+
 var ingressAksValues = [
   'ingressAks.enabled=true'
   'ingressAks.tlsEnabled=true'
@@ -284,6 +289,7 @@ var helmCharts = {
   helmName: helmName
   helmNamespace: helmNamespace
   helmValues: helmValuesString
+  helmStringValues: helmStringValues
   version: helmVersion
 }
 
