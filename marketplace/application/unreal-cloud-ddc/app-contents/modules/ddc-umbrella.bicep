@@ -264,8 +264,11 @@ var mainRestartValues = restartPods ? [ '${mainChartName}.podAnnotations.rollme=
 
 var mainValues = concat(mainEnvValues, mainScyllaValues, mainPersistenceValues, mainOtherValues, mainRestartValues)
 
+// The chart template (mistakenly?) uses podLabels on the worker if podLabels are specified on the main workload.
+// We only need workload identity on main, not on the worker.
 var helmStringArgs = [
   '${mainChartName}.podLabels.azure\\.workload\\.identity/use=true'
+  '${workerPrefix}.podLabels.azure\\.workload\\.identity/use=false'
 ]
 var helmStringValues = '"${join(helmStringArgs, '","')}"'
 
