@@ -360,13 +360,13 @@ module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCo
   }
 }
 
-module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
-  name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for (spec, index) in allLocations: if (assignRole && epicEULA) {
+  name: 'cassandra-keys-${spec.location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
   ]
   params: {
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: spec.keyVaultName
     secretName: 'ddc-db-connection-string'
     secretValue: newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : cassandraConnectionString
   }
