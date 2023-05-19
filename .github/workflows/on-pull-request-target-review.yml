@@ -10,7 +10,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
       - id: review
-        uses: microsoft/gpt-review@v0.8.0
+        uses: microsoft/gpt-review@v0.9.3
         with:
           GIT_COMMIT_HASH: ${{ github.event.pull_request.head.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
