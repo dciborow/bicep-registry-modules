@@ -173,6 +173,14 @@ param existingLogAnalyticsWorkspaceResourceGroupName string = ''
 @description('Seperator to use for regional DNS URLs. By default, subdomains will be created for each region.')
 param locationSpecSeperator string = '.'
 
+@description('Reference to the container registry repo with the cloud DDC helm chart')
+param helmChart string = 'oci://tchordestoragecontainerregistry.azurecr.io/helm/tc-horde-storage'
+
+@description('Reference to the container registry repo with the cloud DDC container image')
+param containerImageRepo string = 'tchordestoragecontainerregistry.azurecr.io/tcunrealhorde/storageapp'
+@description('The cloud DDC container image version to use')
+param containerImageVersion string = '0.39.2'
+
 var _artifactsLocationWithToken = _artifactsLocationSasToken != ''
 var nodeLabels = 'horde-storage'
 
@@ -383,7 +391,6 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     locationSpecs: locationSpecs
     resourceGroupName: resourceGroup().name
     publicIpName: publicIpName
-    keyVaultName: keyVaultName
     servicePrincipalClientID: servicePrincipalClientID
     workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: fullHostname
@@ -401,6 +408,9 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     isApp: isApp
     namespacesToReplicate: namespacesToReplicate
     agentPoolCount: agentPoolCount
+    helmChart: helmChart
+    containerImageRepo: containerImageRepo
+    containerImageVersion: containerImageVersion
   }
 }
 

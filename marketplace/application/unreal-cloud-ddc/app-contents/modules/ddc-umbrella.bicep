@@ -37,6 +37,14 @@ param useLocalPVProvisioner bool = true
 @description('Amount of local storage to claim if useLocalPVProvisioner is true')
 param localStorageSize string = '512Gi'
 
+@description('Reference to the container registry repo with the cloud DDC helm chart')
+param helmChart string
+
+@description('Reference to the container registry repo with the cloud DDC container image')
+param containerImageRepo string
+@description('The cloud DDC container image version to use')
+param containerImageVersion string
+
 resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: 'id-${aksName}-${location}'
 }
@@ -70,13 +78,9 @@ var locationMapping = {
   chinanorth3: 'China North 3'
 }
 
-var helmChart = 'oci://tchordestoragecontainerregistry.azurecr.io/helm/tc-horde-storage'
 var helmName = 'myhordetest'
 var helmNamespace = 'horde-tests'
 var siteName = 'ddc-${location}'
-
-var containerImageRepo = 'azuregamingdev.azurecr.io/unreal-cloud-ddc'
-var containerImageVersion = '0.2.0'
 
 var secretStore = {
   enabled: true

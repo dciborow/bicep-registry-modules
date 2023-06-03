@@ -8,7 +8,7 @@ pool:
 
 variables:
   - name: serviceConnectionName
-    value: Horde Pipeline RG Service Connection
+    value: Unreal Cloud DDC RG Connection
   - name: azureResourceGroupForACR
     value: TC-Unreal-Horde-Pipeline
   - name: acrName

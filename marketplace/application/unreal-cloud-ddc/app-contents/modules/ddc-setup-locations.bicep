@@ -4,7 +4,6 @@ param locationSpecs array
 
 param resourceGroupName string = resourceGroup().name
 param publicIpName string
-param keyVaultName string
 param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string
@@ -42,6 +41,14 @@ param namespacesToReplicate array = []
 @description('This is used to scale up the number of pods (replicas) for the main deployment, so that there is one replica per node on the agent') 
 param agentPoolCount int
 
+@description('Reference to the container registry repo with the cloud DDC helm chart')
+param helmChart string
+
+@description('Reference to the container registry repo with the cloud DDC container image')
+param containerImageRepo string
+@description('The cloud DDC container image version to use')
+param containerImageVersion string
+
 module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
   name: 'helmInstall-ddc-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
   params: {
@@ -65,6 +72,9 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
     helmVersion: helmVersion
     mainReplicaCount: agentPoolCount
     workerReplicaCount: 1
+    helmChart: helmChart
+    containerImageRepo: containerImageRepo
+    containerImageVersion: containerImageVersion
   }
 }]
 
