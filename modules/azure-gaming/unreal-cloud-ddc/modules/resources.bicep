@@ -1,6 +1,9 @@
 @description('Deployment Location')
 param location string
 
+@description('Shorter version of location')
+param regionCode string
+
 @description('Toggle to enable or disable zone redudance.')
 param isZoneRedundant bool = true
 
@@ -131,6 +134,7 @@ module publicIp 'network/publicIpAddress.bicep' = if (enablePublicIP) {
   name: 'publicIp-${uniqueString(location, resourceGroup().id, deployment().name)}'
   params: {
     location: location
+    regionCode: regionCode
     name: publicIpName
     newOrExisting: newOrExisting[newOrExistingPublicIp]
     useDnsZone: useDnsZone

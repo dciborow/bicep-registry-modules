@@ -1,6 +1,9 @@
 @description('Deployment Location')
 param location string
 
+@description('Shorter version of location')
+param regionCode string
+
 @description('Resource Group Name')
 param resourceGroupName string = resourceGroup().name
 
@@ -52,7 +55,7 @@ module dnsRecord 'dnsZoneARecord.bicep' = if (useDnsZone) {
   scope: resourceGroup(dnsZoneResourceGroupName)
   params: {
     dnsZoneName: dnsZoneName
-    recordName: '${location}.${dnsRecordNameSuffix}'
+    recordName: '${regionCode}.${dnsRecordNameSuffix}'
     ipAddress: ipString
   }
 }

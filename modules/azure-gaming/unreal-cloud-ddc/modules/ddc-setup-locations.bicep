@@ -4,7 +4,6 @@ param locationSpecs array
 
 param resourceGroupName string = resourceGroup().name
 param publicIpName string
-param keyVaultName string
 param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string
@@ -32,17 +31,25 @@ param CleanOldRefRecords bool = true
 param CleanOldBlobs bool = true
 
 param helmVersion string = 'latest'
+
 param helmChart string
 param helmName string
 param helmNamespace string
-param siteName string
-param imageVersion string
+param siteNamePrefix string
 
-@description('Set to false to deploy from as an ARM template for debugging') 
+@description('Reference to the container registry repo with the cloud DDC container image')
+param containerImageRepo string
+@description('The cloud DDC container image version to use')
+param containerImageVersion string
+
+@description('Set to false to deploy from as an ARM template for debugging')
 param isApp bool = true
 
-@description('Array of ddc namespaces to replicate if there are secondary regions') 
+@description('Array of ddc namespaces to replicate if there are secondary regions')
 param namespacesToReplicate array = []
+
+@description('This is used to scale up the number of pods (replicas) for the main deployment, so that there is one replica per node on the agent')
+param agentPoolCount int
 
 module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
   name: 'helmInstall-ddc-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
@@ -50,7 +57,7 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
     aksName: aksName
     location: spec.location
     resourceGroupName: resourceGroupName
-    keyVaultName: take('${spec.location}-${keyVaultName}', 24)
+    keyVaultName: spec.keyVaultName
     servicePrincipalClientID: servicePrincipalClientID
     workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: hostname
@@ -65,11 +72,14 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
     CleanOldBlobs: CleanOldBlobs
     namespacesToReplicate: namespacesToReplicate
     helmVersion: helmVersion
+    mainReplicaCount: agentPoolCount
+    workerReplicaCount: 1
     helmChart: helmChart
     helmName: helmName
     helmNamespace: helmNamespace
-    siteName: siteName
-    imageVersion: imageVersion
+    siteNamePrefix: siteNamePrefix
+    containerImageRepo: containerImageRepo
+    containerImageVersion: containerImageVersion
   }
 }]
 
@@ -77,7 +87,7 @@ module configAKS 'ContainerService/configure-aks.bicep' = [for (spec, index) in 
   name: 'configAKS-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
   params: {
     location: spec.location
-    aksName: '${aksName}-${take(spec.location, 8)}'
+    aksName: '${aksName}-${spec.regionCode}'
     additionalCharts: [ ddcSetup[index].outputs.helmChart ]
     staticIP: '${publicIpName}-${spec.location}'
     azureTenantID: azureTenantID

@@ -63,7 +63,7 @@ param storageResourceGroupName string = resourceGroup().name
 param newOrExistingKeyVault string = 'new'
 
 @description('Name of Key Vault resource')
-param keyVaultName string = take('ddcKeyVault${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
+param keyVaultName string = take('kv-${uniqueString(resourceGroup().id, subscription().subscriptionId, location)}', 24)
 
 @description('Create new or use existing Public IP resource')
 @allowed([ 'new', 'existing' ])
@@ -129,10 +129,13 @@ param cassandraConnectionString string = ''
 @description('Connection Strings of User Provided Storage Accounts')
 param storageConnectionStrings array = []
 
-@description('Version of the image to deploy')
-param imageVersion string = '0.38.1'
+@description('Reference to the container registry repo with the cloud DDC container image')
+param containerImageRepo string
 
-@description('Name of the Helm chart to deploy')
+@description('The cloud DDC container image version to use')
+param containerImageVersion string = '0.39.2'
+
+@description('Reference to the container registry repo with the cloud DDC helm chart')
 param helmChart string
 
 @description('Helm Chart Version')
@@ -144,8 +147,8 @@ param helmName string = 'myhordetest'
 @description('Namespace of the Helm release')
 param helmNamespace string = 'horde-tests'
 
-@description('Name of the site')
-param siteName string = 'ddc-${location}'
+@description('This is prefixed to each location when naming the site for the location')
+param siteNamePrefix string = 'ddc-'
 
 @description('Prefix of Managed Identity used during deployment')
 param managedIdentityPrefix string = 'id-ddc-storage-'
@@ -159,16 +162,16 @@ param existingManagedIdentitySubId string = subscription().subscriptionId
 @description('For an existing Managed Identity, the Resource Group it is located in')
 param existingManagedIdentityResourceGroupName string = resourceGroup().name
 
-@description('Set to false to deploy from as an ARM template for debugging') 
+@description('Set to false to deploy from as an ARM template for debugging')
 param isApp bool = true
 
-@description('Set tags to apply to Key Vault resources') 
+@description('Set tags to apply to Key Vault resources')
 param keyVaultTags object = {}
 
-@description('Array of ddc namespaces to replicate if there are secondary regions') 
+@description('Array of ddc namespaces to replicate if there are secondary regions')
 param namespacesToReplicate array = []
 
-@description('If new or existing, this will enable container insights on the AKS cluster. If new, will create one log analytics workspace per location') 
+@description('If new or existing, this will enable container insights on the AKS cluster. If new, will create one log analytics workspace per location')
 @allowed(['new', 'existing', 'none'])
 param newOrExistingWorkspaceForContainerInsights string = 'none'
 
@@ -178,6 +181,9 @@ param logAnalyticsWorkspaceName string = 'law-ddc-${uniqueString(resourceGroup()
 @description('The resource group corresponding to an existing logAnalyticsWorkspaceName')
 param existingLogAnalyticsWorkspaceResourceGroupName string = ''
 
+@description('Seperator to use for regional DNS URLs. By default, subdomains will be created for each region.')
+param locationSpecSeperator string = '.'
+
 var nodeLabels = 'horde-storage'
 
 var useDnsZone = (dnsZoneName != '') && (dnsZoneResourceGroupName != '')
@@ -186,6 +192,35 @@ var fullHostname =  useDnsZone ? '${shortHostname}.${dnsZoneName}' : hostname
 var newOrExisting = {
   new: 'new'
   existing: 'existing'
+}
+
+// When we need a short string for the region.
+// Keys correspond to the "locationMapping" object in ddc-umbrella.bicep
+var regionCodes = {
+  eastus: 'eus'
+  eastus2: 'eus2'
+  westus: 'wus'
+  westus2: 'wus2'
+  westus3: 'wus3'
+  centralus: 'cus'
+  northcentralus: 'ncus'
+  southcentralus: 'scus'
+  northeurope: 'neu'
+  westeurope: 'weu'
+  southeastasia: 'seas'
+  eastasia: 'eas'
+  japaneast: 'jpe'
+  japanwest: 'jpw'
+  australiaeast: 'aue'
+  australiasoutheast: 'ause'
+  brazilsouth: 'brs'
+  canadacentral: 'cnc'
+  canadaeast: 'cne'
+  centralindia: 'cin'
+  southafricanorth: 'san'
+  uaenorth: 'uaen'
+  koreacentral: 'krc'
+  chinanorth3: 'cnn3'
 }
 
 //  Resources
@@ -244,8 +279,10 @@ var locationSpecs = [for (location, index) in allLocations: {
   location: location
   sourceLocation: sourceLocations[index]
   locationCertName: '${certificateName}-${location}'
-  fullLocationHostName: '${location}.${fullHostname}'
-  fullSourceLocationHostName: '${sourceLocations[index]}.${fullHostname}'
+  fullLocationHostName: '${regionCodes[location]}${locationSpecSeperator}${fullHostname}'
+  fullSourceLocationHostName: '${sourceLocations[index]}${locationSpecSeperator}${fullHostname}'
+  keyVaultName: take('${regionCodes[location]}-${keyVaultName}', 24)
+  regionCode: regionCodes[location]
 }]
 
 module allRegionalResources 'modules/resources.bicep' = [for (location, index) in allLocations: if (epicEULA) {
@@ -255,23 +292,24 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
   ]
   params: {
     location: location
+    regionCode: regionCodes[location]
     newOrExistingKubernetes: newOrExistingKubernetes
     newOrExistingKeyVault: newOrExistingKeyVault
     newOrExistingPublicIp: newOrExistingPublicIp
     newOrExistingStorageAccount: newOrExistingStorageAccount
     kubernetesParams: {
-      name: '${aksName}-${take(location, 8)}'
+      name: '${aksName}-${locationSpecs[index].regionCode}'
       agentPoolCount: agentPoolCount
       agentPoolName: agentPoolName
       vmSize: vmSize
       clusterUserName: 'id-${aksName}-${location}'
       nodeLabels: nodeLabels
     }
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: locationSpecs[index].keyVaultName
     keyVaultTags: keyVaultTags
     publicIpName: '${publicIpName}-${location}'
     trafficManagerNameForEndpoints: trafficManagerNameForEndpoints
-    storageAccountName: '${take(location, 8)}${storageAccountName}'
+    storageAccountName: '${locationSpecs[index].regionCode}${storageAccountName}'
     storageResourceGroupName: storageResourceGroupName
     storageSecretName: 'ddc-storage-connection-string'
     assignRole: assignRole
@@ -286,13 +324,13 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     }
 }]
 
-module kvCert 'br/public:deployment-scripts/create-kv-certificate:3.0.1' = [for spec in locationSpecs: if (assignRole && enableCert) {
+module kvCert 'modules/create-kv-certificate/main.bicep' = [for spec in locationSpecs: if (assignRole && enableCert) {
   name: 'akvCert-${spec.location}'
   dependsOn: [
     allRegionalResources
   ]
   params: {
-    akvName: take('${spec.location}-${keyVaultName}', 24)
+    akvName: spec.keyVaultName
     location: spec.location
     certificateNames: [certificateName, spec.locationCertName]
     certificateCommonNames: [fullHostname, spec.fullLocationHostName]
@@ -302,16 +340,17 @@ module kvCert 'br/public:deployment-scripts/create-kv-certificate:3.0.1' = [for 
     managedIdentityName: '${managedIdentityPrefix}${spec.location}'
     rbacRolesNeededOnKV: '00482a5a-887f-4fb3-b363-3b7fe8e74483' // Key Vault Admin
     isCrossTenant: isApp
+    reuseKey: false
   }
 }]
 
-module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
+module buildApp 'modules/keyvault/vaults/secrets.bicep' = [for (location, index) in allLocations: if (assignRole && epicEULA && workerServicePrincipalSecret != '') {
   name: 'build-app-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     allRegionalResources
   ]
   params: {
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: locationSpecs[index].keyVaultName
     secrets: [{ secretName: 'build-app-secret', secretValue: workerServicePrincipalSecret }]
   }
 }]
@@ -330,13 +369,13 @@ module cosmosDB 'modules/documentDB/databaseAccounts.bicep' = if(newOrExistingCo
   }
 }
 
-module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for location in union([ location ], secondaryLocations): if (assignRole && epicEULA) {
-  name: 'cassandra-keys-${location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
+module cassandraKeys 'modules/keyvault/vaults/secrets.bicep' = [for spec in locationSpecs: if (assignRole && epicEULA) {
+  name: 'cassandra-keys-${spec.location}-${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
   dependsOn: [
     cosmosDB
   ]
   params: {
-    keyVaultName: take('${location}-${keyVaultName}', 24)
+    keyVaultName: spec.keyVaultName
     secrets: [{ secretName: 'ddc-db-connection-string', secretValue: newOrExistingCosmosDB == 'new' ? cosmosDB.outputs.cassandraConnectionString : cassandraConnectionString }]
   }
 }]
@@ -352,7 +391,6 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     locationSpecs: locationSpecs
     resourceGroupName: resourceGroup().name
     publicIpName: publicIpName
-    keyVaultName: keyVaultName
     servicePrincipalClientID: servicePrincipalClientID
     workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: fullHostname
@@ -366,14 +404,16 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (assignRole && ep
     helmChart: helmChart
     helmName: helmName
     helmNamespace: helmNamespace
-    siteName: siteName
-    imageVersion: imageVersion
+    siteNamePrefix: siteNamePrefix
+    containerImageRepo: containerImageRepo
+    containerImageVersion: containerImageVersion
     useExistingManagedIdentity: enableCert  // If created, Reuse ID from Cert
     managedIdentityPrefix: managedIdentityPrefix
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
     isApp: isApp
     namespacesToReplicate: namespacesToReplicate
+    agentPoolCount: agentPoolCount
   }
 }
 

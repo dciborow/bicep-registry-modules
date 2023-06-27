@@ -15,8 +15,14 @@ param monitorConfig object = {
   port: 443
   path: '/'
   expectedStatusCodeRanges: [
-    { min: 200, max: 202 }
-    { min: 301, max: 302 }
+    {
+      min: 200
+      max: 202
+    }
+    {
+      min: 301
+      max: 302
+    }
   ]
 }
 
@@ -35,8 +41,14 @@ resource trafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08
       port: contains(monitorConfig, 'port') ? monitorConfig.port : 443
       path: contains(monitorConfig, 'path') ? monitorConfig.path : '/'
       expectedStatusCodeRanges: contains(monitorConfig, 'expectedStatusCodeRanges') ? monitorConfig.expectedStatusCodeRanges : [
-        { min: 200, max: 202 }
-        { min: 301, max: 302 }
+        {
+          min: 200
+          max: 202
+        }
+        {
+          min: 301
+          max: 302
+        }
       ]
     }
   }
@@ -44,6 +56,7 @@ resource trafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08
 
 resource existingTrafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08-01' existing = { name: name }
 
-output id string = existingTrafficManagerProfile.id
-output name string = existingTrafficManagerProfile.name
-output fqdn string = existingTrafficManagerProfile.properties.dnsConfig.fqdn
+var relativeDnsName = newOrExisting == 'new' ? trafficManagerProfile.properties.dnsConfig.relativeName : existingTrafficManagerProfile.properties.dnsConfig.relativeName
+
+output name string = newOrExisting == 'new' ? trafficManagerProfile.name : existingTrafficManagerProfile.name
+output fqdn string = '${relativeDnsName}.trafficmanager.net'
