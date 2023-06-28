@@ -103,9 +103,9 @@ module clusterModule 'ContainerService/managedClusters.bicep' = if (enableKubern
     workspaceResourceId: logAnalyticsWorkspaceResourceId
   }
 }
-var rbacPolicies = [
-  enableKubernetes ? { objectId: clusterModule.outputs.clusterUserObjectId } : {}
-]
+var rbacPolicies = enableKubernetes ? [
+  { objectId: clusterModule.outputs.clusterUserObjectId }
+] : []
 
 module keyVault 'keyvault/vaults.bicep' = if (enableKeyVault) {
   name: 'keyVault-${uniqueString(location, resourceGroup().id, deployment().name)}'

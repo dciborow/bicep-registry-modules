@@ -56,7 +56,5 @@ resource trafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08
 
 resource existingTrafficManagerProfile 'Microsoft.Network/trafficmanagerprofiles@2018-08-01' existing = { name: name }
 
-var relativeDnsName = newOrExisting == 'new' ? trafficManagerProfile.properties.dnsConfig.relativeName : existingTrafficManagerProfile.properties.dnsConfig.relativeName
-
 output name string = newOrExisting == 'new' ? trafficManagerProfile.name : existingTrafficManagerProfile.name
-output fqdn string = '${relativeDnsName}.trafficmanager.net'
+output fqdn string = newOrExisting == 'new' ? trafficManagerProfile.properties.dnsConfig.fqdn : existingTrafficManagerProfile.properties.dnsConfig.fqdn
