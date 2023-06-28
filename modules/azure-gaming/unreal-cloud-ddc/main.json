@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.17.1.54307",
-      "templateHash": "9256001094655897958"
+      "version": "0.18.4.5664",
+      "templateHash": "2148482391601046972"
     }
   },
   "parameters": {
@@ -27,10 +27,11 @@
       "defaultValue": "new",
       "allowedValues": [
         "new",
-        "existing"
+        "existing",
+        "none"
       ],
       "metadata": {
-        "description": "New or Existing Kubernentes Resources"
+        "description": "New or Existing Kubernentes Resources, none to skip."
       }
     },
     "aksName": {
@@ -162,7 +163,7 @@
     },
     "keyVaultName": {
       "type": "string",
-      "defaultValue": "[take(format('ddcKeyVault{0}', uniqueString(resourceGroup().id, subscription().subscriptionId, parameters('location'))), 24)]",
+      "defaultValue": "[take(format('kv-{0}', uniqueString(resourceGroup().id, subscription().subscriptionId, parameters('location'))), 24)]",
       "metadata": {
         "description": "Name of Key Vault resource"
       }
@@ -319,17 +320,23 @@
         "description": "Connection Strings of User Provided Storage Accounts"
       }
     },
-    "imageVersion": {
+    "containerImageRepo": {
       "type": "string",
-      "defaultValue": "0.38.1",
       "metadata": {
-        "description": "Version of the image to deploy"
+        "description": "Reference to the container registry repo with the cloud DDC container image"
+      }
+    },
+    "containerImageVersion": {
+      "type": "string",
+      "defaultValue": "0.39.2",
+      "metadata": {
+        "description": "The cloud DDC container image version to use"
       }
     },
     "helmChart": {
       "type": "string",
       "metadata": {
-        "description": "Name of the Helm chart to deploy"
+        "description": "Reference to the container registry repo with the cloud DDC helm chart"
       }
     },
     "helmVersion": {
@@ -353,11 +360,11 @@
         "description": "Namespace of the Helm release"
       }
     },
-    "siteName": {
+    "siteNamePrefix": {
       "type": "string",
-      "defaultValue": "[format('ddc-{0}', parameters('location'))]",
+      "defaultValue": "ddc-",
       "metadata": {
-        "description": "Name of the site"
+        "description": "This is prefixed to each location when naming the site for the location"
       }
     },
     "managedIdentityPrefix": {
@@ -434,6 +441,13 @@
       "metadata": {
         "description": "The resource group corresponding to an existing logAnalyticsWorkspaceName"
       }
+    },
+    "locationSpecSeperator": {
+      "type": "string",
+      "defaultValue": ".",
+      "metadata": {
+        "description": "Seperator to use for regional DNS URLs. By default, subdomains will be created for each region."
+      }
     }
   },
   "variables": {
@@ -450,8 +464,10 @@
           "location": "[variables('allLocations')[copyIndex('locationSpecs')]]",
           "sourceLocation": "[variables('sourceLocations')[copyIndex('locationSpecs')]]",
           "locationCertName": "[format('{0}-{1}', parameters('certificateName'), variables('allLocations')[copyIndex('locationSpecs')])]",
-          "fullLocationHostName": "[format('{0}.{1}', variables('allLocations')[copyIndex('locationSpecs')], variables('fullHostname'))]",
-          "fullSourceLocationHostName": "[format('{0}.{1}', variables('sourceLocations')[copyIndex('locationSpecs')], variables('fullHostname'))]"
+          "fullLocationHostName": "[format('{0}{1}{2}', variables('regionCodes')[variables('allLocations')[copyIndex('locationSpecs')]], parameters('locationSpecSeperator'), variables('fullHostname'))]",
+          "fullSourceLocationHostName": "[format('{0}{1}{2}', variables('sourceLocations')[copyIndex('locationSpecs')], parameters('locationSpecSeperator'), variables('fullHostname'))]",
+          "keyVaultName": "[take(format('{0}-{1}', variables('regionCodes')[variables('allLocations')[copyIndex('locationSpecs')]], parameters('keyVaultName')), 24)]",
+          "regionCode": "[variables('regionCodes')[variables('allLocations')[copyIndex('locationSpecs')]]]"
         }
       }
     ],
@@ -462,8 +478,36 @@
       "new": "new",
       "existing": "existing"
     },
-    "enableTrafficManager": "[not(equals(parameters('newOrExistingTrafficManager'), 'none'))]",
-    "enableContainerInsights": "[not(equals(parameters('newOrExistingWorkspaceForContainerInsights'), 'none'))]",
+    "regionCodes": {
+      "eastus": "eus",
+      "eastus2": "eus2",
+      "westus": "wus",
+      "westus2": "wus2",
+      "westus3": "wus3",
+      "centralus": "cus",
+      "northcentralus": "ncus",
+      "southcentralus": "scus",
+      "northeurope": "neu",
+      "westeurope": "weu",
+      "southeastasia": "seas",
+      "eastasia": "eas",
+      "japaneast": "jpe",
+      "japanwest": "jpw",
+      "australiaeast": "aue",
+      "australiasoutheast": "ause",
+      "brazilsouth": "brs",
+      "canadacentral": "cnc",
+      "canadaeast": "cne",
+      "centralindia": "cin",
+      "southafricanorth": "san",
+      "uaenorth": "uaen",
+      "koreacentral": "krc",
+      "chinanorth3": "cnn3"
+    },
+    "enableKubernetes": "[not(equals(parameters('newOrExistingKubernetes'), 'none'))]",
+    "newOrExistingPublicIpEffective": "[if(variables('enableKubernetes'), parameters('newOrExistingPublicIp'), 'none')]",
+    "enableTrafficManager": "[and(variables('enableKubernetes'), not(equals(parameters('newOrExistingTrafficManager'), 'none')))]",
+    "enableContainerInsights": "[and(not(equals(parameters('newOrExistingWorkspaceForContainerInsights'), 'none')), variables('enableKubernetes'))]",
     "allLocations": "[concat(createArray(parameters('location')), parameters('secondaryLocations'))]",
     "lastLocationIndex": "[sub(length(variables('allLocations')), 1)]"
   },
@@ -508,8 +552,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "202431137913857937"
+              "version": "0.18.4.5664",
+              "templateHash": "4831199358207601070"
             }
           },
           "parameters": {
@@ -578,17 +622,13 @@
             }
           ],
           "outputs": {
-            "id": {
-              "type": "string",
-              "value": "[resourceId('Microsoft.Network/trafficmanagerprofiles', parameters('name'))]"
-            },
             "name": {
               "type": "string",
-              "value": "[parameters('name')]"
+              "value": "[if(equals(parameters('newOrExisting'), 'new'), parameters('name'), parameters('name'))]"
             },
             "fqdn": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.Network/trafficmanagerprofiles', parameters('name')), '2018-08-01').dnsConfig.fqdn]"
+              "value": "[if(equals(parameters('newOrExisting'), 'new'), reference(resourceId('Microsoft.Network/trafficmanagerprofiles', parameters('name')), '2018-08-01').dnsConfig.fqdn, reference(resourceId('Microsoft.Network/trafficmanagerprofiles', parameters('name')), '2018-08-01').dnsConfig.fqdn)]"
             }
           }
         }
@@ -624,8 +664,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "1614201235391929822"
+              "version": "0.18.4.5664",
+              "templateHash": "9223513811964393376"
             }
           },
           "parameters": {
@@ -739,6 +779,9 @@
           "location": {
             "value": "[variables('allLocations')[copyIndex()]]"
           },
+          "regionCode": {
+            "value": "[variables('regionCodes')[variables('allLocations')[copyIndex()]]]"
+          },
           "newOrExistingKubernetes": {
             "value": "[parameters('newOrExistingKubernetes')]"
           },
@@ -746,14 +789,14 @@
             "value": "[parameters('newOrExistingKeyVault')]"
           },
           "newOrExistingPublicIp": {
-            "value": "[parameters('newOrExistingPublicIp')]"
+            "value": "[variables('newOrExistingPublicIpEffective')]"
           },
           "newOrExistingStorageAccount": {
             "value": "[parameters('newOrExistingStorageAccount')]"
           },
           "kubernetesParams": {
             "value": {
-              "name": "[format('{0}-{1}', parameters('aksName'), take(variables('allLocations')[copyIndex()], 8))]",
+              "name": "[format('{0}-{1}', parameters('aksName'), variables('locationSpecs')[copyIndex()].regionCode)]",
               "agentPoolCount": "[parameters('agentPoolCount')]",
               "agentPoolName": "[parameters('agentPoolName')]",
               "vmSize": "[parameters('vmSize')]",
@@ -762,7 +805,7 @@
             }
           },
           "keyVaultName": {
-            "value": "[take(format('{0}-{1}', variables('allLocations')[copyIndex()], parameters('keyVaultName')), 24)]"
+            "value": "[variables('locationSpecs')[copyIndex()].keyVaultName]"
           },
           "keyVaultTags": {
             "value": "[parameters('keyVaultTags')]"
@@ -772,7 +815,7 @@
           },
           "trafficManagerNameForEndpoints": "[if(variables('enableTrafficManager'), createObject('value', reference(resourceId('Microsoft.Resources/deployments', format('trafficManager-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))), '2022-09-01').outputs.name.value), createObject('value', ''))]",
           "storageAccountName": {
-            "value": "[format('{0}{1}', take(variables('allLocations')[copyIndex()], 8), parameters('storageAccountName'))]"
+            "value": "[format('{0}{1}', variables('locationSpecs')[copyIndex()].regionCode, parameters('storageAccountName'))]"
           },
           "storageResourceGroupName": {
             "value": "[parameters('storageResourceGroupName')]"
@@ -810,8 +853,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "12127209814794616693"
+              "version": "0.18.4.5664",
+              "templateHash": "6860732117347575652"
             }
           },
           "parameters": {
@@ -819,6 +862,12 @@
               "type": "string",
               "metadata": {
                 "description": "Deployment Location"
+              }
+            },
+            "regionCode": {
+              "type": "string",
+              "metadata": {
+                "description": "Shorter version of location"
               }
             },
             "isZoneRedundant": {
@@ -1024,8 +1073,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "4479417156640631213"
+                      "version": "0.18.4.5664",
+                      "templateHash": "7757450176418311993"
                     }
                   },
                   "parameters": {
@@ -1242,11 +1291,7 @@
                   "tags": {
                     "value": "[parameters('keyVaultTags')]"
                   },
-                  "rbacPolicies": {
-                    "value": [
-                      "[if(variables('enableKubernetes'), createObject('objectId', reference(resourceId('Microsoft.Resources/deployments', format('create_cluster-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))), '2022-09-01').outputs.clusterUserObjectId.value), createObject())]"
-                    ]
-                  },
+                  "rbacPolicies": "[if(variables('enableKubernetes'), createObject('value', createArray(createObject('objectId', reference(resourceId('Microsoft.Resources/deployments', format('create_cluster-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))), '2022-09-01').outputs.clusterUserObjectId.value))), createObject('value', createArray()))]",
                   "assignRole": {
                     "value": "[parameters('assignRole')]"
                   }
@@ -1257,8 +1302,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "18249196113362453683"
+                      "version": "0.18.4.5664",
+                      "templateHash": "7162356298263272921"
                     }
                   },
                   "parameters": {
@@ -1424,8 +1469,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "18031134609435998803"
+                      "version": "0.18.4.5664",
+                      "templateHash": "16925931985328871018"
                     }
                   },
                   "parameters": {
@@ -1553,6 +1598,9 @@
                   "location": {
                     "value": "[parameters('location')]"
                   },
+                  "regionCode": {
+                    "value": "[parameters('regionCode')]"
+                  },
                   "name": {
                     "value": "[parameters('publicIpName')]"
                   },
@@ -1578,8 +1626,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "17503428422705423640"
+                      "version": "0.18.4.5664",
+                      "templateHash": "12655426725085502078"
                     }
                   },
                   "parameters": {
@@ -1587,6 +1635,12 @@
                       "type": "string",
                       "metadata": {
                         "description": "Deployment Location"
+                      }
+                    },
+                    "regionCode": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Shorter version of location"
                       }
                     },
                     "resourceGroupName": {
@@ -1680,7 +1734,7 @@
                             "value": "[parameters('dnsZoneName')]"
                           },
                           "recordName": {
-                            "value": "[format('{0}.{1}', parameters('location'), parameters('dnsRecordNameSuffix'))]"
+                            "value": "[format('{0}.{1}', parameters('regionCode'), parameters('dnsRecordNameSuffix'))]"
                           },
                           "ipAddress": "[if(equals(parameters('newOrExisting'), 'new'), createObject('value', reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress), createObject('value', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupName')), 'Microsoft.Network/publicIPAddresses', parameters('name')), '2021-03-01').ipAddress))]"
                         },
@@ -1690,8 +1744,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.17.1.54307",
-                              "templateHash": "6933415234523780727"
+                              "version": "0.18.4.5664",
+                              "templateHash": "3774318775422758943"
                             }
                           },
                           "parameters": {
@@ -1779,8 +1833,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "15457691896165794204"
+                      "version": "0.18.4.5664",
+                      "templateHash": "12844074321570951159"
                     }
                   },
                   "parameters": {
@@ -1850,8 +1904,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "14921151177649558405"
+                      "version": "0.18.4.5664",
+                      "templateHash": "6164084509021418989"
                     }
                   },
                   "parameters": {
@@ -1916,7 +1970,7 @@
         "name": "kvCert",
         "count": "[length(variables('locationSpecs'))]"
       },
-      "condition": "[and(parameters('assignRole'), parameters('enableCert'))]",
+      "condition": "[and(and(parameters('assignRole'), parameters('enableCert')), variables('enableKubernetes'))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "[format('akvCert-{0}', variables('locationSpecs')[copyIndex()].location)]",
@@ -1927,7 +1981,7 @@
         "mode": "Incremental",
         "parameters": {
           "akvName": {
-            "value": "[take(format('{0}-{1}', variables('locationSpecs')[copyIndex()].location, parameters('keyVaultName')), 24)]"
+            "value": "[variables('locationSpecs')[copyIndex()].keyVaultName]"
           },
           "location": {
             "value": "[variables('locationSpecs')[copyIndex()].location]"
@@ -1961,6 +2015,9 @@
           },
           "isCrossTenant": {
             "value": "[parameters('isApp')]"
+          },
+          "reuseKey": {
+            "value": false
           }
         },
         "template": {
@@ -1969,8 +2026,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.15.31.15270",
-              "templateHash": "12854429452572357298"
+              "version": "0.18.4.5664",
+              "templateHash": "9471314971237164219"
             }
           },
           "parameters": {
@@ -2101,10 +2158,17 @@
               "metadata": {
                 "description": "Override this parameter if using this in cross tenant scenarios"
               }
+            },
+            "reuseKey": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "The default policy might cause errors about CSR being used before, so set this to false if that happens"
+              }
             }
           },
           "variables": {
-            "$fxv#0": "#!/bin/bash\nset -e\n\necho \"Waiting on Identity RBAC replication ($initialDelay)\"\nsleep $initialDelay\n\n#Retry loop to catch errors (usually RBAC delays)\nretryLoopCount=0\nuntil [ $retryLoopCount -ge $retryMax ]\ndo\n    echo \"Creating AKV Cert $certName with CN $certCommonName (attempt $retryLoopCount)...\"\n\n    if [ -z \"$issuerName\" ] || [ -z \"$issuerProvider\" ]; then\n        policy=$(az keyvault certificate get-default-policy \\\n            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g \\\n            | sed -e s/\\\"name\\\":\\ \\\"Self\\\"/\\\"name\\\":\\ \\\"${issuerName}\\\"/g )\n    else\n      if [ \"$issuerProvider\" == \"DigiCert\" ] || [ \"$issuerProvider\" == \"GlobalCert\"]; then\n        az keyvault certificate issuer create \\\n          --vault-name $akvName \\\n          --issuer-name $issuerName \\\n          --provider-name $issuerProvider \\\n          --account-id $accountId \\\n          --password $issuerPassword \\\n          --organizatiion-id $organizationId\n      else\n        az keyvault certificate issuer create \\\n          --vault-name $akvName \\\n          --issuer-name $issuerName \\\n          --provider-name $issuerProvider\n      fi\n      policy=$(az keyvault certificate get-default-policy \\\n        | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g )\n    fi\n    az keyvault certificate create \\\n        --vault-name $akvName \\\n        -n $certName \\\n        -p \"$policy\" \\\n        && break\n\n    sleep $retrySleep\n    retryLoopCount=$((retryLoopCount+1))\ndone\n\necho \"Getting Certificate $certName\";\nretryLoopCount=0\ncreatedCert=$(az keyvault certificate show -n $certName --vault-name $akvName -o json)\nwhile [ -z \"$(echo $createdCert | jq -r '.x509ThumbprintHex')\" ] && [ $retryLoopCount -lt $retryMax ]\ndo\n    echo \"Waiting for cert creation (attempt $retryLoopCount)...\"\n    sleep $retrySleep\n    createdCert=$(az keyvault certificate show -n $certName --vault-name $akvName -o json)\n    retryLoopCount=$((retryLoopCount+1))\ndone\n\nunversionedSecretId=$(echo $createdCert | jq -r \".sid\" | cut -d'/' -f-5) # remove the version from the url;\njsonOutputString=$(echo $createdCert | jq --arg usid $unversionedSecretId '{name: .name ,certSecretId: {versioned: .sid, unversioned: $usid }, thumbprint: .x509Thumbprint, thumbprintHex: .x509ThumbprintHex}')\necho $jsonOutputString > $AZ_SCRIPTS_OUTPUT_PATH\n",
+            "$fxv#0": "#!/bin/bash\nset -e\n\necho \"Waiting on Identity RBAC replication ($initialDelay)\"\nsleep $initialDelay\n\n#Retry loop to catch errors (usually RBAC delays)\nretryLoopCount=0\nuntil [ $retryLoopCount -ge $retryMax ]\ndo\n    echo \"Creating AKV Cert $certName with CN $certCommonName (attempt $retryLoopCount)...\"\n\n    if [ -z \"$issuerName\" ] || [ -z \"$issuerProvider\" ]; then\n        policy=$(az keyvault certificate get-default-policy \\\n            | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g )\n    else\n      if [ \"$issuerProvider\" == \"DigiCert\" ] || [ \"$issuerProvider\" == \"GlobalCert\"]; then\n        az keyvault certificate issuer create \\\n          --vault-name $akvName \\\n          --issuer-name $issuerName \\\n          --provider-name $issuerProvider \\\n          --account-id $accountId \\\n          --password $issuerPassword \\\n          --organizatiion-id $organizationId\n      else\n        az keyvault certificate issuer create \\\n          --vault-name $akvName \\\n          --issuer-name $issuerName \\\n          --provider-name $issuerProvider\n      fi\n      policy=$(az keyvault certificate get-default-policy \\\n        | sed -e s/CN=CLIGetDefaultPolicy/CN=${certCommonName}/g \\\n        | sed -e s/\\\"name\\\":\\ \\\"Self\\\"/\\\"name\\\":\\ \\\"${issuerName}\\\"/g \\\n        | sed -e s/\\\"reuseKey\\\":\\ true/\\\"reuseKey\\\":\\ ${reuseKey}/g )\n    fi\n    az keyvault certificate create \\\n        --vault-name $akvName \\\n        -n $certName \\\n        -p \"$policy\" \\\n        && break\n\n    sleep $retrySleep\n    retryLoopCount=$((retryLoopCount+1))\ndone\n\necho \"Getting Certificate $certName\";\nretryLoopCount=0\ncreatedCert=$(az keyvault certificate show -n $certName --vault-name $akvName -o json)\nwhile [ -z \"$(echo $createdCert | jq -r '.x509ThumbprintHex')\" ] && [ $retryLoopCount -lt $retryMax ]\ndo\n    echo \"Waiting for cert creation (attempt $retryLoopCount)...\"\n    sleep $retrySleep\n    createdCert=$(az keyvault certificate show -n $certName --vault-name $akvName -o json)\n    retryLoopCount=$((retryLoopCount+1))\ndone\n\nunversionedSecretId=$(echo $createdCert | jq -r \".sid\" | cut -d'/' -f-5) # remove the version from the url;\njsonOutputString=$(echo $createdCert | jq --arg usid $unversionedSecretId '{name: .name ,certSecretId: {versioned: .sid, unversioned: $usid }, thumbprint: .x509Thumbprint, thumbprintHex: .x509ThumbprintHex}')\necho $jsonOutputString > $AZ_SCRIPTS_OUTPUT_PATH\n",
             "delegatedManagedIdentityResourceId": "[if(parameters('useExistingManagedIdentity'), extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingManagedIdentitySubId'), parameters('existingManagedIdentityResourceGroupName')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')))]"
           },
           "resources": [
@@ -2198,6 +2262,10 @@
                   {
                     "name": "organizationId",
                     "value": "[parameters('organizationId')]"
+                  },
+                  {
+                    "name": "reuseKey",
+                    "value": "[toLower(string(parameters('reuseKey')))]"
                   }
                 ],
                 "scriptContent": "[variables('$fxv#0')]",
@@ -2212,52 +2280,52 @@
           "outputs": {
             "certificateNames": {
               "type": "array",
+              "metadata": {
+                "description": "Certificate names"
+              },
               "copy": {
                 "count": "[length(parameters('certificateNames'))]",
                 "input": "[createArray(reference(resourceId('Microsoft.Resources/deploymentScripts', format('AKV-Cert-{0}-{1}', parameters('akvName'), replace(replace(parameters('certificateNames')[copyIndex()], ':', ''), '/', '-'))), '2020-10-01').outputs.name)]"
-              },
-              "metadata": {
-                "description": "Certificate names"
               }
             },
             "certificateSecretIds": {
               "type": "array",
+              "metadata": {
+                "description": "KeyVault secret ids to the created version"
+              },
               "copy": {
                 "count": "[length(parameters('certificateNames'))]",
                 "input": "[createArray(reference(resourceId('Microsoft.Resources/deploymentScripts', format('AKV-Cert-{0}-{1}', parameters('akvName'), replace(replace(parameters('certificateNames')[copyIndex()], ':', ''), '/', '-'))), '2020-10-01').outputs.certSecretId.versioned)]"
-              },
-              "metadata": {
-                "description": "KeyVault secret ids to the created version"
               }
             },
             "certificateSecretIdUnversioneds": {
               "type": "array",
+              "metadata": {
+                "description": "KeyVault secret ids which uses the unversioned uri"
+              },
               "copy": {
                 "count": "[length(parameters('certificateNames'))]",
                 "input": "[createArray(reference(resourceId('Microsoft.Resources/deploymentScripts', format('AKV-Cert-{0}-{1}', parameters('akvName'), replace(replace(parameters('certificateNames')[copyIndex()], ':', ''), '/', '-'))), '2020-10-01').outputs.certSecretId.unversioned)]"
-              },
-              "metadata": {
-                "description": "KeyVault secret ids which uses the unversioned uri"
               }
             },
             "certificateThumbpints": {
               "type": "array",
+              "metadata": {
+                "description": "Certificate Thumbprints"
+              },
               "copy": {
                 "count": "[length(parameters('certificateNames'))]",
                 "input": "[createArray(reference(resourceId('Microsoft.Resources/deploymentScripts', format('AKV-Cert-{0}-{1}', parameters('akvName'), replace(replace(parameters('certificateNames')[copyIndex()], ':', ''), '/', '-'))), '2020-10-01').outputs.thumbprint)]"
-              },
-              "metadata": {
-                "description": "Certificate Thumbprints"
               }
             },
             "certificateThumbprintHexs": {
               "type": "array",
+              "metadata": {
+                "description": "Certificate Thumbprints (in hex)"
+              },
               "copy": {
                 "count": "[length(parameters('certificateNames'))]",
                 "input": "[createArray(reference(resourceId('Microsoft.Resources/deploymentScripts', format('AKV-Cert-{0}-{1}', parameters('akvName'), replace(replace(parameters('certificateNames')[copyIndex()], ':', ''), '/', '-'))), '2020-10-01').outputs.thumbprintHex)]"
-              },
-              "metadata": {
-                "description": "Certificate Thumbprints (in hex)"
               }
             }
           }
@@ -2270,12 +2338,12 @@
     {
       "copy": {
         "name": "buildApp",
-        "count": "[length(union(createArray(parameters('location')), parameters('secondaryLocations')))]"
+        "count": "[length(variables('allLocations'))]"
       },
       "condition": "[and(and(parameters('assignRole'), parameters('epicEULA')), not(equals(parameters('workerServicePrincipalSecret'), '')))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
-      "name": "[format('build-app-{0}-{1}', union(createArray(parameters('location')), parameters('secondaryLocations'))[copyIndex()], uniqueString(resourceGroup().id, subscription().subscriptionId))]",
+      "name": "[format('build-app-{0}-{1}', variables('allLocations')[copyIndex()], uniqueString(resourceGroup().id, subscription().subscriptionId))]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -2283,7 +2351,7 @@
         "mode": "Incremental",
         "parameters": {
           "keyVaultName": {
-            "value": "[take(format('{0}-{1}', union(createArray(parameters('location')), parameters('secondaryLocations'))[copyIndex()], parameters('keyVaultName')), 24)]"
+            "value": "[variables('locationSpecs')[copyIndex()].keyVaultName]"
           },
           "secrets": {
             "value": [
@@ -2300,8 +2368,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "14921151177649558405"
+              "version": "0.18.4.5664",
+              "templateHash": "6164084509021418989"
             }
           },
           "parameters": {
@@ -2371,8 +2439,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "7047988714817970266"
+              "version": "0.18.4.5664",
+              "templateHash": "12397661483614520711"
             }
           },
           "parameters": {
@@ -2548,12 +2616,12 @@
     {
       "copy": {
         "name": "cassandraKeys",
-        "count": "[length(union(createArray(parameters('location')), parameters('secondaryLocations')))]"
+        "count": "[length(variables('locationSpecs'))]"
       },
       "condition": "[and(parameters('assignRole'), parameters('epicEULA'))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
-      "name": "[format('cassandra-keys-{0}-{1}', union(createArray(parameters('location')), parameters('secondaryLocations'))[copyIndex()], uniqueString(resourceGroup().id, subscription().subscriptionId))]",
+      "name": "[format('cassandra-keys-{0}-{1}', variables('locationSpecs')[copyIndex()].location, uniqueString(resourceGroup().id, subscription().subscriptionId))]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -2561,7 +2629,7 @@
         "mode": "Incremental",
         "parameters": {
           "keyVaultName": {
-            "value": "[take(format('{0}-{1}', union(createArray(parameters('location')), parameters('secondaryLocations'))[copyIndex()], parameters('keyVaultName')), 24)]"
+            "value": "[variables('locationSpecs')[copyIndex()].keyVaultName]"
           },
           "secrets": {
             "value": [
@@ -2578,8 +2646,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "14921151177649558405"
+              "version": "0.18.4.5664",
+              "templateHash": "6164084509021418989"
             }
           },
           "parameters": {
@@ -2617,7 +2685,7 @@
       ]
     },
     {
-      "condition": "[and(parameters('assignRole'), parameters('epicEULA'))]",
+      "condition": "[and(and(variables('enableKubernetes'), parameters('assignRole')), parameters('epicEULA'))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "[format('setup-ddc-{0}', parameters('location'))]",
@@ -2638,9 +2706,6 @@
           },
           "publicIpName": {
             "value": "[parameters('publicIpName')]"
-          },
-          "keyVaultName": {
-            "value": "[parameters('keyVaultName')]"
           },
           "servicePrincipalClientID": {
             "value": "[parameters('servicePrincipalClientID')]"
@@ -2681,11 +2746,14 @@
           "helmNamespace": {
             "value": "[parameters('helmNamespace')]"
           },
-          "siteName": {
-            "value": "[parameters('siteName')]"
+          "siteNamePrefix": {
+            "value": "[parameters('siteNamePrefix')]"
           },
-          "imageVersion": {
-            "value": "[parameters('imageVersion')]"
+          "containerImageRepo": {
+            "value": "[parameters('containerImageRepo')]"
+          },
+          "containerImageVersion": {
+            "value": "[parameters('containerImageVersion')]"
           },
           "useExistingManagedIdentity": {
             "value": "[parameters('enableCert')]"
@@ -2704,6 +2772,9 @@
           },
           "namespacesToReplicate": {
             "value": "[parameters('namespacesToReplicate')]"
+          },
+          "agentPoolCount": {
+            "value": "[parameters('agentPoolCount')]"
           }
         },
         "template": {
@@ -2712,8 +2783,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "16476643639621389885"
+              "version": "0.18.4.5664",
+              "templateHash": "14147796154238442359"
             }
           },
           "parameters": {
@@ -2731,9 +2802,6 @@
               "defaultValue": "[resourceGroup().name]"
             },
             "publicIpName": {
-              "type": "string"
-            },
-            "keyVaultName": {
               "type": "string"
             },
             "servicePrincipalClientID": {
@@ -2813,11 +2881,20 @@
             "helmNamespace": {
               "type": "string"
             },
-            "siteName": {
+            "siteNamePrefix": {
               "type": "string"
             },
-            "imageVersion": {
-              "type": "string"
+            "containerImageRepo": {
+              "type": "string",
+              "metadata": {
+                "description": "Reference to the container registry repo with the cloud DDC container image"
+              }
+            },
+            "containerImageVersion": {
+              "type": "string",
+              "metadata": {
+                "description": "The cloud DDC container image version to use"
+              }
             },
             "isApp": {
               "type": "bool",
@@ -2831,6 +2908,12 @@
               "defaultValue": [],
               "metadata": {
                 "description": "Array of ddc namespaces to replicate if there are secondary regions"
+              }
+            },
+            "agentPoolCount": {
+              "type": "int",
+              "metadata": {
+                "description": "This is used to scale up the number of pods (replicas) for the main deployment, so that there is one replica per node on the agent"
               }
             }
           },
@@ -2859,7 +2942,7 @@
                     "value": "[parameters('resourceGroupName')]"
                   },
                   "keyVaultName": {
-                    "value": "[take(format('{0}-{1}', parameters('locationSpecs')[copyIndex()].location, parameters('keyVaultName')), 24)]"
+                    "value": "[parameters('locationSpecs')[copyIndex()].keyVaultName]"
                   },
                   "servicePrincipalClientID": {
                     "value": "[parameters('servicePrincipalClientID')]"
@@ -2901,6 +2984,12 @@
                   "helmVersion": {
                     "value": "[parameters('helmVersion')]"
                   },
+                  "mainReplicaCount": {
+                    "value": "[parameters('agentPoolCount')]"
+                  },
+                  "workerReplicaCount": {
+                    "value": 1
+                  },
                   "helmChart": {
                     "value": "[parameters('helmChart')]"
                   },
@@ -2910,11 +2999,14 @@
                   "helmNamespace": {
                     "value": "[parameters('helmNamespace')]"
                   },
-                  "siteName": {
-                    "value": "[parameters('siteName')]"
+                  "siteNamePrefix": {
+                    "value": "[parameters('siteNamePrefix')]"
                   },
-                  "imageVersion": {
-                    "value": "[parameters('imageVersion')]"
+                  "containerImageRepo": {
+                    "value": "[parameters('containerImageRepo')]"
+                  },
+                  "containerImageVersion": {
+                    "value": "[parameters('containerImageVersion')]"
                   }
                 },
                 "template": {
@@ -2923,8 +3015,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "8537210623178436890"
+                      "version": "0.18.4.5664",
+                      "templateHash": "13457817621107563962"
                     }
                   },
                   "parameters": {
@@ -2977,7 +3069,10 @@
                       "defaultValue": "latest"
                     },
                     "helmChart": {
-                      "type": "string"
+                      "type": "string",
+                      "metadata": {
+                        "description": "Reference to the container registry repo with the cloud DDC helm chart"
+                      }
                     },
                     "helmName": {
                       "type": "string"
@@ -2985,15 +3080,30 @@
                     "helmNamespace": {
                       "type": "string"
                     },
-                    "siteName": {
+                    "siteNamePrefix": {
                       "type": "string"
                     },
-                    "imageVersion": {
-                      "type": "string"
+                    "containerImageRepo": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Reference to the container registry repo with the cloud DDC container image"
+                      }
+                    },
+                    "containerImageVersion": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The cloud DDC container image version to use"
+                      }
                     },
                     "enableWorker": {
                       "type": "bool",
                       "defaultValue": false
+                    },
+                    "mainReplicaCount": {
+                      "type": "int"
+                    },
+                    "workerReplicaCount": {
+                      "type": "int"
                     },
                     "CleanOldRefRecords": {
                       "type": "bool",
@@ -3026,6 +3136,20 @@
                       "defaultValue": "",
                       "metadata": {
                         "description": "If this is non-empty, an open telemetry collector will be set up to send data to Application Insights"
+                      }
+                    },
+                    "useLocalPVProvisioner": {
+                      "type": "bool",
+                      "defaultValue": true,
+                      "metadata": {
+                        "description": "This will use an ephemeral volume claim template to make use of local NVMe disk(s)"
+                      }
+                    },
+                    "localStorageSize": {
+                      "type": "string",
+                      "defaultValue": "512Gi",
+                      "metadata": {
+                        "description": "Amount of local storage to claim if useLocalPVProvisioner is true"
                       }
                     }
                   },
@@ -3070,6 +3194,11 @@
                         "name": "mainScyllaValues",
                         "count": "[length(variables('scyllaValueSuffixes'))]",
                         "input": "[format('{0}.Scylla.{1}', variables('mainConfigPrefix'), variables('scyllaValueSuffixes')[copyIndex('mainScyllaValues')])]"
+                      },
+                      {
+                        "name": "mainPersistenceValuesConditional",
+                        "count": "[length(variables('persistenceSuffixes'))]",
+                        "input": "[format('{0}.persistence.{1}', variables('mainChartName'), variables('persistenceSuffixes')[copyIndex('mainPersistenceValuesConditional')])]"
                       }
                     ],
                     "locationMapping": {
@@ -3098,6 +3227,7 @@
                       "koreacentral": "Korea Central",
                       "chinanorth3": "China North 3"
                     },
+                    "siteName": "[format('{0}{1}', parameters('siteNamePrefix'), parameters('location'))]",
                     "loginDomain": "microsoftonline",
                     "serviceCreds": {
                       "OAuthClientId": "[parameters('workerServicePrincipalClientID')]",
@@ -3106,11 +3236,11 @@
                       "OAuthScope": "[format('api://{0}/.default', parameters('servicePrincipalClientID'))]"
                     },
                     "global": {
-                      "siteName": "[parameters('siteName')]",
+                      "siteName": "[variables('siteName')]",
                       "authMethod": "JWTBearer",
                       "jwtAuthority": "[format('https://login.{0}.com/{1}', variables('loginDomain'), parameters('loginTenantID'))]",
                       "jwtAudience": "[format('api://{0}', parameters('servicePrincipalClientID'))]",
-                      "OverrideAppVersion": "[parameters('imageVersion')]",
+                      "OverrideAppVersion": "[parameters('containerImageVersion')]",
                       "ServiceCredentials": "[variables('serviceCreds')]"
                     },
                     "ingress": {
@@ -3147,6 +3277,8 @@
                     "workerReplicatorValues": "[if(greater(length(parameters('namespacesToReplicate')), 0), concat(createArray(variables('replicationEnabledValue')), flatten(variables('replicatorValueArrays'))), createArray())]",
                     "workerOtherValues": [
                       "[format('{0}.enabled=true', variables('workerPrefix'))]",
+                      "[format('{0}.replicaCount={1}', variables('workerPrefix'), parameters('workerReplicaCount'))]",
+                      "[format('{0}.image.repository={1}', variables('workerPrefix'), parameters('containerImageRepo'))]",
                       "[format('{0}.Azure.ConnectionString={1}', variables('workerConfigPrefix'), variables('storageConnectionString'))]",
                       "[format('{0}.GC.CleanOldRefRecords={1}', variables('workerConfigPrefix'), parameters('CleanOldRefRecords'))]",
                       "[format('{0}.GC.CleanOldBlobs={1}', variables('workerConfigPrefix'), parameters('CleanOldBlobs'))]"
@@ -3156,11 +3288,12 @@
                     "globalValues": [
                       "[format('global.auth.schemes.Bearer.jwtAuthority={0}', variables('global').jwtAuthority)]",
                       "[format('global.auth.schemes.Bearer.jwtAudience={0}', variables('global').jwtAudience)]",
-                      "[format('global.siteName={0}', parameters('siteName'))]",
+                      "[format('global.siteName={0}', variables('siteName'))]",
                       "[format('global.ServiceCredentials.OAuthClientId={0}', variables('serviceCreds').OAuthClientId)]",
                       "[format('global.ServiceCredentials.OAuthClientSecret={0}', variables('serviceCreds').OAuthClientSecret)]",
                       "[format('global.ServiceCredentials.OAuthLoginUrl={0}', variables('serviceCreds').OAuthLoginUrl)]",
-                      "[format('global.ServiceCredentials.OAuthScope={0}', variables('serviceCreds').OAuthScope)]"
+                      "[format('global.ServiceCredentials.OAuthScope={0}', variables('serviceCreds').OAuthScope)]",
+                      "[format('global.OverrideAppVersion={0}', variables('global').OverrideAppVersion)]"
                     ],
                     "locationTlsSecretName": "[format('{0}-{1}', variables('ingress').tlsSecretName, parameters('location'))]",
                     "otelSamplingRatio": "0.01",
@@ -3180,7 +3313,20 @@
                     "otelEnvValueSuffixes": "[if(variables('useOtel'), concat(variables('otelEnvValueSuffixesSimple'), variables('hostIPEnvValueSuffixes')), createArray())]",
                     "mainEnvValueSuffixes": "[concat(variables('sharedEnvValueSuffixes'), variables('otelEnvValueSuffixes'))]",
                     "mainConfigPrefix": "[format('{0}.config', variables('mainChartName'))]",
+                    "persistenceSuffixes": [
+                      "enabled=false",
+                      "[format('size={0}', parameters('localStorageSize'))]",
+                      "volume.ephemeral.volumeClaimTemplate.spec.accessModes[0]=ReadWriteOnce",
+                      "volume.ephemeral.volumeClaimTemplate.spec.storageClassName=local-disk",
+                      "[format('volume.ephemeral.volumeClaimTemplate.spec.resources.requests.storage={0}', parameters('localStorageSize'))]"
+                    ],
+                    "mainPersistenceValues": "[if(parameters('useLocalPVProvisioner'), variables('mainPersistenceValuesConditional'), createArray())]",
                     "mainRestartValues": "[if(parameters('restartPods'), createArray(format('{0}.podAnnotations.rollme={1}', variables('mainChartName'), uniqueString(parameters('podRollMeSeed')))), createArray())]",
+                    "helmStringArgs": [
+                      "[format('{0}.podLabels.azure\\.workload\\.identity/use=true', variables('mainChartName'))]",
+                      "[format('{0}.podLabels.azure\\.workload\\.identity/use=false', variables('workerPrefix'))]"
+                    ],
+                    "helmStringValues": "[format('\"{0}\"', join(variables('helmStringArgs'), '\",\"'))]",
                     "ingressAksValues": [
                       "ingressAks.enabled=true",
                       "ingressAks.tlsEnabled=true",
@@ -3199,7 +3345,8 @@
                         "helmChart": "[parameters('helmChart')]",
                         "helmName": "[parameters('helmName')]",
                         "helmNamespace": "[parameters('helmNamespace')]",
-                        "helmValues": "[replace(format('\"{0}\"', join(concat(variables('globalValues'), createArray('secretStore.enabled=true', format('secretStore.clientID={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).clientID), format('secretStore.keyvaultName={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).keyVaultName), format('secretStore.resourceGroup={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).resourceGroup), format('secretStore.subscriptionId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).subscriptionID), format('secretStore.tenantId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).tenantID), format('secretStore.tlsSecretName={0}', variables('ingress').tlsSecretName), format('secretStore.tlsCertName={0}', variables('ingress').tlsCertName), format('secretStore.extraHosts[0].tlsSecretName={0}', variables('locationTlsSecretName')), format('secretStore.extraHosts[0].tlsCertName={0}', parameters('locationCertificateName'))), concat(variables('mainEnvValues'), variables('mainScyllaValues'), createArray(format('{0}.Azure.ConnectionString={1}', variables('mainConfigPrefix'), variables('storageConnectionString')), format('{0}.GC.CleanOldBlobs=false', variables('mainConfigPrefix')), format('{0}.serviceAccount.annotations.azure\\.workload\\.identity/client-id={1}', variables('mainChartName'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId)), variables('mainRestartValues')), variables('workerValues'), variables('ingressAksValues'), variables('otelCollectorValues')), '\",\"')), '$(FEDERATED_ID)', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId)]",
+                        "helmValues": "[replace(format('\"{0}\"', join(concat(variables('globalValues'), createArray('secretStore.enabled=true', format('secretStore.clientID={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).clientID), format('secretStore.keyvaultName={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).keyVaultName), format('secretStore.resourceGroup={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).resourceGroup), format('secretStore.subscriptionId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).subscriptionID), format('secretStore.tenantId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).tenantID), format('secretStore.tlsSecretName={0}', variables('ingress').tlsSecretName), format('secretStore.tlsCertName={0}', variables('ingress').tlsCertName), format('secretStore.extraHosts[0].tlsSecretName={0}', variables('locationTlsSecretName')), format('secretStore.extraHosts[0].tlsCertName={0}', parameters('locationCertificateName'))), concat(variables('mainEnvValues'), variables('mainScyllaValues'), variables('mainPersistenceValues'), createArray(format('{0}.replicaCount={1}', variables('mainChartName'), parameters('mainReplicaCount')), format('{0}.image.repository={1}', variables('mainChartName'), parameters('containerImageRepo')), format('{0}.Azure.ConnectionString={1}', variables('mainConfigPrefix'), variables('storageConnectionString')), format('{0}.GC.CleanOldBlobs=false', variables('mainConfigPrefix')), format('{0}.serviceAccount.annotations.azure\\.workload\\.identity/client-id={1}', variables('mainChartName'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId)), variables('mainRestartValues')), variables('workerValues'), variables('ingressAksValues'), variables('otelCollectorValues')), '\",\"')), '$(FEDERATED_ID)', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId)]",
+                        "helmStringValues": "[variables('helmStringValues')]",
                         "version": "[parameters('helmVersion')]"
                       }
                     }
@@ -3225,7 +3372,7 @@
                     "value": "[parameters('locationSpecs')[copyIndex()].location]"
                   },
                   "aksName": {
-                    "value": "[format('{0}-{1}', parameters('aksName'), take(parameters('locationSpecs')[copyIndex()].location, 8))]"
+                    "value": "[format('{0}-{1}', parameters('aksName'), parameters('locationSpecs')[copyIndex()].regionCode)]"
                   },
                   "additionalCharts": {
                     "value": [
@@ -3260,8 +3407,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.17.1.54307",
-                      "templateHash": "4624203276325441916"
+                      "version": "0.18.4.5664",
+                      "templateHash": "4678070173325710321"
                     }
                   },
                   "parameters": {
@@ -3354,8 +3501,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.17.1.54307",
-                              "templateHash": "6096852621529567618"
+                              "version": "0.18.4.5664",
+                              "templateHash": "5699570002688714996"
                             }
                           },
                           "parameters": {
@@ -3401,8 +3548,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.17.1.54307",
-                              "templateHash": "12088186693464622402"
+                              "version": "0.18.4.5664",
+                              "templateHash": "3634787068459332158"
                             }
                           },
                           "parameters": {
@@ -3483,8 +3630,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.17.1.54307",
-                              "templateHash": "2790888798891464386"
+                              "version": "0.18.4.5664",
+                              "templateHash": "1009791138636647162"
                             }
                           },
                           "parameters": {
@@ -3571,8 +3718,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.17.1.54307",
-                              "templateHash": "13841886012506053625"
+                              "version": "0.18.4.5664",
+                              "templateHash": "18395188055380971045"
                             }
                           },
                           "variables": {
@@ -3642,8 +3789,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.17.1.54307",
-                              "templateHash": "13053169466513026986"
+                              "version": "0.18.4.5664",
+                              "templateHash": "9337988228550688377"
                             }
                           },
                           "parameters": {
@@ -3780,8 +3927,8 @@
                                   "metadata": {
                                     "_generator": {
                                       "name": "bicep",
-                                      "version": "0.17.1.54307",
-                                      "templateHash": "5467358035052467881"
+                                      "version": "0.18.4.5664",
+                                      "templateHash": "1004481284178649138"
                                     }
                                   },
                                   "parameters": {
@@ -4004,7 +4151,7 @@
       ]
     },
     {
-      "condition": "[variables('useDnsZone')]",
+      "condition": "[and(variables('useDnsZone'), variables('enableTrafficManager'))]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "[format('dns-{0}', uniqueString(parameters('dnsZoneName'), resourceGroup().id, deployment().name))]",
@@ -4021,9 +4168,7 @@
           "recordName": {
             "value": "[parameters('shortHostname')]"
           },
-          "targetFQDN": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('trafficManager-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))), '2022-09-01').outputs.fqdn.value]"
-          }
+          "targetFQDN": "[if(variables('enableTrafficManager'), createObject('value', reference(resourceId('Microsoft.Resources/deployments', format('trafficManager-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name))), '2022-09-01').outputs.fqdn.value), createObject('value', ''))]"
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
@@ -4031,8 +4176,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.17.1.54307",
-              "templateHash": "17122869042654732242"
+              "version": "0.18.4.5664",
+              "templateHash": "16046993926434974127"
             }
           },
           "parameters": {
