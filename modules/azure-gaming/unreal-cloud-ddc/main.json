@@ -30,7 +30,7 @@
         "existing"
       ],
       "metadata": {
-        "description": "New or Existing Kubernentes Resources"
+        "description": "New or Existing Kubernetes Resources"
       }
     },
     "aksName": {

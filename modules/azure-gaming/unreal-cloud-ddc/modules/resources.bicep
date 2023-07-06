@@ -24,6 +24,9 @@ param publicIpName string = 'pubip${uniqueString(resourceGroup().id, subscriptio
 @description('Existing traffic manager name to add endpoints to. Leave empty to skip endpoints')
 param trafficManagerNameForEndpoints string = ''
 
+@description('The id of the subnet to use for VMs and Kubernetes, or empty if AKS should manage its own VNet and subnet.')
+param vmSubnetId string
+
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingKubernetes string = 'none'
 param kubernetesParams object = {
@@ -101,6 +104,7 @@ module clusterModule 'ContainerService/managedClusters.bicep' = if (enableKubern
     clusterUserName: kubernetesParams.clusterUserName
     nodeLabels: kubernetesParams.nodeLabels
     workspaceResourceId: logAnalyticsWorkspaceResourceId
+    vnetSubnetId: vmSubnetId
   }
 }
 var rbacPolicies = enableKubernetes ? [

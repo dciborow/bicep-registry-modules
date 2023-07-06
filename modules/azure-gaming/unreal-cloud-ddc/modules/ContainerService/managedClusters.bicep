@@ -30,6 +30,9 @@ param clusterUserName string = 'k8-${take(uniqueString(location, name), 15)}'
 @description('Azure Monitor Log Analytics Resource ID. Leave empty to disable container insights')
 param workspaceResourceId string = ''
 
+@description('Id of an existing subnet to use for the cluster. If this is empty, AKS will create and manage the subnet')
+param vnetSubnetId string = ''
+
 resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = if (newOrExisting == 'new') {
   name: clusterUserName
   location: location
@@ -49,6 +52,22 @@ var addonProfiles = workspaceResourceId == '' ? {
   }
 }
 
+var agentPoolProfileBase = {
+  name: agentPoolName
+  count: agentPoolCount
+  vmSize: vmSize
+  osType: 'Linux'
+  mode: 'System'
+  nodeLabels: { type: nodeLabels }
+  availabilityZones: isZoneRedundant ? availabilityZones : null
+}
+
+var subnetProperties = vnetSubnetId != '' ? {
+  vnetSubnetID : vnetSubnetId
+} : {}
+
+var agentPoolProfile = union(agentPoolProfileBase, subnetProperties)
+
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-preview' = if (newOrExisting == 'new') {
   name: take(name, 80)
   location: location
@@ -64,15 +83,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-07-02-previ
     dnsPrefix: dnsPrefix
     enableRBAC: true
     agentPoolProfiles: [
-      {
-        name: agentPoolName
-        count: agentPoolCount
-        vmSize: vmSize
-        osType: 'Linux'
-        mode: 'System'
-        nodeLabels: { type: nodeLabels }
-        availabilityZones: isZoneRedundant ? availabilityZones : null
-      }
+      agentPoolProfile
     ]
     identityProfile: {
       assignedIdentity: {

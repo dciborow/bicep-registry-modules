@@ -5,7 +5,7 @@ param location string
 @description('Secondary Deployment Locations')
 param secondaryLocations array = []
 
-@description('New or Existing Kubernentes Resources, none to skip.')
+@description('New or Existing Kubernetes Resources, none to skip.')
 @allowed([ 'new', 'existing', 'none' ])
 param newOrExistingKubernetes string = 'new'
 
@@ -20,6 +20,21 @@ param agentPoolName string = 'k8agent'
 
 @description('Virtual Machine Skew for Kubernetes')
 param vmSize string = 'Standard_L16s_v2'
+
+@description('Whether to create a common vnet for the AKS cluster and related resources. If false, the cluster will create and manage the vnet and subnet internally')
+param useVnet bool = false
+
+@description('Prefix to use for virtual network name, will be appended with the region code.')
+param vnetNamePrefix string = 'vnet-${uniqueString(resourceGroup().id, aksName, location)}-'
+
+@description('Overall address prefix/range for all vnets')
+param vnetOverallAddrPrefix string
+
+@description('Address range for a vnet in a given region')
+param vnetRegionAddrRange int
+
+@description('Name of subnet to use for virtual machines')
+param vnetVmSubnetName string = 'vmsubnet'
 
 @description('Hostname of Deployment')
 param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
@@ -272,6 +287,23 @@ var logAnalyticsWorkspaceResourceId = enableContainerInsights ? logAnalytics.out
 
 var allLocations = concat([location], secondaryLocations)
 
+var vnetSpecs = [for (location, index) in allLocations: {
+  name: '${vnetNamePrefix}${regionCodes[location]}'
+  location: location
+}]
+
+module vnets 'modules/network/vnets.bicep' = if (useVnet) {
+  name: '${vnetNamePrefix}-eachregion'
+  params: {
+    vnetSpecs: vnetSpecs
+    overallAddrPrefix: vnetOverallAddrPrefix
+    regionAddrRange: vnetRegionAddrRange
+    vmSubnetName: vnetVmSubnetName
+  }
+}
+
+var vmSubnetIds = useVnet ? vnets.outputs.vmSubnetIds : []
+
 // Compute "source" locations for replication.
 // Forms a cycle so that a given region replaces from only one other location.
 var lastLocationIndex = length(allLocations) - 1
@@ -300,6 +332,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     newOrExistingKeyVault: newOrExistingKeyVault
     newOrExistingPublicIp: newOrExistingPublicIpEffective
     newOrExistingStorageAccount: newOrExistingStorageAccount
+    vmSubnetId: useVnet ? vmSubnetIds[index] : ''
     kubernetesParams: {
       name: '${aksName}-${locationSpecs[index].regionCode}'
       agentPoolCount: agentPoolCount

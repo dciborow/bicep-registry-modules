@@ -46,20 +46,49 @@ module helmInstallLocalProvisioner 'local-pv-provisioner.bicep' = if(enableLocal
   name: 'helmInstallProvisioner-${uniqueString(aksName, location, resourceGroup().name)}'
 }
 
-var helmCharts = union(
+var helmChartsPreReqs = union(
   enableWorkloadIdentity ? [helmInstallWorkloadID.outputs.helmChart] : [], 
   enableIngress ? [helmInstallIngress.outputs.helmChart] : [],
   enableSecretStore ? [helmInstallSecretStore.outputs.helmChart] : [],
-  enableLocalProvisioner ? [helmInstallLocalProvisioner.outputs.helmChart] : [],
-  additionalCharts
+  enableLocalProvisioner ? [helmInstallLocalProvisioner.outputs.helmChart] : []
   )
 
+  module prereqs 'helmChartInstall.bicep' = {
+    name: 'helmInstallPrereqs-${uniqueString(aksName, location, resourceGroup().name)}'
+    params: {
+      aksName: aksName
+      location: location
+      helmCharts: helmChartsPreReqs
+      useExistingManagedIdentity: useExistingManagedIdentity
+      managedIdentityName: managedIdentityName
+      existingManagedIdentitySubId: existingManagedIdentitySubId
+      existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
+      isApp: isApp
+    }
+  }
+
+// Ingress needs some time to start up. Otherwise the next helm install will fail
+module delay '../delay.bicep' = {
+  name: 'delay-${uniqueString(aksName, location, resourceGroup().name)}'
+  dependsOn: [
+    prereqs
+  ]
+  params: {
+    location: location
+    sleepName: 'sleep-${uniqueString(aksName, location, resourceGroup().name)}'
+    sleepSeconds: 30
+  }
+}
+
 module combo 'helmChartInstall.bicep' = {
-  name: 'helmInstallCombo-${uniqueString(aksName, location, resourceGroup().name)}'
+  name: 'helmInstallAdditional-${uniqueString(aksName, location, resourceGroup().name)}'
+  dependsOn: [
+    delay
+  ]
   params: {
     aksName: aksName
     location: location
-    helmCharts: helmCharts
+    helmCharts: additionalCharts
     useExistingManagedIdentity: useExistingManagedIdentity
     managedIdentityName: managedIdentityName
     existingManagedIdentitySubId: existingManagedIdentitySubId
