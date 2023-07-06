@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.18.4.5664",
-      "templateHash": "2148482391601046972"
+      "templateHash": "11038442697871023063"
     }
   },
   "parameters": {
@@ -31,7 +31,7 @@
         "none"
       ],
       "metadata": {
-        "description": "New or Existing Kubernentes Resources, none to skip."
+        "description": "New or Existing Kubernetes Resources, none to skip."
       }
     },
     "aksName": {
@@ -60,6 +60,39 @@
       "defaultValue": "Standard_L16s_v2",
       "metadata": {
         "description": "Virtual Machine Skew for Kubernetes"
+      }
+    },
+    "useVnet": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to create a common vnet for the AKS cluster and related resources. If false, the cluster will create and manage the vnet and subnet internally"
+      }
+    },
+    "vnetNamePrefix": {
+      "type": "string",
+      "defaultValue": "[format('vnet-{0}-', uniqueString(resourceGroup().id, parameters('aksName'), parameters('location')))]",
+      "metadata": {
+        "description": "Prefix to use for virtual network name, will be appended with the region code."
+      }
+    },
+    "vnetOverallAddrPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Overall address prefix/range for all vnets"
+      }
+    },
+    "vnetRegionAddrRange": {
+      "type": "int",
+      "metadata": {
+        "description": "Address range for a vnet in a given region"
+      }
+    },
+    "vnetVmSubnetName": {
+      "type": "string",
+      "defaultValue": "vmsubnet",
+      "metadata": {
+        "description": "Name of subnet to use for virtual machines"
       }
     },
     "hostname": {
@@ -453,6 +486,14 @@
   "variables": {
     "copy": [
       {
+        "name": "vnetSpecs",
+        "count": "[length(variables('allLocations'))]",
+        "input": {
+          "name": "[format('{0}{1}', parameters('vnetNamePrefix'), variables('regionCodes')[variables('allLocations')[copyIndex('vnetSpecs')]])]",
+          "location": "[variables('allLocations')[copyIndex('vnetSpecs')]]"
+        }
+      },
+      {
         "name": "sourceLocations",
         "count": "[length(variables('allLocations'))]",
         "input": "[if(greater(copyIndex('sourceLocations'), 0), variables('allLocations')[sub(copyIndex('sourceLocations'), 1)], variables('allLocations')[variables('lastLocationIndex')])]"
@@ -762,6 +803,309 @@
       }
     },
     {
+      "condition": "[parameters('useVnet')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}-eachregion', parameters('vnetNamePrefix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "vnetSpecs": {
+            "value": "[variables('vnetSpecs')]"
+          },
+          "overallAddrPrefix": {
+            "value": "[parameters('vnetOverallAddrPrefix')]"
+          },
+          "regionAddrRange": {
+            "value": "[parameters('vnetRegionAddrRange')]"
+          },
+          "vmSubnetName": {
+            "value": "[parameters('vnetVmSubnetName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.18.4.5664",
+              "templateHash": "12757534926814650152"
+            }
+          },
+          "parameters": {
+            "vnetSpecs": {
+              "type": "array",
+              "metadata": {
+                "description": "Array of objects, each one having a name and location"
+              }
+            },
+            "overallAddrPrefix": {
+              "type": "string"
+            },
+            "regionAddrRange": {
+              "type": "int"
+            },
+            "vmSubnetName": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "vnetRanges",
+                "count": "[length(parameters('vnetSpecs'))]",
+                "input": "[cidrSubnet(parameters('overallAddrPrefix'), parameters('regionAddrRange'), copyIndex('vnetRanges'))]"
+              },
+              {
+                "name": "allVnetNames",
+                "count": "[length(parameters('vnetSpecs'))]",
+                "input": "[parameters('vnetSpecs')[copyIndex('allVnetNames')].name]"
+              }
+            ]
+          },
+          "resources": [
+            {
+              "copy": {
+                "name": "vnets",
+                "count": "[length(parameters('vnetSpecs'))]"
+              },
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[parameters('vnetSpecs')[copyIndex()].name]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "name": {
+                    "value": "[parameters('vnetSpecs')[copyIndex()].name]"
+                  },
+                  "location": {
+                    "value": "[parameters('vnetSpecs')[copyIndex()].location]"
+                  },
+                  "addressRange": {
+                    "value": "[variables('vnetRanges')[copyIndex()]]"
+                  },
+                  "subnets": {
+                    "value": {
+                      "[format('{0}', parameters('vmSubnetName'))]": "[cidrSubnet(variables('vnetRanges')[copyIndex()], 24, 0)]"
+                    }
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.18.4.5664",
+                      "templateHash": "610956615432687132"
+                    }
+                  },
+                  "parameters": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "addressRange": {
+                      "type": "string"
+                    },
+                    "subnets": {
+                      "type": "object",
+                      "metadata": {
+                        "description": "Each key is the subnet name and the value is the subnet address range."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "copy": [
+                      {
+                        "name": "subnetArray",
+                        "count": "[length(items(parameters('subnets')))]",
+                        "input": {
+                          "name": "[items(parameters('subnets'))[copyIndex('subnetArray')].key]",
+                          "properties": {
+                            "addressPrefix": "[items(parameters('subnets'))[copyIndex('subnetArray')].value]"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks",
+                      "apiVersion": "2022-07-01",
+                      "name": "[parameters('name')]",
+                      "location": "[parameters('location')]",
+                      "properties": {
+                        "addressSpace": {
+                          "addressPrefixes": [
+                            "[parameters('addressRange')]"
+                          ]
+                        },
+                        "subnets": "[variables('subnetArray')]"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "copy": {
+                "name": "peerings",
+                "count": "[length(parameters('vnetSpecs'))]"
+              },
+              "condition": "[greater(copyIndex(), 0)]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('{0}-peerings', parameters('vnetSpecs')[copyIndex()].name)]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "parentVnetName": {
+                    "value": "[parameters('vnetSpecs')[copyIndex()].name]"
+                  },
+                  "vnetNames": {
+                    "value": "[variables('allVnetNames')]"
+                  },
+                  "peeringCount": {
+                    "value": "[copyIndex()]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.18.4.5664",
+                      "templateHash": "16694627787096508323"
+                    }
+                  },
+                  "parameters": {
+                    "parentVnetName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The name of the parent vnet, assumed to be in the same resource group"
+                      }
+                    },
+                    "vnetNames": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "Array of vnet names to peer with in same resource group, only first peeringCount will be used to peer"
+                      }
+                    },
+                    "peeringCount": {
+                      "type": "int",
+                      "metadata": {
+                        "description": "Index of one past the last vnet to peer with"
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "copy": {
+                        "name": "peeringPairs",
+                        "count": "[length(range(0, parameters('peeringCount')))]"
+                      },
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('peering-{0}-{1}', range(0, parameters('peeringCount'))[copyIndex()], parameters('peeringCount'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "srcVnetName": {
+                            "value": "[parameters('vnetNames')[range(0, parameters('peeringCount'))[copyIndex()]]]"
+                          },
+                          "dstVnetName": {
+                            "value": "[parameters('parentVnetName')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.18.4.5664",
+                              "templateHash": "13002272634325882484"
+                            }
+                          },
+                          "parameters": {
+                            "srcVnetName": {
+                              "type": "string"
+                            },
+                            "dstVnetName": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                              "apiVersion": "2022-07-01",
+                              "name": "[format('{0}/{1}', parameters('srcVnetName'), format('{0}-To-{1}', parameters('srcVnetName'), parameters('dstVnetName')))]",
+                              "properties": {
+                                "allowVirtualNetworkAccess": true,
+                                "allowForwardedTraffic": true,
+                                "allowGatewayTransit": false,
+                                "useRemoteGateways": false,
+                                "remoteVirtualNetwork": {
+                                  "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('dstVnetName'))]"
+                                }
+                              }
+                            },
+                            {
+                              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                              "apiVersion": "2022-07-01",
+                              "name": "[format('{0}/{1}', parameters('dstVnetName'), format('{0}-To-{1}', parameters('dstVnetName'), parameters('srcVnetName')))]",
+                              "properties": {
+                                "allowVirtualNetworkAccess": true,
+                                "allowForwardedTraffic": true,
+                                "allowGatewayTransit": false,
+                                "useRemoteGateways": false,
+                                "remoteVirtualNetwork": {
+                                  "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('srcVnetName'))]"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "vnets"
+              ]
+            }
+          ],
+          "outputs": {
+            "vmSubnetIds": {
+              "type": "array",
+              "copy": {
+                "count": "[length(variables('allVnetNames'))]",
+                "input": "[resourceId('Microsoft.Network/VirtualNetworks/subnets', variables('allVnetNames')[copyIndex()], parameters('vmSubnetName'))]"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "copy": {
         "name": "allRegionalResources",
         "count": "[length(variables('allLocations'))]"
@@ -794,6 +1138,7 @@
           "newOrExistingStorageAccount": {
             "value": "[parameters('newOrExistingStorageAccount')]"
           },
+          "vmSubnetId": "[if(parameters('useVnet'), createObject('value', if(parameters('useVnet'), reference(resourceId('Microsoft.Resources/deployments', format('{0}-eachregion', parameters('vnetNamePrefix'))), '2022-09-01').outputs.vmSubnetIds.value, createArray())[copyIndex()]), createObject('value', ''))]",
           "kubernetesParams": {
             "value": {
               "name": "[format('{0}-{1}', parameters('aksName'), variables('locationSpecs')[copyIndex()].regionCode)]",
@@ -854,7 +1199,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.18.4.5664",
-              "templateHash": "6860732117347575652"
+              "templateHash": "9120954476849339768"
             }
           },
           "parameters": {
@@ -929,6 +1274,12 @@
               "defaultValue": "",
               "metadata": {
                 "description": "Existing traffic manager name to add endpoints to. Leave empty to skip endpoints"
+              }
+            },
+            "vmSubnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "The id of the subnet to use for VMs and Kubernetes, or empty if AKS should manage its own VNet and subnet."
               }
             },
             "newOrExistingKubernetes": {
@@ -1065,6 +1416,9 @@
                   },
                   "workspaceResourceId": {
                     "value": "[parameters('logAnalyticsWorkspaceResourceId')]"
+                  },
+                  "vnetSubnetId": {
+                    "value": "[parameters('vmSubnetId')]"
                   }
                 },
                 "template": {
@@ -1074,7 +1428,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.18.4.5664",
-                      "templateHash": "7757450176418311993"
+                      "templateHash": "14290167893167593081"
                     }
                   },
                   "parameters": {
@@ -1156,10 +1510,30 @@
                       "metadata": {
                         "description": "Azure Monitor Log Analytics Resource ID. Leave empty to disable container insights"
                       }
+                    },
+                    "vnetSubnetId": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "Id of an existing subnet to use for the cluster. If this is empty, AKS will create and manage the subnet"
+                      }
                     }
                   },
                   "variables": {
-                    "addonProfiles": "[if(equals(parameters('workspaceResourceId'), ''), createObject('omsagent', createObject('enabled', false(), 'config', createObject())), createObject('omsagent', createObject('enabled', true(), 'config', createObject('logAnalyticsWorkspaceResourceID', parameters('workspaceResourceId')))))]"
+                    "addonProfiles": "[if(equals(parameters('workspaceResourceId'), ''), createObject('omsagent', createObject('enabled', false(), 'config', createObject())), createObject('omsagent', createObject('enabled', true(), 'config', createObject('logAnalyticsWorkspaceResourceID', parameters('workspaceResourceId')))))]",
+                    "agentPoolProfileBase": {
+                      "name": "[parameters('agentPoolName')]",
+                      "count": "[parameters('agentPoolCount')]",
+                      "vmSize": "[parameters('vmSize')]",
+                      "osType": "Linux",
+                      "mode": "System",
+                      "nodeLabels": {
+                        "type": "[parameters('nodeLabels')]"
+                      },
+                      "availabilityZones": "[if(parameters('isZoneRedundant'), parameters('availabilityZones'), null())]"
+                    },
+                    "subnetProperties": "[if(not(equals(parameters('vnetSubnetId'), '')), createObject('vnetSubnetID', parameters('vnetSubnetId')), createObject())]",
+                    "agentPoolProfile": "[union(variables('agentPoolProfileBase'), variables('subnetProperties'))]"
                   },
                   "resources": [
                     {
@@ -1189,17 +1563,7 @@
                         "dnsPrefix": "[parameters('dnsPrefix')]",
                         "enableRBAC": true,
                         "agentPoolProfiles": [
-                          {
-                            "name": "[parameters('agentPoolName')]",
-                            "count": "[parameters('agentPoolCount')]",
-                            "vmSize": "[parameters('vmSize')]",
-                            "osType": "Linux",
-                            "mode": "System",
-                            "nodeLabels": {
-                              "type": "[parameters('nodeLabels')]"
-                            },
-                            "availabilityZones": "[if(parameters('isZoneRedundant'), parameters('availabilityZones'), null())]"
-                          }
+                          "[variables('agentPoolProfile')]"
                         ],
                         "identityProfile": {
                           "assignedIdentity": {
@@ -1962,7 +2326,8 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', format('logAnalytics-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name)))]",
-        "[resourceId('Microsoft.Resources/deployments', format('trafficManager-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name)))]"
+        "[resourceId('Microsoft.Resources/deployments', format('trafficManager-{0}', uniqueString(parameters('location'), resourceGroup().id, deployment().name)))]",
+        "[resourceId('Microsoft.Resources/deployments', format('{0}-eachregion', parameters('vnetNamePrefix')))]"
       ]
     },
     {
@@ -2784,7 +3149,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.18.4.5664",
-              "templateHash": "14147796154238442359"
+              "templateHash": "9234382599843421546"
             }
           },
           "parameters": {
@@ -3408,7 +3773,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.18.4.5664",
-                      "templateHash": "4678070173325710321"
+                      "templateHash": "2910770851926098597"
                     }
                   },
                   "parameters": {
@@ -3751,7 +4116,7 @@
                     {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
-                      "name": "[format('helmInstallCombo-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))]",
+                      "name": "[format('helmInstallPrereqs-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))]",
                       "properties": {
                         "expressionEvaluationOptions": {
                           "scope": "inner"
@@ -3765,7 +4130,7 @@
                             "value": "[parameters('location')]"
                           },
                           "helmCharts": {
-                            "value": "[union(if(parameters('enableWorkloadIdentity'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallWorkloadID-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()), if(parameters('enableIngress'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallIngress-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()), if(parameters('enableSecretStore'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallSecretStore-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()), if(parameters('enableLocalProvisioner'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallProvisioner-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()), parameters('additionalCharts'))]"
+                            "value": "[union(if(parameters('enableWorkloadIdentity'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallWorkloadID-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()), if(parameters('enableIngress'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallIngress-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()), if(parameters('enableSecretStore'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallSecretStore-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()), if(parameters('enableLocalProvisioner'), createArray(reference(resourceId('Microsoft.Resources/deployments', format('helmInstallProvisioner-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))), '2022-09-01').outputs.helmChart.value), createArray()))]"
                           },
                           "useExistingManagedIdentity": {
                             "value": "[parameters('useExistingManagedIdentity')]"
@@ -4133,6 +4498,462 @@
                         "[resourceId('Microsoft.Resources/deployments', format('helmInstallProvisioner-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name)))]",
                         "[resourceId('Microsoft.Resources/deployments', format('helmInstallSecretStore-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name)))]",
                         "[resourceId('Microsoft.Resources/deployments', format('helmInstallWorkloadID-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name)))]"
+                      ]
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('delay-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "location": {
+                            "value": "[parameters('location')]"
+                          },
+                          "sleepName": {
+                            "value": "[format('sleep-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))]"
+                          },
+                          "sleepSeconds": {
+                            "value": 30
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.18.4.5664",
+                              "templateHash": "9231073494512761698"
+                            }
+                          },
+                          "parameters": {
+                            "location": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            },
+                            "utcValue": {
+                              "type": "string",
+                              "defaultValue": "[utcNow()]"
+                            },
+                            "sleepName": {
+                              "type": "string",
+                              "defaultValue": "sleep-1"
+                            },
+                            "sleepSeconds": {
+                              "type": "int",
+                              "defaultValue": 30
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Resources/deploymentScripts",
+                              "apiVersion": "2020-10-01",
+                              "name": "[parameters('sleepName')]",
+                              "location": "[parameters('location')]",
+                              "kind": "AzurePowerShell",
+                              "properties": {
+                                "forceUpdateTag": "[parameters('utcValue')]",
+                                "azPowerShellVersion": "8.3",
+                                "timeout": "PT10M",
+                                "arguments": "[format('-seconds {0}', parameters('sleepSeconds'))]",
+                                "scriptContent": "    param ( [string] $seconds )    \n    Write-Output Sleeping for: $seconds ....\n    Start-Sleep -Seconds $seconds   \n    Write-Output Sleep over - resuming ....\n    ",
+                                "cleanupPreference": "OnSuccess",
+                                "retentionInterval": "P1D"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Resources/deployments', format('helmInstallPrereqs-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name)))]"
+                      ]
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('helmInstallAdditional-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "aksName": {
+                            "value": "[parameters('aksName')]"
+                          },
+                          "location": {
+                            "value": "[parameters('location')]"
+                          },
+                          "helmCharts": {
+                            "value": "[parameters('additionalCharts')]"
+                          },
+                          "useExistingManagedIdentity": {
+                            "value": "[parameters('useExistingManagedIdentity')]"
+                          },
+                          "managedIdentityName": {
+                            "value": "[parameters('managedIdentityName')]"
+                          },
+                          "existingManagedIdentitySubId": {
+                            "value": "[parameters('existingManagedIdentitySubId')]"
+                          },
+                          "existingManagedIdentityResourceGroupName": {
+                            "value": "[parameters('existingManagedIdentityResourceGroupName')]"
+                          },
+                          "isApp": {
+                            "value": "[parameters('isApp')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.18.4.5664",
+                              "templateHash": "9337988228550688377"
+                            }
+                          },
+                          "parameters": {
+                            "aksName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the Azure Kubernetes Service"
+                              }
+                            },
+                            "location": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The location to deploy the resources to"
+                              }
+                            },
+                            "forceUpdateTag": {
+                              "type": "string",
+                              "defaultValue": "[utcNow()]",
+                              "metadata": {
+                                "description": "How the deployment script should be forced to execute"
+                              }
+                            },
+                            "useExistingManagedIdentity": {
+                              "type": "bool",
+                              "defaultValue": false,
+                              "metadata": {
+                                "description": "Does the Managed Identity already exists, or should be created"
+                              }
+                            },
+                            "managedIdentityName": {
+                              "type": "string",
+                              "defaultValue": "[format('id-AksRun-{0}', parameters('location'))]",
+                              "metadata": {
+                                "description": "Name of the Managed Identity resource"
+                              }
+                            },
+                            "existingManagedIdentitySubId": {
+                              "type": "string",
+                              "defaultValue": "[subscription().subscriptionId]",
+                              "metadata": {
+                                "description": "For an existing Managed Identity, the Subscription Id it is located in"
+                              }
+                            },
+                            "existingManagedIdentityResourceGroupName": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().name]",
+                              "metadata": {
+                                "description": "For an existing Managed Identity, the Resource Group it is located in"
+                              }
+                            },
+                            "cleanupPreference": {
+                              "type": "string",
+                              "defaultValue": "OnSuccess",
+                              "metadata": {
+                                "description": "When the script resource is cleaned up"
+                              },
+                              "allowedValues": [
+                                "OnSuccess",
+                                "OnExpiration",
+                                "Always"
+                              ]
+                            },
+                            "helmCharts": {
+                              "type": "array",
+                              "metadata": {
+                                "description": "Helm Charts {helmChart: azure-marketplace/wordpress, helmName: my-wordpress, helmNamespace: wordpress, helmValues: array, helmRepo: <>, helmRepoURL: <>}"
+                              }
+                            },
+                            "isApp": {
+                              "type": "bool",
+                              "defaultValue": true,
+                              "metadata": {
+                                "description": "Set to false to deploy from as an ARM template for debugging"
+                              }
+                            }
+                          },
+                          "variables": {
+                            "copy": [
+                              {
+                                "name": "commands",
+                                "count": "[length(parameters('helmCharts'))]",
+                                "input": "[join(createArray(if(contains(parameters('helmCharts')[copyIndex('commands')], 'helmRepo'), format('helm repo add {0} {1} && helm repo update &&', parameters('helmCharts')[copyIndex('commands')].helmRepo, parameters('helmCharts')[copyIndex('commands')].helmRepoURL), ''), format('helm upgrade {0} {1} --install', parameters('helmCharts')[copyIndex('commands')].helmName, parameters('helmCharts')[copyIndex('commands')].helmChart), if(contains(parameters('helmCharts')[copyIndex('commands')], 'helmNamespace'), format('--create-namespace --namespace {0}', parameters('helmCharts')[copyIndex('commands')].helmNamespace), ''), if(contains(parameters('helmCharts')[copyIndex('commands')], 'helmValues'), format('--set {0}', parameters('helmCharts')[copyIndex('commands')].helmValues), ''), if(contains(parameters('helmCharts')[copyIndex('commands')], 'helmStringValues'), format('--set-string {0}', parameters('helmCharts')[copyIndex('commands')].helmStringValues), ''), if(contains(parameters('helmCharts')[copyIndex('commands')], 'version'), format('--version {0}', parameters('helmCharts')[copyIndex('commands')].version), ''), '|| exit 1'), ' ')]"
+                              }
+                            ],
+                            "commandString": "[join(variables('commands'), '; ')]"
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Resources/deployments",
+                              "apiVersion": "2022-09-01",
+                              "name": "[format('helmChartMultiInstall-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name))]",
+                              "properties": {
+                                "expressionEvaluationOptions": {
+                                  "scope": "inner"
+                                },
+                                "mode": "Incremental",
+                                "parameters": {
+                                  "aksName": {
+                                    "value": "[parameters('aksName')]"
+                                  },
+                                  "location": {
+                                    "value": "[parameters('location')]"
+                                  },
+                                  "commands": {
+                                    "value": [
+                                      "[variables('commandString')]"
+                                    ]
+                                  },
+                                  "forceUpdateTag": {
+                                    "value": "[parameters('forceUpdateTag')]"
+                                  },
+                                  "useExistingManagedIdentity": {
+                                    "value": "[parameters('useExistingManagedIdentity')]"
+                                  },
+                                  "managedIdentityName": {
+                                    "value": "[parameters('managedIdentityName')]"
+                                  },
+                                  "existingManagedIdentitySubId": {
+                                    "value": "[parameters('existingManagedIdentitySubId')]"
+                                  },
+                                  "existingManagedIdentityResourceGroupName": {
+                                    "value": "[parameters('existingManagedIdentityResourceGroupName')]"
+                                  },
+                                  "cleanupPreference": {
+                                    "value": "[parameters('cleanupPreference')]"
+                                  },
+                                  "isApp": {
+                                    "value": "[parameters('isApp')]"
+                                  }
+                                },
+                                "template": {
+                                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                                  "contentVersion": "1.0.0.0",
+                                  "metadata": {
+                                    "_generator": {
+                                      "name": "bicep",
+                                      "version": "0.18.4.5664",
+                                      "templateHash": "1004481284178649138"
+                                    }
+                                  },
+                                  "parameters": {
+                                    "aksName": {
+                                      "type": "string",
+                                      "metadata": {
+                                        "description": "The name of the Azure Kubernetes Service"
+                                      }
+                                    },
+                                    "location": {
+                                      "type": "string",
+                                      "metadata": {
+                                        "description": "The location to deploy the resources to"
+                                      }
+                                    },
+                                    "forceUpdateTag": {
+                                      "type": "string",
+                                      "defaultValue": "[utcNow()]",
+                                      "metadata": {
+                                        "description": "How the deployment script should be forced to execute"
+                                      }
+                                    },
+                                    "rbacRolesNeeded": {
+                                      "type": "array",
+                                      "defaultValue": [
+                                        "b24988ac-6180-42a0-ab88-20f7382dd24c",
+                                        "7f6c6a51-bcf8-42ba-9220-52d62157d7db"
+                                      ],
+                                      "metadata": {
+                                        "description": "An array of Azure RoleIds that are required for the DeploymentScript resource"
+                                      }
+                                    },
+                                    "useExistingManagedIdentity": {
+                                      "type": "bool",
+                                      "defaultValue": false,
+                                      "metadata": {
+                                        "description": "Does the Managed Identity already exists, or should be created"
+                                      }
+                                    },
+                                    "managedIdentityName": {
+                                      "type": "string",
+                                      "defaultValue": "[format('id-AksRunCommandProxy-{0}', parameters('location'))]",
+                                      "metadata": {
+                                        "description": "Name of the Managed Identity resource"
+                                      }
+                                    },
+                                    "existingManagedIdentitySubId": {
+                                      "type": "string",
+                                      "defaultValue": "[subscription().subscriptionId]",
+                                      "metadata": {
+                                        "description": "For an existing Managed Identity, the Subscription Id it is located in"
+                                      }
+                                    },
+                                    "existingManagedIdentityResourceGroupName": {
+                                      "type": "string",
+                                      "defaultValue": "[resourceGroup().name]",
+                                      "metadata": {
+                                        "description": "For an existing Managed Identity, the Resource Group it is located in"
+                                      }
+                                    },
+                                    "commands": {
+                                      "type": "array",
+                                      "metadata": {
+                                        "description": "An array of commands to run"
+                                      }
+                                    },
+                                    "initialScriptDelay": {
+                                      "type": "string",
+                                      "defaultValue": "120s",
+                                      "metadata": {
+                                        "description": "A delay before the script import operation starts. Primarily to allow Azure AAD Role Assignments to propagate"
+                                      }
+                                    },
+                                    "cleanupPreference": {
+                                      "type": "string",
+                                      "defaultValue": "OnSuccess",
+                                      "metadata": {
+                                        "description": "When the script resource is cleaned up"
+                                      },
+                                      "allowedValues": [
+                                        "OnSuccess",
+                                        "OnExpiration",
+                                        "Always"
+                                      ]
+                                    },
+                                    "isApp": {
+                                      "type": "bool",
+                                      "defaultValue": true,
+                                      "metadata": {
+                                        "description": "Set to false to deploy from as an ARM template for debugging"
+                                      }
+                                    }
+                                  },
+                                  "variables": {
+                                    "delegatedManagedIdentityResourceId": "[if(parameters('useExistingManagedIdentity'), extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingManagedIdentitySubId'), parameters('existingManagedIdentityResourceGroupName')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')))]"
+                                  },
+                                  "resources": [
+                                    {
+                                      "condition": "[not(parameters('useExistingManagedIdentity'))]",
+                                      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                                      "apiVersion": "2018-11-30",
+                                      "name": "[parameters('managedIdentityName')]",
+                                      "location": "[parameters('location')]"
+                                    },
+                                    {
+                                      "copy": {
+                                        "name": "rbac",
+                                        "count": "[length(parameters('rbacRolesNeeded'))]"
+                                      },
+                                      "type": "Microsoft.Authorization/roleAssignments",
+                                      "apiVersion": "2022-04-01",
+                                      "scope": "[format('Microsoft.ContainerService/managedClusters/{0}', parameters('aksName'))]",
+                                      "name": "[guid(resourceId('Microsoft.ContainerService/managedClusters', parameters('aksName')), parameters('rbacRolesNeeded')[copyIndex()], if(parameters('useExistingManagedIdentity'), extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingManagedIdentitySubId'), parameters('existingManagedIdentityResourceGroupName')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))))]",
+                                      "properties": {
+                                        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', parameters('rbacRolesNeeded')[copyIndex()])]",
+                                        "principalId": "[if(parameters('useExistingManagedIdentity'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingManagedIdentitySubId'), parameters('existingManagedIdentityResourceGroupName')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), '2018-11-30').principalId, reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), '2018-11-30').principalId)]",
+                                        "principalType": "ServicePrincipal",
+                                        "delegatedManagedIdentityResourceId": "[if(parameters('isApp'), variables('delegatedManagedIdentityResourceId'), null())]"
+                                      },
+                                      "dependsOn": [
+                                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]"
+                                      ]
+                                    },
+                                    {
+                                      "copy": {
+                                        "name": "runAksCommand",
+                                        "count": "[length(parameters('commands'))]",
+                                        "mode": "serial",
+                                        "batchSize": 1
+                                      },
+                                      "type": "Microsoft.Resources/deploymentScripts",
+                                      "apiVersion": "2020-10-01",
+                                      "name": "[format('AKS-Run-{0}-{1}-{2}', parameters('aksName'), deployment().name, copyIndex())]",
+                                      "location": "[parameters('location')]",
+                                      "identity": {
+                                        "type": "UserAssigned",
+                                        "userAssignedIdentities": {
+                                          "[format('{0}', if(parameters('useExistingManagedIdentity'), extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', parameters('existingManagedIdentitySubId'), parameters('existingManagedIdentityResourceGroupName')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))))]": {}
+                                        }
+                                      },
+                                      "kind": "AzureCLI",
+                                      "properties": {
+                                        "forceUpdateTag": "[parameters('forceUpdateTag')]",
+                                        "azCliVersion": "2.35.0",
+                                        "timeout": "PT10M",
+                                        "retentionInterval": "P1D",
+                                        "environmentVariables": [
+                                          {
+                                            "name": "RG",
+                                            "value": "[resourceGroup().name]"
+                                          },
+                                          {
+                                            "name": "aksName",
+                                            "value": "[parameters('aksName')]"
+                                          },
+                                          {
+                                            "name": "command",
+                                            "value": "[parameters('commands')[copyIndex()]]"
+                                          },
+                                          {
+                                            "name": "initialDelay",
+                                            "value": "[parameters('initialScriptDelay')]"
+                                          },
+                                          {
+                                            "name": "loopIndex",
+                                            "value": "[string(copyIndex())]"
+                                          }
+                                        ],
+                                        "scriptContent": "      #!/bin/bash\n      set +H\n\n      if [ \"$loopIndex\" == \"0\" ] && [ \"$initialDelay\" != \"0\" ]\n      then\n        echo \"Waiting on RBAC replication ($initialDelay)\"\n        sleep $initialDelay\n\n        #Force RBAC refresh\n        az logout\n        az login --identity\n      fi\n\n      echo \"Sending command $command to AKS Cluster $aksName in $RG\"\n      cmdOut=$(az aks command invoke -g $RG -n $aksName -o json --command \"${command}\")\n      echo $cmdOut\n\n      jsonOutputString=$cmdOut\n      echo $jsonOutputString > $AZ_SCRIPTS_OUTPUT_PATH\n    ",
+                                        "cleanupPreference": "[parameters('cleanupPreference')]"
+                                      },
+                                      "dependsOn": [
+                                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]",
+                                        "rbac"
+                                      ]
+                                    }
+                                  ],
+                                  "outputs": {
+                                    "commandOutput": {
+                                      "type": "array",
+                                      "metadata": {
+                                        "description": "Array of command output from each Deployment Script AKS run command"
+                                      },
+                                      "copy": {
+                                        "count": "[length(parameters('commands'))]",
+                                        "input": {
+                                          "Index": "[copyIndex()]",
+                                          "Name": "[format('AKS-Run-{0}-{1}-{2}', parameters('aksName'), deployment().name, copyIndex())]",
+                                          "CommandOutput": "[reference(resourceId('Microsoft.Resources/deploymentScripts', format('AKS-Run-{0}-{1}-{2}', parameters('aksName'), deployment().name, copyIndex())), '2020-10-01').outputs]"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Resources/deployments', format('delay-{0}', uniqueString(parameters('aksName'), parameters('location'), resourceGroup().name)))]"
                       ]
                     }
                   ]
