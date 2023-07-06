@@ -18,7 +18,7 @@ In Unreal Engine 5 (UE5), ‘Unreal Cloud DDC’ is an optional service which us
 | :----------------------------------------------- | :------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `location`                                       | `string`       | Yes      | Deployment Location                                                                                                                                            |
 | `secondaryLocations`                             | `array`        | No       | Secondary Deployment Locations                                                                                                                                 |
-| `newOrExistingKubernetes`                        | `string`       | No       | New or Existing Kubernetes Resources                                                                                                                          |
+| `newOrExistingKubernetes`                        | `string`       | No       | New or Existing Kubernentes Resources, none to skip.                                                                                                           |
 | `aksName`                                        | `string`       | No       | Name of Kubernetes Resource                                                                                                                                    |
 | `agentPoolCount`                                 | `int`          | No       | Number of Kubernetes Nodes                                                                                                                                     |
 | `agentPoolName`                                  | `string`       | No       | Name of Kubernetes Agent Pool                                                                                                                                  |
@@ -57,12 +57,13 @@ In Unreal Engine 5 (UE5), ‘Unreal Cloud DDC’ is an optional service which us
 | `CleanOldBlobs`                                  | `bool`         | No       | Delete old blobs that are no longer referenced by any ref - this runs in each region to cleanup that regions blob stores                                       |
 | `cassandraConnectionString`                      | `securestring` | No       | Connection String of User Provided Cassandra Database                                                                                                          |
 | `storageConnectionStrings`                       | `array`        | No       | Connection Strings of User Provided Storage Accounts                                                                                                           |
-| `imageVersion`                                   | `string`       | No       | Version of the image to deploy                                                                                                                                 |
-| `helmChart`                                      | `string`       | Yes      | Name of the Helm chart to deploy                                                                                                                               |
+| `containerImageRepo`                             | `string`       | Yes      | Reference to the container registry repo with the cloud DDC container image                                                                                    |
+| `containerImageVersion`                          | `string`       | No       | The cloud DDC container image version to use                                                                                                                   |
+| `helmChart`                                      | `string`       | Yes      | Reference to the container registry repo with the cloud DDC helm chart                                                                                         |
 | `helmVersion`                                    | `string`       | No       | Helm Chart Version                                                                                                                                             |
 | `helmName`                                       | `string`       | No       | Name of the Helm release                                                                                                                                       |
 | `helmNamespace`                                  | `string`       | No       | Namespace of the Helm release                                                                                                                                  |
-| `siteName`                                       | `string`       | No       | Name of the site                                                                                                                                               |
+| `siteNamePrefix`                                 | `string`       | No       | This is prefixed to each location when naming the site for the location                                                                                        |
 | `managedIdentityPrefix`                          | `string`       | No       | Prefix of Managed Identity used during deployment                                                                                                              |
 | `useExistingManagedIdentity`                     | `bool`         | No       | Does the Managed Identity already exists, or should be created                                                                                                 |
 | `existingManagedIdentitySubId`                   | `string`       | No       | For an existing Managed Identity, the Subscription Id it is located in                                                                                         |
@@ -73,13 +74,14 @@ In Unreal Engine 5 (UE5), ‘Unreal Cloud DDC’ is an optional service which us
 | `newOrExistingWorkspaceForContainerInsights`     | `string`       | No       | If new or existing, this will enable container insights on the AKS cluster. If new, will create one log analytics workspace per location                       |
 | `logAnalyticsWorkspaceName`                      | `string`       | No       | The name of the log analytics workspace to use for container insights                                                                                          |
 | `existingLogAnalyticsWorkspaceResourceGroupName` | `string`       | No       | The resource group corresponding to an existing logAnalyticsWorkspaceName                                                                                      |
+| `locationSpecSeperator`                          | `string`       | No       | Seperator to use for regional DNS URLs. By default, subdomains will be created for each region.                                                                |
 
 ## Outputs
 
-| Name                  | Type   | Description                        |
-| :-------------------- | :----: | :--------------------------------- |
-| cosmosDBName          | string | Name of Cosmos DB resource         |
-| newOrExistingCosmosDB | string | New or Existing Cosmos DB resource |
+| Name                    | Type     | Description                        |
+| :---------------------- | :------: | :--------------------------------- |
+| `cosmosDBName`          | `string` | Name of Cosmos DB resource         |
+| `newOrExistingCosmosDB` | `string` | New or Existing Cosmos DB resource |
 
 ## Examples
 
