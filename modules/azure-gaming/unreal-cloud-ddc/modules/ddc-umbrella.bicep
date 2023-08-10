@@ -1,4 +1,4 @@
-param aksName string = ''
+param clusterIdentityName string
 param location string
 param resourceGroupName string
 param keyVaultName string
@@ -8,6 +8,9 @@ param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
 param locationHostname string
+param useVnet bool
+param loadBalancerSubnetName string
+param internalLoadBalancerIP string
 param replicationSourceHostname string
 param keyVaultTenantID string = subscription().tenantId
 param loginTenantID string = subscription().tenantId
@@ -50,10 +53,10 @@ param useLocalPVProvisioner bool = true
 param localStorageSize string = '512Gi'
 
 resource clusterUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
-  name: 'id-${aksName}-${location}'
+  name: clusterIdentityName
 }
 
-var federatedId = clusterUser.properties.clientId
+var federatedClientId = clusterUser.properties.clientId
 
 var locationMapping = {
   eastus: 'East US'
@@ -86,7 +89,7 @@ var siteName = '${siteNamePrefix}${location}'
 
 var secretStore = {
   enabled: true
-  clientID: federatedId
+  clientID: federatedClientId
   keyVaultName: keyVaultName
   resourceGroup: resourceGroupName
   subscriptionID: subscription().subscriptionId
@@ -139,7 +142,7 @@ var storageConnectionString = 'akv!${keyVaultName}|ddc-storage-connection-string
 // Setting up shared suffixes between main and worker.
 var scyllaValueSuffixes = [for kvp in items(scyllaSpec): '${kvp.key}=${kvp.value}' ]
 
-// Replace $(FEDERATED_ID) later as federatedId is not supported in loops.
+// Replace $(FEDERATED_ID) later as federatedClientId is not supported in loops.
 var sharedEnv = {
   AZURE_CLIENT_ID: '$(FEDERATED_ID)'
   AZURE_TENANT_ID: keyVaultTenantID
@@ -162,11 +165,13 @@ var workerConfigPrefix = '${workerPrefix}.config'
 var replicationPrefix = '${workerConfigPrefix}.Replication'
 var replicationEnabledValue = '${replicationPrefix}.Enabled=true'
 var replicatorPrefix = '${replicationPrefix}.Replicators'
+var replicationProtocol = useVnet ? 'http' : 'https'
+
 var replicatorValueArrays = [for (namespaceToReplicate, index) in namespacesToReplicate: [
-  '${replicatorPrefix}[${index}].ReplicatorName=Replicator${location}'
+  '${replicatorPrefix}[${index}].ReplicatorName=Replicator${location}-${namespaceToReplicate}'
   '${replicatorPrefix}[${index}].Namespace=${namespaceToReplicate}'
   '${replicatorPrefix}[${index}].Version=Refs'
-  '${replicatorPrefix}[${index}].ConnectionString=${replicationSourceHostname}'
+  '${replicatorPrefix}[${index}].ConnectionString=${replicationProtocol}://${replicationSourceHostname}'
 ]]
 
 var workerReplicatorValues = (length(namespacesToReplicate) > 0) ? concat([replicationEnabledValue], flatten(replicatorValueArrays)) : []
@@ -263,20 +268,39 @@ var mainOtherValues = [
   '${mainChartName}.image.repository=${containerImageRepo}'
   '${mainConfigPrefix}.Azure.ConnectionString=${storageConnectionString}'
   '${mainConfigPrefix}.GC.CleanOldBlobs=false'
-  '${mainChartName}.serviceAccount.annotations.azure\\.workload\\.identity/client-id=${federatedId}'
+  '${mainChartName}.serviceAccount.annotations.azure\\.workload\\.identity/client-id=${federatedClientId}'
 ]
 
 var mainRestartValues = restartPods ? [ '${mainChartName}.podAnnotations.rollme=${uniqueString(podRollMeSeed)}' ] : []
 
-var mainValues = concat(mainEnvValues, mainScyllaValues, mainPersistenceValues, mainOtherValues, mainRestartValues)
+// Add extra service as internal load balancer.
+
+var mainExtraServicePrefix = '${mainChartName}.extraService'
+var mainLBAnnotationsPrefix = '${mainExtraServicePrefix}.annotations.service\\.beta\\.kubernetes\\.io'
+
+var mainVnetValues = useVnet ? [
+  '${mainLBAnnotationsPrefix}/azure-load-balancer-ipv4=${internalLoadBalancerIP}'
+  '${mainLBAnnotationsPrefix}/azure-load-balancer-internal-subnet=${loadBalancerSubnetName}'
+  '${mainExtraServicePrefix}.type=LoadBalancer'
+  '${mainExtraServicePrefix}.portName=http'
+  '${mainExtraServicePrefix}.port=80'
+  '${mainExtraServicePrefix}.targetPort=internal-http'
+] : []
+
+var mainValues = concat(mainEnvValues, mainScyllaValues, mainPersistenceValues, mainOtherValues, mainRestartValues, mainVnetValues)
 
 // The chart template (mistakenly?) uses podLabels on the worker if podLabels are specified on the main workload.
 // We only need workload identity on main, not on the worker.
-var helmStringArgs = [
+var helmStringArgsBase = [
   '${mainChartName}.podLabels.azure\\.workload\\.identity/use=true'
   '${workerPrefix}.podLabels.azure\\.workload\\.identity/use=false'
 ]
-var helmStringValues = '"${join(helmStringArgs, '","')}"'
+
+var mainVnetStringArgs = useVnet ? [
+  '${mainLBAnnotationsPrefix}/azure-load-balancer-internal=true'
+] : []
+
+var helmStringArgs = concat(helmStringArgsBase, mainVnetStringArgs)
 
 var ingressAksValues = [
   'ingressAks.enabled=true'
@@ -287,11 +311,13 @@ var ingressAksValues = [
   'ingressAks.hosts[1].tlsSecretName=${locationTlsSecretName}'
 ]
 
+var helmStringValues = '"${join(helmStringArgs, '","')}"'
+
 var otelCollectorValues = useOtel ? ['opentelemetry-collector.config.exporters.azuremonitor.instrumentation_key=${appInsightsKey}'] : []
 
 var helmValuesListCombined = concat(globalValues, secretStoreValues, mainValues, workerValues, ingressAksValues, otelCollectorValues)
 var helmValuesStringWithTemplate = '"${join(helmValuesListCombined, '","')}"'
-var helmValuesString = replace(helmValuesStringWithTemplate, '$(FEDERATED_ID)', federatedId)
+var helmValuesString = replace(helmValuesStringWithTemplate, '$(FEDERATED_ID)', federatedClientId)
 
 var helmCharts = {
   helmChart: helmChart

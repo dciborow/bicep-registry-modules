@@ -35,8 +35,9 @@ param kubernetesParams object = {
   agentPoolName: 'agentpool'
   vmSize: 'Standard_D2_v2'
   assignRole: true
-  clusterUserName: 'k8-${take(uniqueString(location, resourceGroup().id), 15)}'
+  clusterIdentityName: 'k8-${take(uniqueString(location, resourceGroup().id), 15)}'
   nodeLabels: 'defaultLabel'
+  version: '1.24.9'
 }
 param assignRole bool = true
 
@@ -98,10 +99,11 @@ module clusterModule 'ContainerService/managedClusters.bicep' = if (enableKubern
     agentPoolName: contains(kubernetesParams, 'agentPoolName') ? kubernetesParams.agentPoolName : 'agentpool'
     vmSize: contains(kubernetesParams, 'vmSize') ? kubernetesParams.vmSize : 'Standard_D2_v2'
     assignRole: assignRole
+    kubernetesVersion: contains(kubernetesParams, 'version') ? kubernetesParams.version : '1.24.9'
     newOrExisting: newOrExisting[newOrExistingKubernetes]
     isZoneRedundant: isZoneRedundant && !contains(noAvailabilityZones, location)
     subject: subject
-    clusterUserName: kubernetesParams.clusterUserName
+    clusterIdentityName: kubernetesParams.clusterIdentityName
     nodeLabels: kubernetesParams.nodeLabels
     workspaceResourceId: logAnalyticsWorkspaceResourceId
     vnetSubnetId: vmSubnetId

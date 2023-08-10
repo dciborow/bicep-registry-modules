@@ -3,7 +3,8 @@ param aksName string
 param locationSpecs array
 
 param resourceGroupName string = resourceGroup().name
-param publicIpName string
+param publicIpNamePrefix string
+param useVnet bool
 param servicePrincipalClientID string
 param workerServicePrincipalClientID string = servicePrincipalClientID
 param hostname string
@@ -49,12 +50,40 @@ param isApp bool = true
 param namespacesToReplicate array = []
 
 @description('This is used to scale up the number of pods (replicas) for the main deployment, so that there is one replica per node on the agent')
-param agentPoolCount int
+param mainReplicaCount int
+
+@description('Whether to use a local ephemeral Persistent Volume provisioner for the cluster')
+param enableLocalPVProvisioner bool = true
+
+param privateDnsZoneName string
+param loadBalancerSubnetName string
+
+resource publicIPs 'Microsoft.Network/publicIPAddresses@2021-03-01' existing = [for spec in locationSpecs: {
+  name: '${publicIpNamePrefix}-${spec.location}'
+}]
+
+// Need to find available IP address for each location for internal load balancer.
+module findAvailableIPs './network/listAvailableIP.bicep' = [for spec in locationSpecs: {
+  name: 'findAvailableIPs-${spec.regionCode}-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
+  params: {
+    location: spec.location
+    vnetName: spec.vnetName
+    subnetName: loadBalancerSubnetName
+    managedIdentityName: spec.clusterIdentityName
+    managedIdentityResourceGroup: resourceGroupName
+    enableScript: useVnet
+  }
+}]
+
+var privateLocationHostNames = [for spec in locationSpecs: '${spec.regioncode}.${privateDnsZoneName}']
 
 module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
   name: 'helmInstall-ddc-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
+  dependsOn: useVnet ? [
+    findAvailableIPs[index]
+  ] : []
   params: {
-    aksName: aksName
+    clusterIdentityName: spec.clusterIdentityName
     location: spec.location
     resourceGroupName: resourceGroupName
     keyVaultName: spec.keyVaultName
@@ -62,7 +91,10 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
     workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: hostname
     locationHostname: spec.fullLocationHostName
-    replicationSourceHostname: spec.fullSourceLocationHostName
+    useVnet: useVnet
+    loadBalancerSubnetName: loadBalancerSubnetName
+    internalLoadBalancerIP: useVnet ? findAvailableIPs[index].outputs.availableIP : ''
+    replicationSourceHostname: useVnet ? privateLocationHostNames[spec.sourceLocationIndex] : spec.fullSourceLocationHostName
     certificateName: certificateName
     locationCertificateName: spec.locationCertName
     keyVaultTenantID: keyVaultTenantID
@@ -72,7 +104,7 @@ module ddcSetup 'ddc-umbrella.bicep' = [for (spec, index) in locationSpecs: {
     CleanOldBlobs: CleanOldBlobs
     namespacesToReplicate: namespacesToReplicate
     helmVersion: helmVersion
-    mainReplicaCount: agentPoolCount
+    mainReplicaCount: mainReplicaCount
     workerReplicaCount: 1
     helmChart: helmChart
     helmName: helmName
@@ -89,12 +121,26 @@ module configAKS 'ContainerService/configure-aks.bicep' = [for (spec, index) in 
     location: spec.location
     aksName: '${aksName}-${spec.regionCode}'
     additionalCharts: [ ddcSetup[index].outputs.helmChart ]
-    staticIP: '${publicIpName}-${spec.location}'
+    publicIpAddress: publicIPs[index].properties.ipAddress
     azureTenantID: azureTenantID
     useExistingManagedIdentity: useExistingManagedIdentity
     managedIdentityName: '${managedIdentityPrefix}${spec.location}'
     existingManagedIdentitySubId: existingManagedIdentitySubId
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
+    enableLocalProvisioner: enableLocalPVProvisioner
     isApp: isApp
+  }
+}]
+
+// Add A records in private DNS zone.
+module ipRecords './network/privateDnsZoneARecord.bicep' = [for (spec, index) in locationSpecs: if (useVnet) {
+  name: 'addIpRecords-${uniqueString(spec.location, resourceGroup().id, deployment().name)}'
+  dependsOn: [
+    configAKS
+  ] 
+  params: {
+    privateDnsZoneName: privateDnsZoneName
+    recordName: spec.regionCode
+    ipAddress: findAvailableIPs[index].outputs.availableIP
   }
 }]

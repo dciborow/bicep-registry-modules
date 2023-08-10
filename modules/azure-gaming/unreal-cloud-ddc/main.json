@@ -31,7 +31,7 @@
         "none"
       ],
       "metadata": {
-        "description": "New or Existing Kubernentes Resources, none to skip."
+        "description": "New or Existing Kubernetes Resources"
       }
     },
     "aksName": {

@@ -15,11 +15,23 @@ param aksName string = 'ddc-storage-${take(uniqueString(resourceGroup().id), 6)}
 @description('Number of Kubernetes Nodes')
 param agentPoolCount int = 3
 
+@description('Whether to use a local ephemeral Persistent Volume provisioner for the cluster')
+param enableLocalPVProvisioner bool = true
+
+// By default, use one less replica than the nodes in the agent pool if local PV provisioning is enabled.
+// This allows for the ephemeral volume controller to work properly while creating an extra pod during updates.
+// TODO: Make use of all agents even with local PV provisioning.
+@description('Number of pod replicas for the main Kubernetes Deployment')
+param mainReplicaCount int = enableLocalPVProvisioner ? agentPoolCount - 1 : agentPoolCount
+
 @description('Name of Kubernetes Agent Pool')
 param agentPoolName string = 'k8agent'
 
 @description('Virtual Machine Skew for Kubernetes')
 param vmSize string = 'Standard_L16s_v2'
+
+@description('Kubernetes version should be supported in all requested regions')
+param kubernetesVersion string = '1.24.9'
 
 @description('Whether to create a common vnet for the AKS cluster and related resources. If false, the cluster will create and manage the vnet and subnet internally')
 param useVnet bool = false
@@ -35,6 +47,12 @@ param vnetRegionAddrRange int
 
 @description('Name of subnet to use for virtual machines')
 param vnetVmSubnetName string = 'vmsubnet'
+
+@description('Name of subnet to use for internal load balancers')
+param vnetLoadBalancerSubnetName string = 'lbsubnet'
+
+@description('Name of private DNS zone if useVnet is true')
+param privateDnsZoneName string
 
 @description('Hostname of Deployment')
 param hostname string = 'deploy1.ddc-storage.gaming.azure.com'
@@ -84,7 +102,7 @@ param keyVaultName string = take('kv-${uniqueString(resourceGroup().id, subscrip
 @allowed([ 'new', 'existing' ])
 param newOrExistingPublicIp string = 'new'
 
-@description('Name of Public IP Resource')
+@description('Name of Public IP Resource, will be suffixed with the location.')
 param publicIpName string = 'ddcPublicIP${uniqueString(resourceGroup().id, subscription().subscriptionId)}'
 
 @description('Create new or use existing Traffic Manager Profile.')
@@ -154,7 +172,7 @@ param containerImageVersion string = '0.39.2'
 param helmChart string
 
 @description('Helm Chart Version')
-param helmVersion string = '0.2.3'
+param helmVersion string
 
 @description('Name of the Helm release')
 param helmName string = 'myhordetest'
@@ -299,25 +317,30 @@ module vnets 'modules/network/vnets.bicep' = if (useVnet) {
     overallAddrPrefix: vnetOverallAddrPrefix
     regionAddrRange: vnetRegionAddrRange
     vmSubnetName: vnetVmSubnetName
+    loadBalancerSubnetName: vnetLoadBalancerSubnetName
+    privateDnsZoneName: privateDnsZoneName
   }
 }
 
 var vmSubnetIds = useVnet ? vnets.outputs.vmSubnetIds : []
 
-// Compute "source" locations for replication.
+// Compute "source" location indices for replication.
 // Forms a cycle so that a given region replaces from only one other location.
 var lastLocationIndex = length(allLocations) - 1
-var sourceLocations = [for (location, index) in allLocations: (index > 0) ? allLocations[index-1] : allLocations[lastLocationIndex]]
+var sourceLocationIndices = [for index in range(0, length(allLocations)): (index > 0) ? index-1 : lastLocationIndex]
+var sourceLocations = [for index in sourceLocationIndices: allLocations[index]]
 
 // Prepare a number of properties for each location
 var locationSpecs = [for (location, index) in allLocations: {
   location: location
-  sourceLocation: sourceLocations[index]
+  sourceLocationIndex: sourceLocationIndices[index]
   locationCertName: '${certificateName}-${location}'
   fullLocationHostName: '${regionCodes[location]}${locationSpecSeperator}${fullHostname}'
-  fullSourceLocationHostName: '${sourceLocations[index]}${locationSpecSeperator}${fullHostname}'
+  fullSourceLocationHostName: '${regionCodes[sourceLocations[index]]}${locationSpecSeperator}${fullHostname}'
   keyVaultName: take('${regionCodes[location]}-${keyVaultName}', 24)
   regionCode: regionCodes[location]
+  clusterIdentityName: 'id-${aksName}-${location}'
+  vnetName: useVnet ? vnetSpecs[index].name : ''
 }]
 
 module allRegionalResources 'modules/resources.bicep' = [for (location, index) in allLocations: if (epicEULA) {
@@ -338,7 +361,8 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
       agentPoolCount: agentPoolCount
       agentPoolName: agentPoolName
       vmSize: vmSize
-      clusterUserName: 'id-${aksName}-${location}'
+      version: kubernetesVersion
+      clusterIdentityName: locationSpecs[index].clusterIdentityName
       nodeLabels: nodeLabels
     }
     keyVaultName: locationSpecs[index].keyVaultName
@@ -350,7 +374,7 @@ module allRegionalResources 'modules/resources.bicep' = [for (location, index) i
     storageSecretName: 'ddc-storage-connection-string'
     assignRole: assignRole
     isZoneRedundant: isZoneRedundant
-    subject: 'system:serviceaccount:horde-tests:workload-identity-sa'
+    subject: 'system:serviceaccount:${helmNamespace}:workload-identity-sa'
     storageAccountSecret: newOrExistingStorageAccount == 'existing' ? storageConnectionStrings[index] : ''
     useDnsZone: useDnsZone
     dnsZoneName: dnsZoneName
@@ -426,7 +450,8 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (enableKubernetes
     aksName: aksName
     locationSpecs: locationSpecs
     resourceGroupName: resourceGroup().name
-    publicIpName: publicIpName
+    publicIpNamePrefix: publicIpName
+    useVnet: useVnet
     servicePrincipalClientID: servicePrincipalClientID
     workerServicePrincipalClientID: workerServicePrincipalClientID
     hostname: fullHostname
@@ -449,7 +474,10 @@ module setuplocations 'modules/ddc-setup-locations.bicep' = if (enableKubernetes
     existingManagedIdentityResourceGroupName: existingManagedIdentityResourceGroupName
     isApp: isApp
     namespacesToReplicate: namespacesToReplicate
-    agentPoolCount: agentPoolCount
+    enableLocalPVProvisioner: enableLocalPVProvisioner
+    mainReplicaCount: mainReplicaCount
+    privateDnsZoneName: privateDnsZoneName
+    loadBalancerSubnetName: vnetLoadBalancerSubnetName
   }
 }
 

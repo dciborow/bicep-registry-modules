@@ -1,6 +1,6 @@
 param aksName string
 param location string
-param staticIP string = ''
+param publicIpAddress string = ''
 param additionalCharts array = []
 
 param enableWorkloadIdentity bool = true
@@ -33,13 +33,9 @@ module helmInstallWorkloadID 'workload-id.bicep' = if(enableWorkloadIdentity) {
 
 module helmInstallSecretStore 'csi-secret-store.bicep' = if(enableSecretStore) { name: 'helmInstallSecretStore-${uniqueString(aksName, location, resourceGroup().name)}' }
 
-resource publicIP 'Microsoft.Network/publicIPAddresses@2021-03-01' existing = {
-  name: staticIP
-}
-
 module helmInstallIngress 'nginx-ingress.bicep' = if(enableIngress) {
   name: 'helmInstallIngress-${uniqueString(aksName, location, resourceGroup().name)}'
-  params: { staticIP: publicIP.properties.ipAddress }
+  params: { staticIP: publicIpAddress }
 }
 
 module helmInstallLocalProvisioner 'local-pv-provisioner.bicep' = if(enableLocalProvisioner) {
