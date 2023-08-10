@@ -1,3 +1,7 @@
+metadata name = 'Unreal Cloud DDC'
+metadata description = 'Unreal Cloud DDC for Unreal Engine game development.'
+metadata owner = 'dciborow'
+
 //  Parameters
 @description('Deployment Location')
 param location string

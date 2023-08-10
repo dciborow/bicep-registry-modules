@@ -4,9 +4,12 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.18.4.5664",
-      "templateHash": "11038442697871023063"
-    }
+      "version": "0.20.4.51522",
+      "templateHash": "5854598994552399421"
+    },
+    "name": "Unreal Cloud DDC",
+    "description": "Unreal Cloud DDC for Unreal Engine game development.",
+    "owner": "dciborow"
   },
   "parameters": {
     "location": {
@@ -31,7 +34,7 @@
         "none"
       ],
       "metadata": {
-        "description": "New or Existing Kubernetes Resources"
+        "description": "New or Existing Kubernetes Resources, none to skip."
       }
     },
     "aksName": {
@@ -48,6 +51,20 @@
         "description": "Number of Kubernetes Nodes"
       }
     },
+    "enableLocalPVProvisioner": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to use a local ephemeral Persistent Volume provisioner for the cluster"
+      }
+    },
+    "mainReplicaCount": {
+      "type": "int",
+      "defaultValue": "[if(parameters('enableLocalPVProvisioner'), sub(parameters('agentPoolCount'), 1), parameters('agentPoolCount'))]",
+      "metadata": {
+        "description": "Number of pod replicas for the main Kubernetes Deployment"
+      }
+    },
     "agentPoolName": {
       "type": "string",
       "defaultValue": "k8agent",
@@ -60,6 +77,13 @@
       "defaultValue": "Standard_L16s_v2",
       "metadata": {
         "description": "Virtual Machine Skew for Kubernetes"
+      }
+    },
+    "kubernetesVersion": {
+      "type": "string",
+      "defaultValue": "1.24.9",
+      "metadata": {
+        "description": "Kubernetes version should be supported in all requested regions"
       }
     },
     "useVnet": {
@@ -93,6 +117,19 @@
       "defaultValue": "vmsubnet",
       "metadata": {
         "description": "Name of subnet to use for virtual machines"
+      }
+    },
+    "vnetLoadBalancerSubnetName": {
+      "type": "string",
+      "defaultValue": "lbsubnet",
+      "metadata": {
+        "description": "Name of subnet to use for internal load balancers"
+      }
+    },
+    "privateDnsZoneName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of private DNS zone if useVnet is true"
       }
     },
     "hostname": {
@@ -216,7 +253,7 @@
       "type": "string",
       "defaultValue": "[format('ddcPublicIP{0}', uniqueString(resourceGroup().id, subscription().subscriptionId))]",
       "metadata": {
-        "description": "Name of Public IP Resource"
+        "description": "Name of Public IP Resource, will be suffixed with the location."
       }
     },
     "newOrExistingTrafficManager": {
@@ -374,7 +411,6 @@
     },
     "helmVersion": {
       "type": "string",
-      "defaultValue": "0.2.3",
       "metadata": {
         "description": "Helm Chart Version"
       }
@@ -494,21 +530,28 @@
         }
       },
       {
+        "name": "sourceLocationIndices",
+        "count": "[length(range(0, length(variables('allLocations'))))]",
+        "input": "[if(greater(range(0, length(variables('allLocations')))[copyIndex('sourceLocationIndices')], 0), sub(range(0, length(variables('allLocations')))[copyIndex('sourceLocationIndices')], 1), variables('lastLocationIndex'))]"
+      },
+      {
         "name": "sourceLocations",
-        "count": "[length(variables('allLocations'))]",
-        "input": "[if(greater(copyIndex('sourceLocations'), 0), variables('allLocations')[sub(copyIndex('sourceLocations'), 1)], variables('allLocations')[variables('lastLocationIndex')])]"
+        "count": "[length(variables('sourceLocationIndices'))]",
+        "input": "[variables('allLocations')[variables('sourceLocationIndices')[copyIndex('sourceLocations')]]]"
       },
       {
         "name": "locationSpecs",
         "count": "[length(variables('allLocations'))]",
         "input": {
           "location": "[variables('allLocations')[copyIndex('locationSpecs')]]",
-          "sourceLocation": "[variables('sourceLocations')[copyIndex('locationSpecs')]]",
+          "sourceLocationIndex": "[variables('sourceLocationIndices')[copyIndex('locationSpecs')]]",
           "locationCertName": "[format('{0}-{1}', parameters('certificateName'), variables('allLocations')[copyIndex('locationSpecs')])]",
           "fullLocationHostName": "[format('{0}{1}{2}', variables('regionCodes')[variables('allLocations')[copyIndex('locationSpecs')]], parameters('locationSpecSeperator'), variables('fullHostname'))]",
-          "fullSourceLocationHostName": "[format('{0}{1}{2}', variables('sourceLocations')[copyIndex('locationSpecs')], parameters('locationSpecSeperator'), variables('fullHostname'))]",
+          "fullSourceLocationHostName": "[format('{0}{1}{2}', variables('regionCodes')[variables('sourceLocations')[copyIndex('locationSpecs')]], parameters('locationSpecSeperator'), variables('fullHostname'))]",
           "keyVaultName": "[take(format('{0}-{1}', variables('regionCodes')[variables('allLocations')[copyIndex('locationSpecs')]], parameters('keyVaultName')), 24)]",
-          "regionCode": "[variables('regionCodes')[variables('allLocations')[copyIndex('locationSpecs')]]]"
+          "regionCode": "[variables('regionCodes')[variables('allLocations')[copyIndex('locationSpecs')]]]",
+          "clusterIdentityName": "[format('id-{0}-{1}', parameters('aksName'), variables('allLocations')[copyIndex('locationSpecs')])]",
+          "vnetName": "[if(parameters('useVnet'), variables('vnetSpecs')[copyIndex('locationSpecs')].name, '')]"
         }
       }
     ],
@@ -593,8 +636,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "4831199358207601070"
+              "version": "0.20.4.51522",
+              "templateHash": "9963494728343196933"
             }
           },
           "parameters": {
@@ -705,8 +748,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "9223513811964393376"
+              "version": "0.20.4.51522",
+              "templateHash": "6007120194379601496"
             }
           },
           "parameters": {
@@ -824,6 +867,12 @@
           },
           "vmSubnetName": {
             "value": "[parameters('vnetVmSubnetName')]"
+          },
+          "loadBalancerSubnetName": {
+            "value": "[parameters('vnetLoadBalancerSubnetName')]"
+          },
+          "privateDnsZoneName": {
+            "value": "[parameters('privateDnsZoneName')]"
           }
         },
         "template": {
@@ -832,8 +881,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "12757534926814650152"
+              "version": "0.20.4.51522",
+              "templateHash": "11667977244542673243"
             }
           },
           "parameters": {
@@ -849,7 +898,17 @@
             "regionAddrRange": {
               "type": "int"
             },
+            "subnetAddrRange": {
+              "type": "int",
+              "defaultValue": 24
+            },
             "vmSubnetName": {
+              "type": "string"
+            },
+            "loadBalancerSubnetName": {
+              "type": "string"
+            },
+            "privateDnsZoneName": {
               "type": "string"
             }
           },
@@ -893,7 +952,8 @@
                   },
                   "subnets": {
                     "value": {
-                      "[format('{0}', parameters('vmSubnetName'))]": "[cidrSubnet(variables('vnetRanges')[copyIndex()], 24, 0)]"
+                      "[format('{0}', parameters('vmSubnetName'))]": "[cidrSubnet(variables('vnetRanges')[copyIndex()], parameters('subnetAddrRange'), 0)]",
+                      "[format('{0}', parameters('loadBalancerSubnetName'))]": "[cidrSubnet(variables('vnetRanges')[copyIndex()], parameters('subnetAddrRange'), 1)]"
                     }
                   }
                 },
@@ -903,8 +963,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "610956615432687132"
+                      "version": "0.20.4.51522",
+                      "templateHash": "11540350809636702088"
                     }
                   },
                   "parameters": {
@@ -953,7 +1013,13 @@
                         "subnets": "[variables('subnetArray')]"
                       }
                     }
-                  ]
+                  ],
+                  "outputs": {
+                    "vnetId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('name'))]"
+                    }
+                  }
                 }
               }
             },
@@ -988,8 +1054,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "16694627787096508323"
+                      "version": "0.20.4.51522",
+                      "templateHash": "15996880906186008026"
                     }
                   },
                   "parameters": {
@@ -1040,8 +1106,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "13002272634325882484"
+                              "version": "0.20.4.51522",
+                              "templateHash": "5341206273074847987"
                             }
                           },
                           "parameters": {
@@ -1091,6 +1157,93 @@
               "dependsOn": [
                 "vnets"
               ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('private-dns-zone-{0}', uniqueString(parameters('privateDnsZoneName')))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "zoneName": {
+                    "value": "[parameters('privateDnsZoneName')]"
+                  },
+                  "vnetLinkSpecs": {
+                    "copy": [
+                      {
+                        "name": "value",
+                        "count": "[length(parameters('vnetSpecs'))]",
+                        "input": "[createObject('vnetId', reference(resourceId('Microsoft.Resources/deployments', parameters('vnetSpecs')[copyIndex('value')].name), '2022-09-01').outputs.vnetId.value, 'location', parameters('vnetSpecs')[copyIndex('value')].location)]"
+                      }
+                    ]
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.20.4.51522",
+                      "templateHash": "11897657792904643784"
+                    }
+                  },
+                  "parameters": {
+                    "zoneName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Name of private DNS zone"
+                      }
+                    },
+                    "vnetLinkSpecs": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "Array of virtual networks to link to this private DNS zone. Each is an object with a vnetId property and a location property"
+                      }
+                    }
+                  },
+                  "variables": {
+                    "zoneLocation": "global"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/privateDnsZones",
+                      "apiVersion": "2020-06-01",
+                      "name": "[parameters('zoneName')]",
+                      "location": "[variables('zoneLocation')]"
+                    },
+                    {
+                      "copy": {
+                        "name": "vnetLinks",
+                        "count": "[length(parameters('vnetLinkSpecs'))]"
+                      },
+                      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+                      "apiVersion": "2020-06-01",
+                      "name": "[format('{0}/{1}', parameters('zoneName'), format('link-{0}', parameters('vnetLinkSpecs')[copyIndex()].location))]",
+                      "location": "[variables('zoneLocation')]",
+                      "tags": {
+                        "tagName1": "tagValue1",
+                        "tagName2": "tagValue2"
+                      },
+                      "properties": {
+                        "registrationEnabled": false,
+                        "virtualNetwork": {
+                          "id": "[parameters('vnetLinkSpecs')[copyIndex()].vnetId]"
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/privateDnsZones', parameters('zoneName'))]"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "vnets"
+              ]
             }
           ],
           "outputs": {
@@ -1099,6 +1252,13 @@
               "copy": {
                 "count": "[length(variables('allVnetNames'))]",
                 "input": "[resourceId('Microsoft.Network/VirtualNetworks/subnets', variables('allVnetNames')[copyIndex()], parameters('vmSubnetName'))]"
+              }
+            },
+            "loadBalancerSubnetIds": {
+              "type": "array",
+              "copy": {
+                "count": "[length(variables('allVnetNames'))]",
+                "input": "[resourceId('Microsoft.Network/VirtualNetworks/subnets', variables('allVnetNames')[copyIndex()], parameters('loadBalancerSubnetName'))]"
               }
             }
           }
@@ -1145,7 +1305,8 @@
               "agentPoolCount": "[parameters('agentPoolCount')]",
               "agentPoolName": "[parameters('agentPoolName')]",
               "vmSize": "[parameters('vmSize')]",
-              "clusterUserName": "[format('id-{0}-{1}', parameters('aksName'), variables('allLocations')[copyIndex()])]",
+              "version": "[parameters('kubernetesVersion')]",
+              "clusterIdentityName": "[variables('locationSpecs')[copyIndex()].clusterIdentityName]",
               "nodeLabels": "[variables('nodeLabels')]"
             }
           },
@@ -1175,7 +1336,7 @@
             "value": "[parameters('isZoneRedundant')]"
           },
           "subject": {
-            "value": "system:serviceaccount:horde-tests:workload-identity-sa"
+            "value": "[format('system:serviceaccount:{0}:workload-identity-sa', parameters('helmNamespace'))]"
           },
           "storageAccountSecret": "[if(equals(parameters('newOrExistingStorageAccount'), 'existing'), createObject('value', parameters('storageConnectionStrings')[copyIndex()]), createObject('value', ''))]",
           "useDnsZone": {
@@ -1198,8 +1359,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "9120954476849339768"
+              "version": "0.20.4.51522",
+              "templateHash": "9419018135375634108"
             }
           },
           "parameters": {
@@ -1299,8 +1460,9 @@
                 "agentPoolName": "agentpool",
                 "vmSize": "Standard_D2_v2",
                 "assignRole": true,
-                "clusterUserName": "[format('k8-{0}', take(uniqueString(parameters('location'), resourceGroup().id), 15))]",
-                "nodeLabels": "defaultLabel"
+                "clusterIdentityName": "[format('k8-{0}', take(uniqueString(parameters('location'), resourceGroup().id), 15))]",
+                "nodeLabels": "defaultLabel",
+                "version": "1.24.9"
               }
             },
             "assignRole": {
@@ -1399,6 +1561,7 @@
                   "assignRole": {
                     "value": "[parameters('assignRole')]"
                   },
+                  "kubernetesVersion": "[if(contains(parameters('kubernetesParams'), 'version'), createObject('value', parameters('kubernetesParams').version), createObject('value', '1.24.9'))]",
                   "newOrExisting": {
                     "value": "[variables('newOrExisting')[parameters('newOrExistingKubernetes')]]"
                   },
@@ -1408,8 +1571,8 @@
                   "subject": {
                     "value": "[parameters('subject')]"
                   },
-                  "clusterUserName": {
-                    "value": "[parameters('kubernetesParams').clusterUserName]"
+                  "clusterIdentityName": {
+                    "value": "[parameters('kubernetesParams').clusterIdentityName]"
                   },
                   "nodeLabels": {
                     "value": "[parameters('kubernetesParams').nodeLabels]"
@@ -1427,8 +1590,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "14290167893167593081"
+                      "version": "0.20.4.51522",
+                      "templateHash": "10431837443980725396"
                     }
                   },
                   "parameters": {
@@ -1467,8 +1630,7 @@
                       "defaultValue": "[format('k8-{0}', take(uniqueString(parameters('name')), 5))]"
                     },
                     "kubernetesVersion": {
-                      "type": "string",
-                      "defaultValue": "1.24.9"
+                      "type": "string"
                     },
                     "availabilityZones": {
                       "type": "array",
@@ -1500,7 +1662,7 @@
                         "description": "Subject for Federated Credential. Ex: system:serviceaccount:ucddc-tests:workload-identity-sa"
                       }
                     },
-                    "clusterUserName": {
+                    "clusterIdentityName": {
                       "type": "string",
                       "defaultValue": "[format('k8-{0}', take(uniqueString(parameters('location'), parameters('name')), 15))]"
                     },
@@ -1540,19 +1702,19 @@
                       "condition": "[equals(parameters('newOrExisting'), 'new')]",
                       "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
                       "apiVersion": "2018-11-30",
-                      "name": "[parameters('clusterUserName')]",
+                      "name": "[parameters('clusterIdentityName')]",
                       "location": "[parameters('location')]"
                     },
                     {
                       "condition": "[equals(parameters('newOrExisting'), 'new')]",
                       "type": "Microsoft.ContainerService/managedClusters",
-                      "apiVersion": "2022-07-02-preview",
+                      "apiVersion": "2023-02-01",
                       "name": "[take(parameters('name'), 80)]",
                       "location": "[parameters('location')]",
                       "identity": {
                         "type": "UserAssigned",
                         "userAssignedIdentities": {
-                          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')))]": {}
+                          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')))]": {}
                         }
                       },
                       "properties": {
@@ -1567,66 +1729,66 @@
                         ],
                         "identityProfile": {
                           "assignedIdentity": {
-                            "clientId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')), '2018-11-30').clientId]",
-                            "resourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName'))]",
-                            "objectId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')), '2018-11-30').principalId]"
+                            "clientId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId]",
+                            "resourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName'))]",
+                            "objectId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').principalId]"
                           },
                           "kubeletAssignedIdentity": {
-                            "clientId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')), '2018-11-30').clientId]",
-                            "resourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName'))]",
-                            "objectId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')), '2018-11-30').principalId]"
+                            "clientId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId]",
+                            "resourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName'))]",
+                            "objectId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').principalId]"
                           }
                         },
                         "addonProfiles": "[variables('addonProfiles')]"
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName'))]"
+                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName'))]"
                       ]
                     },
                     {
                       "condition": "[and(equals(parameters('newOrExisting'), 'new'), not(equals(parameters('subject'), '')))]",
                       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials",
-                      "apiVersion": "2022-01-31-preview",
-                      "name": "[format('{0}/{1}', parameters('clusterUserName'), format('federated-k8-{0}', take(uniqueString(parameters('location'), parameters('name')), 15)))]",
+                      "apiVersion": "2023-01-31",
+                      "name": "[format('{0}/{1}', parameters('clusterIdentityName'), format('federated-k8-{0}', take(uniqueString(parameters('location'), parameters('name')), 15)))]",
                       "properties": {
                         "audiences": [
                           "api://AzureADTokenExchange"
                         ],
-                        "issuer": "[reference(resourceId('Microsoft.ContainerService/managedClusters', take(parameters('name'), 80)), '2022-07-02-preview').oidcIssuerProfile.issuerURL]",
+                        "issuer": "[reference(resourceId('Microsoft.ContainerService/managedClusters', take(parameters('name'), 80)), '2023-02-01').oidcIssuerProfile.issuerURL]",
                         "subject": "[parameters('subject')]"
                       },
                       "dependsOn": [
                         "[resourceId('Microsoft.ContainerService/managedClusters', take(parameters('name'), 80))]",
-                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName'))]"
+                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName'))]"
                       ]
                     },
                     {
                       "condition": "[parameters('assignRole')]",
                       "type": "Microsoft.Authorization/roleAssignments",
-                      "apiVersion": "2020-04-01-preview",
-                      "name": "[guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')), subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4d97b98b-1d4f-4787-a291-c67834d212e7'))]",
+                      "apiVersion": "2022-04-01",
+                      "name": "[guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4d97b98b-1d4f-4787-a291-c67834d212e7'))]",
                       "properties": {
                         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4d97b98b-1d4f-4787-a291-c67834d212e7')]",
-                        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')), '2018-11-30').principalId]",
+                        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').principalId]",
                         "principalType": "ServicePrincipal"
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName'))]"
+                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName'))]"
                       ]
                     }
                   ],
                   "outputs": {
                     "nodeResourceGroup": {
                       "type": "string",
-                      "value": "[if(equals(parameters('newOrExisting'), 'new'), reference(resourceId('Microsoft.ContainerService/managedClusters', take(parameters('name'), 80)), '2022-07-02-preview').nodeResourceGroup, reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('name')), '2021-03-01').nodeResourceGroup)]"
+                      "value": "[if(equals(parameters('newOrExisting'), 'new'), reference(resourceId('Microsoft.ContainerService/managedClusters', take(parameters('name'), 80)), '2023-02-01').nodeResourceGroup, reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('name')), '2021-03-01').nodeResourceGroup)]"
                     },
                     "clusterUserObjectId": {
                       "type": "string",
-                      "value": "[if(equals(parameters('newOrExisting'), 'new'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterUserName')), '2018-11-30').principalId, reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('k8-{0}', take(uniqueString(parameters('location'), parameters('name')), 15))), '2018-11-30').principalId)]"
+                      "value": "[if(equals(parameters('newOrExisting'), 'new'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').principalId, reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('k8-{0}', take(uniqueString(parameters('location'), parameters('name')), 15))), '2018-11-30').principalId)]"
                     },
                     "clusterUrl": {
                       "type": "string",
-                      "value": "[if(equals(parameters('newOrExisting'), 'new'), reference(resourceId('Microsoft.ContainerService/managedClusters', take(parameters('name'), 80)), '2022-07-02-preview').fqdn, reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('name')), '2021-03-01').fqdn)]"
+                      "value": "[if(equals(parameters('newOrExisting'), 'new'), reference(resourceId('Microsoft.ContainerService/managedClusters', take(parameters('name'), 80)), '2023-02-01').fqdn, reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('name')), '2021-03-01').fqdn)]"
                     }
                   }
                 }
@@ -1666,8 +1828,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "7162356298263272921"
+                      "version": "0.20.4.51522",
+                      "templateHash": "10904550076456244554"
                     }
                   },
                   "parameters": {
@@ -1833,8 +1995,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "16925931985328871018"
+                      "version": "0.20.4.51522",
+                      "templateHash": "1702591846921117923"
                     }
                   },
                   "parameters": {
@@ -1878,13 +2040,13 @@
                     "storageAccountTier": {
                       "type": "string",
                       "defaultValue": "Standard",
-                      "metadata": {
-                        "description": "Storage Account Tier. Standard or Premium."
-                      },
                       "allowedValues": [
                         "Standard",
                         "Premium"
-                      ]
+                      ],
+                      "metadata": {
+                        "description": "Storage Account Tier. Standard or Premium."
+                      }
                     },
                     "storageAccountType": {
                       "type": "string",
@@ -1990,8 +2152,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "12655426725085502078"
+                      "version": "0.20.4.51522",
+                      "templateHash": "13443589276779078418"
                     }
                   },
                   "parameters": {
@@ -2043,13 +2205,13 @@
                     "newOrExisting": {
                       "type": "string",
                       "defaultValue": "new",
-                      "metadata": {
-                        "description": "Create new or use existing resource selection. new/existing"
-                      },
                       "allowedValues": [
                         "new",
                         "existing"
-                      ]
+                      ],
+                      "metadata": {
+                        "description": "Create new or use existing resource selection. new/existing"
+                      }
                     },
                     "publicIpSku": {
                       "type": "object",
@@ -2108,8 +2270,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "3774318775422758943"
+                              "version": "0.20.4.51522",
+                              "templateHash": "10285833394103624009"
                             }
                           },
                           "parameters": {
@@ -2197,8 +2359,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "12844074321570951159"
+                      "version": "0.20.4.51522",
+                      "templateHash": "5940136841444431674"
                     }
                   },
                   "parameters": {
@@ -2268,8 +2430,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "6164084509021418989"
+                      "version": "0.20.4.51522",
+                      "templateHash": "17859563125985691252"
                     }
                   },
                   "parameters": {
@@ -2391,8 +2553,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "9471314971237164219"
+              "version": "0.20.4.51522",
+              "templateHash": "16230193041955540066"
             }
           },
           "parameters": {
@@ -2473,14 +2635,14 @@
             "cleanupPreference": {
               "type": "string",
               "defaultValue": "OnSuccess",
-              "metadata": {
-                "description": "When the script resource is cleaned up"
-              },
               "allowedValues": [
                 "OnSuccess",
                 "OnExpiration",
                 "Always"
-              ]
+              ],
+              "metadata": {
+                "description": "When the script resource is cleaned up"
+              }
             },
             "issuerName": {
               "type": "string",
@@ -2733,8 +2895,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "6164084509021418989"
+              "version": "0.20.4.51522",
+              "templateHash": "17859563125985691252"
             }
           },
           "parameters": {
@@ -2804,8 +2966,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "12397661483614520711"
+              "version": "0.20.4.51522",
+              "templateHash": "11962635656628054684"
             }
           },
           "parameters": {
@@ -2830,8 +2992,8 @@
             "maxStalenessPrefix": {
               "type": "int",
               "defaultValue": 100000,
-              "maxValue": 2147483647,
               "minValue": 10,
+              "maxValue": 2147483647,
               "metadata": {
                 "description": "Max stale requests. Required for BoundedStaleness. Valid ranges, Single Region: 10 to 2147483647. Multi Region: 100000 to 2147483647."
               }
@@ -2839,8 +3001,8 @@
             "maxIntervalInSeconds": {
               "type": "int",
               "defaultValue": 300,
-              "maxValue": 86400,
               "minValue": 5,
+              "maxValue": 86400,
               "metadata": {
                 "description": "Max lag time (minutes). Required for BoundedStaleness. Valid ranges, Single Region: 5 to 84600. Multi Region: 300 to 86400."
               }
@@ -2848,16 +3010,16 @@
             "defaultConsistencyLevel": {
               "type": "string",
               "defaultValue": "Session",
-              "metadata": {
-                "description": "The default consistency level of the Cosmos DB account."
-              },
               "allowedValues": [
                 "Eventual",
                 "ConsistentPrefix",
                 "Session",
                 "BoundedStaleness",
                 "Strong"
-              ]
+              ],
+              "metadata": {
+                "description": "The default consistency level of the Cosmos DB account."
+              }
             },
             "systemManagedFailover": {
               "type": "bool",
@@ -3011,8 +3173,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "6164084509021418989"
+              "version": "0.20.4.51522",
+              "templateHash": "17859563125985691252"
             }
           },
           "parameters": {
@@ -3069,8 +3231,11 @@
           "resourceGroupName": {
             "value": "[resourceGroup().name]"
           },
-          "publicIpName": {
+          "publicIpNamePrefix": {
             "value": "[parameters('publicIpName')]"
+          },
+          "useVnet": {
+            "value": "[parameters('useVnet')]"
           },
           "servicePrincipalClientID": {
             "value": "[parameters('servicePrincipalClientID')]"
@@ -3138,8 +3303,17 @@
           "namespacesToReplicate": {
             "value": "[parameters('namespacesToReplicate')]"
           },
-          "agentPoolCount": {
-            "value": "[parameters('agentPoolCount')]"
+          "enableLocalPVProvisioner": {
+            "value": "[parameters('enableLocalPVProvisioner')]"
+          },
+          "mainReplicaCount": {
+            "value": "[parameters('mainReplicaCount')]"
+          },
+          "privateDnsZoneName": {
+            "value": "[parameters('privateDnsZoneName')]"
+          },
+          "loadBalancerSubnetName": {
+            "value": "[parameters('vnetLoadBalancerSubnetName')]"
           }
         },
         "template": {
@@ -3148,8 +3322,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "9234382599843421546"
+              "version": "0.20.4.51522",
+              "templateHash": "8338693452087215222"
             }
           },
           "parameters": {
@@ -3166,8 +3340,11 @@
               "type": "string",
               "defaultValue": "[resourceGroup().name]"
             },
-            "publicIpName": {
+            "publicIpNamePrefix": {
               "type": "string"
+            },
+            "useVnet": {
+              "type": "bool"
             },
             "servicePrincipalClientID": {
               "type": "string"
@@ -3275,14 +3452,186 @@
                 "description": "Array of ddc namespaces to replicate if there are secondary regions"
               }
             },
-            "agentPoolCount": {
+            "mainReplicaCount": {
               "type": "int",
               "metadata": {
                 "description": "This is used to scale up the number of pods (replicas) for the main deployment, so that there is one replica per node on the agent"
               }
+            },
+            "enableLocalPVProvisioner": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Whether to use a local ephemeral Persistent Volume provisioner for the cluster"
+              }
+            },
+            "privateDnsZoneName": {
+              "type": "string"
+            },
+            "loadBalancerSubnetName": {
+              "type": "string"
             }
           },
+          "variables": {
+            "copy": [
+              {
+                "name": "privateLocationHostNames",
+                "count": "[length(parameters('locationSpecs'))]",
+                "input": "[format('{0}.{1}', parameters('locationSpecs')[copyIndex('privateLocationHostNames')].regioncode, parameters('privateDnsZoneName'))]"
+              }
+            ]
+          },
           "resources": [
+            {
+              "copy": {
+                "name": "findAvailableIPs",
+                "count": "[length(parameters('locationSpecs'))]"
+              },
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('findAvailableIPs-{0}-{1}', parameters('locationSpecs')[copyIndex()].regionCode, uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('locationSpecs')[copyIndex()].location]"
+                  },
+                  "vnetName": {
+                    "value": "[parameters('locationSpecs')[copyIndex()].vnetName]"
+                  },
+                  "subnetName": {
+                    "value": "[parameters('loadBalancerSubnetName')]"
+                  },
+                  "managedIdentityName": {
+                    "value": "[parameters('locationSpecs')[copyIndex()].clusterIdentityName]"
+                  },
+                  "managedIdentityResourceGroup": {
+                    "value": "[parameters('resourceGroupName')]"
+                  },
+                  "enableScript": {
+                    "value": "[parameters('useVnet')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.20.4.51522",
+                      "templateHash": "6104879292398045968"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The location to use for the deployment script involved"
+                      }
+                    },
+                    "vnetName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The name of the Virtual Network to search"
+                      }
+                    },
+                    "subnetName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The name of the specific subnet to search in"
+                      }
+                    },
+                    "managedIdentityName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The name of a managed identity having query access over the subnet"
+                      }
+                    },
+                    "managedIdentityResourceGroup": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The resource group containing the managed identity"
+                      }
+                    },
+                    "forceUpdateTag": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "How the deployment script should be forced to execute"
+                      }
+                    },
+                    "cleanupPreference": {
+                      "type": "string",
+                      "defaultValue": "OnSuccess",
+                      "allowedValues": [
+                        "OnSuccess",
+                        "OnExpiration",
+                        "Always"
+                      ],
+                      "metadata": {
+                        "description": "When the script resource is cleaned up"
+                      }
+                    },
+                    "enableScript": {
+                      "type": "bool",
+                      "metadata": {
+                        "description": "Boolean that, if set to false, bypasses the script and return an empty string as IP"
+                      }
+                    }
+                  },
+                  "variables": {
+                    "$fxv#0": "#!/bin/bash\nset -e\n\necho \"Finding free IPs in vnet $VNET_NAME, subnet $SUBNET_NAME, resource group $RESOURCE_GROUP\"\nfreeIPArrayString=\"$(az network vnet subnet list-available-ips --resource-group \"$RESOURCE_GROUP\" --vnet-name \"$VNET_NAME\" -n \"$SUBNET_NAME\")\"\nresultsJsonString=\"{ \\\"availableIPs\\\": $freeIPArrayString }\"\necho $resultsJsonString > $AZ_SCRIPTS_OUTPUT_PATH\n"
+                  },
+                  "resources": [
+                    {
+                      "condition": "[parameters('enableScript')]",
+                      "type": "Microsoft.Resources/deploymentScripts",
+                      "apiVersion": "2020-10-01",
+                      "name": "[format('ListAvailableIPs-{0}-{1}-{2}', parameters('vnetName'), parameters('subnetName'), parameters('location'))]",
+                      "location": "[parameters('location')]",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[format('{0}', extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('managedIdentityResourceGroup')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')))]": {}
+                        }
+                      },
+                      "kind": "AzureCLI",
+                      "properties": {
+                        "forceUpdateTag": "[parameters('forceUpdateTag')]",
+                        "azCliVersion": "2.40.0",
+                        "timeout": "PT10M",
+                        "retentionInterval": "P1D",
+                        "environmentVariables": [
+                          {
+                            "name": "VNET_NAME",
+                            "value": "[parameters('vnetName')]"
+                          },
+                          {
+                            "name": "SUBNET_NAME",
+                            "value": "[parameters('subnetName')]"
+                          },
+                          {
+                            "name": "RESOURCE_GROUP",
+                            "value": "[resourceGroup().name]"
+                          }
+                        ],
+                        "scriptContent": "[variables('$fxv#0')]",
+                        "cleanupPreference": "[parameters('cleanupPreference')]"
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "availableIP": {
+                      "type": "string",
+                      "value": "[if(parameters('enableScript'), reference(resourceId('Microsoft.Resources/deploymentScripts', format('ListAvailableIPs-{0}-{1}-{2}', parameters('vnetName'), parameters('subnetName'), parameters('location'))), '2020-10-01').outputs.availableIPs[0], '')]"
+                    }
+                  }
+                }
+              }
+            },
             {
               "copy": {
                 "name": "ddcSetup",
@@ -3297,8 +3646,8 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
-                  "aksName": {
-                    "value": "[parameters('aksName')]"
+                  "clusterIdentityName": {
+                    "value": "[parameters('locationSpecs')[copyIndex()].clusterIdentityName]"
                   },
                   "location": {
                     "value": "[parameters('locationSpecs')[copyIndex()].location]"
@@ -3321,9 +3670,14 @@
                   "locationHostname": {
                     "value": "[parameters('locationSpecs')[copyIndex()].fullLocationHostName]"
                   },
-                  "replicationSourceHostname": {
-                    "value": "[parameters('locationSpecs')[copyIndex()].fullSourceLocationHostName]"
+                  "useVnet": {
+                    "value": "[parameters('useVnet')]"
                   },
+                  "loadBalancerSubnetName": {
+                    "value": "[parameters('loadBalancerSubnetName')]"
+                  },
+                  "internalLoadBalancerIP": "[if(parameters('useVnet'), createObject('value', reference(resourceId('Microsoft.Resources/deployments', format('findAvailableIPs-{0}-{1}', parameters('locationSpecs')[copyIndex()].regionCode, uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name))), '2022-09-01').outputs.availableIP.value), createObject('value', ''))]",
+                  "replicationSourceHostname": "[if(parameters('useVnet'), createObject('value', variables('privateLocationHostNames')[parameters('locationSpecs')[copyIndex()].sourceLocationIndex]), createObject('value', parameters('locationSpecs')[copyIndex()].fullSourceLocationHostName))]",
                   "certificateName": {
                     "value": "[parameters('certificateName')]"
                   },
@@ -3350,7 +3704,7 @@
                     "value": "[parameters('helmVersion')]"
                   },
                   "mainReplicaCount": {
-                    "value": "[parameters('agentPoolCount')]"
+                    "value": "[parameters('mainReplicaCount')]"
                   },
                   "workerReplicaCount": {
                     "value": 1
@@ -3380,14 +3734,13 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "13457817621107563962"
+                      "version": "0.20.4.51522",
+                      "templateHash": "15734646248517807172"
                     }
                   },
                   "parameters": {
-                    "aksName": {
-                      "type": "string",
-                      "defaultValue": ""
+                    "clusterIdentityName": {
+                      "type": "string"
                     },
                     "location": {
                       "type": "string"
@@ -3416,6 +3769,15 @@
                       "defaultValue": "deploy1.ddc-storage.gaming.azure.com"
                     },
                     "locationHostname": {
+                      "type": "string"
+                    },
+                    "useVnet": {
+                      "type": "bool"
+                    },
+                    "loadBalancerSubnetName": {
+                      "type": "string"
+                    },
+                    "internalLoadBalancerIP": {
                       "type": "string"
                     },
                     "replicationSourceHostname": {
@@ -3533,7 +3895,7 @@
                       {
                         "name": "replicatorValueArrays",
                         "count": "[length(parameters('namespacesToReplicate'))]",
-                        "input": "[createArray(format('{0}[{1}].ReplicatorName=Replicator{2}', variables('replicatorPrefix'), copyIndex('replicatorValueArrays'), parameters('location')), format('{0}[{1}].Namespace={2}', variables('replicatorPrefix'), copyIndex('replicatorValueArrays'), parameters('namespacesToReplicate')[copyIndex('replicatorValueArrays')]), format('{0}[{1}].Version=Refs', variables('replicatorPrefix'), copyIndex('replicatorValueArrays')), format('{0}[{1}].ConnectionString={2}', variables('replicatorPrefix'), copyIndex('replicatorValueArrays'), parameters('replicationSourceHostname')))]"
+                        "input": "[createArray(format('{0}[{1}].ReplicatorName=Replicator{2}-{3}', variables('replicatorPrefix'), copyIndex('replicatorValueArrays'), parameters('location'), parameters('namespacesToReplicate')[copyIndex('replicatorValueArrays')]), format('{0}[{1}].Namespace={2}', variables('replicatorPrefix'), copyIndex('replicatorValueArrays'), parameters('namespacesToReplicate')[copyIndex('replicatorValueArrays')]), format('{0}[{1}].Version=Refs', variables('replicatorPrefix'), copyIndex('replicatorValueArrays')), format('{0}[{1}].ConnectionString={2}://{3}', variables('replicatorPrefix'), copyIndex('replicatorValueArrays'), variables('replicationProtocol'), parameters('replicationSourceHostname')))]"
                       },
                       {
                         "name": "workerScyllaValues",
@@ -3639,6 +4001,7 @@
                     "replicationPrefix": "[format('{0}.Replication', variables('workerConfigPrefix'))]",
                     "replicationEnabledValue": "[format('{0}.Enabled=true', variables('replicationPrefix'))]",
                     "replicatorPrefix": "[format('{0}.Replicators', variables('replicationPrefix'))]",
+                    "replicationProtocol": "[if(parameters('useVnet'), 'http', 'https')]",
                     "workerReplicatorValues": "[if(greater(length(parameters('namespacesToReplicate')), 0), concat(createArray(variables('replicationEnabledValue')), flatten(variables('replicatorValueArrays'))), createArray())]",
                     "workerOtherValues": [
                       "[format('{0}.enabled=true', variables('workerPrefix'))]",
@@ -3687,11 +4050,15 @@
                     ],
                     "mainPersistenceValues": "[if(parameters('useLocalPVProvisioner'), variables('mainPersistenceValuesConditional'), createArray())]",
                     "mainRestartValues": "[if(parameters('restartPods'), createArray(format('{0}.podAnnotations.rollme={1}', variables('mainChartName'), uniqueString(parameters('podRollMeSeed')))), createArray())]",
-                    "helmStringArgs": [
+                    "mainExtraServicePrefix": "[format('{0}.extraService', variables('mainChartName'))]",
+                    "mainLBAnnotationsPrefix": "[format('{0}.annotations.service\\.beta\\.kubernetes\\.io', variables('mainExtraServicePrefix'))]",
+                    "mainVnetValues": "[if(parameters('useVnet'), createArray(format('{0}/azure-load-balancer-ipv4={1}', variables('mainLBAnnotationsPrefix'), parameters('internalLoadBalancerIP')), format('{0}/azure-load-balancer-internal-subnet={1}', variables('mainLBAnnotationsPrefix'), parameters('loadBalancerSubnetName')), format('{0}.type=LoadBalancer', variables('mainExtraServicePrefix')), format('{0}.portName=http', variables('mainExtraServicePrefix')), format('{0}.port=80', variables('mainExtraServicePrefix')), format('{0}.targetPort=internal-http', variables('mainExtraServicePrefix'))), createArray())]",
+                    "helmStringArgsBase": [
                       "[format('{0}.podLabels.azure\\.workload\\.identity/use=true', variables('mainChartName'))]",
                       "[format('{0}.podLabels.azure\\.workload\\.identity/use=false', variables('workerPrefix'))]"
                     ],
-                    "helmStringValues": "[format('\"{0}\"', join(variables('helmStringArgs'), '\",\"'))]",
+                    "mainVnetStringArgs": "[if(parameters('useVnet'), createArray(format('{0}/azure-load-balancer-internal=true', variables('mainLBAnnotationsPrefix'))), createArray())]",
+                    "helmStringArgs": "[concat(variables('helmStringArgsBase'), variables('mainVnetStringArgs'))]",
                     "ingressAksValues": [
                       "ingressAks.enabled=true",
                       "ingressAks.tlsEnabled=true",
@@ -3700,6 +4067,7 @@
                       "[format('ingressAks.hosts[1].name={0}', parameters('locationHostname'))]",
                       "[format('ingressAks.hosts[1].tlsSecretName={0}', variables('locationTlsSecretName'))]"
                     ],
+                    "helmStringValues": "[format('\"{0}\"', join(variables('helmStringArgs'), '\",\"'))]",
                     "otelCollectorValues": "[if(variables('useOtel'), createArray(format('opentelemetry-collector.config.exporters.azuremonitor.instrumentation_key={0}', parameters('appInsightsKey'))), createArray())]"
                   },
                   "resources": [],
@@ -3710,14 +4078,18 @@
                         "helmChart": "[parameters('helmChart')]",
                         "helmName": "[parameters('helmName')]",
                         "helmNamespace": "[parameters('helmNamespace')]",
-                        "helmValues": "[replace(format('\"{0}\"', join(concat(variables('globalValues'), createArray('secretStore.enabled=true', format('secretStore.clientID={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).clientID), format('secretStore.keyvaultName={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).keyVaultName), format('secretStore.resourceGroup={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).resourceGroup), format('secretStore.subscriptionId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).subscriptionID), format('secretStore.tenantId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).tenantID), format('secretStore.tlsSecretName={0}', variables('ingress').tlsSecretName), format('secretStore.tlsCertName={0}', variables('ingress').tlsCertName), format('secretStore.extraHosts[0].tlsSecretName={0}', variables('locationTlsSecretName')), format('secretStore.extraHosts[0].tlsCertName={0}', parameters('locationCertificateName'))), concat(variables('mainEnvValues'), variables('mainScyllaValues'), variables('mainPersistenceValues'), createArray(format('{0}.replicaCount={1}', variables('mainChartName'), parameters('mainReplicaCount')), format('{0}.image.repository={1}', variables('mainChartName'), parameters('containerImageRepo')), format('{0}.Azure.ConnectionString={1}', variables('mainConfigPrefix'), variables('storageConnectionString')), format('{0}.GC.CleanOldBlobs=false', variables('mainConfigPrefix')), format('{0}.serviceAccount.annotations.azure\\.workload\\.identity/client-id={1}', variables('mainChartName'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId)), variables('mainRestartValues')), variables('workerValues'), variables('ingressAksValues'), variables('otelCollectorValues')), '\",\"')), '$(FEDERATED_ID)', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('id-{0}-{1}', parameters('aksName'), parameters('location'))), '2018-11-30').clientId)]",
+                        "helmValues": "[replace(format('\"{0}\"', join(concat(variables('globalValues'), createArray('secretStore.enabled=true', format('secretStore.clientID={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).clientID), format('secretStore.keyvaultName={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).keyVaultName), format('secretStore.resourceGroup={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).resourceGroup), format('secretStore.subscriptionId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).subscriptionID), format('secretStore.tenantId={0}', createObject('enabled', true(), 'clientID', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId, 'keyVaultName', parameters('keyVaultName'), 'resourceGroup', parameters('resourceGroupName'), 'subscriptionID', subscription().subscriptionId, 'tenantID', parameters('keyVaultTenantID')).tenantID), format('secretStore.tlsSecretName={0}', variables('ingress').tlsSecretName), format('secretStore.tlsCertName={0}', variables('ingress').tlsCertName), format('secretStore.extraHosts[0].tlsSecretName={0}', variables('locationTlsSecretName')), format('secretStore.extraHosts[0].tlsCertName={0}', parameters('locationCertificateName'))), concat(variables('mainEnvValues'), variables('mainScyllaValues'), variables('mainPersistenceValues'), createArray(format('{0}.replicaCount={1}', variables('mainChartName'), parameters('mainReplicaCount')), format('{0}.image.repository={1}', variables('mainChartName'), parameters('containerImageRepo')), format('{0}.Azure.ConnectionString={1}', variables('mainConfigPrefix'), variables('storageConnectionString')), format('{0}.GC.CleanOldBlobs=false', variables('mainConfigPrefix')), format('{0}.serviceAccount.annotations.azure\\.workload\\.identity/client-id={1}', variables('mainChartName'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId)), variables('mainRestartValues'), variables('mainVnetValues')), variables('workerValues'), variables('ingressAksValues'), variables('otelCollectorValues')), '\",\"')), '$(FEDERATED_ID)', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('clusterIdentityName')), '2018-11-30').clientId)]",
                         "helmStringValues": "[variables('helmStringValues')]",
                         "version": "[parameters('helmVersion')]"
                       }
                     }
                   }
                 }
-              }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', format('findAvailableIPs-{0}-{1}', parameters('locationSpecs')[copyIndex()].regionCode, uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name)))]",
+                "[resourceId('Microsoft.Resources/deployments', format('findAvailableIPs-{0}-{1}', parameters('locationSpecs')[copyIndex()].regionCode, uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name)))]"
+              ]
             },
             {
               "copy": {
@@ -3744,8 +4116,8 @@
                       "[reference(resourceId('Microsoft.Resources/deployments', format('helmInstall-ddc-{0}', uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name))), '2022-09-01').outputs.helmChart.value]"
                     ]
                   },
-                  "staticIP": {
-                    "value": "[format('{0}-{1}', parameters('publicIpName'), parameters('locationSpecs')[copyIndex()].location)]"
+                  "publicIpAddress": {
+                    "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', format('{0}-{1}', parameters('publicIpNamePrefix'), parameters('locationSpecs')[copyIndex()].location)), '2021-03-01').ipAddress]"
                   },
                   "azureTenantID": {
                     "value": "[parameters('azureTenantID')]"
@@ -3762,6 +4134,9 @@
                   "existingManagedIdentityResourceGroupName": {
                     "value": "[parameters('existingManagedIdentityResourceGroupName')]"
                   },
+                  "enableLocalProvisioner": {
+                    "value": "[parameters('enableLocalPVProvisioner')]"
+                  },
                   "isApp": {
                     "value": "[parameters('isApp')]"
                   }
@@ -3772,8 +4147,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.18.4.5664",
-                      "templateHash": "2910770851926098597"
+                      "version": "0.20.4.51522",
+                      "templateHash": "4147424268282536128"
                     }
                   },
                   "parameters": {
@@ -3783,7 +4158,7 @@
                     "location": {
                       "type": "string"
                     },
-                    "staticIP": {
+                    "publicIpAddress": {
                       "type": "string",
                       "defaultValue": ""
                     },
@@ -3866,8 +4241,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "5699570002688714996"
+                              "version": "0.20.4.51522",
+                              "templateHash": "126845826961713133"
                             }
                           },
                           "parameters": {
@@ -3913,8 +4288,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "3634787068459332158"
+                              "version": "0.20.4.51522",
+                              "templateHash": "10561926575326750511"
                             }
                           },
                           "parameters": {
@@ -3986,7 +4361,7 @@
                         "mode": "Incremental",
                         "parameters": {
                           "staticIP": {
-                            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('staticIP')), '2021-03-01').ipAddress]"
+                            "value": "[parameters('publicIpAddress')]"
                           }
                         },
                         "template": {
@@ -3995,8 +4370,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "1009791138636647162"
+                              "version": "0.20.4.51522",
+                              "templateHash": "214279049349519283"
                             }
                           },
                           "parameters": {
@@ -4083,8 +4458,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "18395188055380971045"
+                              "version": "0.20.4.51522",
+                              "templateHash": "7518064445977878794"
                             }
                           },
                           "variables": {
@@ -4154,8 +4529,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "9337988228550688377"
+                              "version": "0.20.4.51522",
+                              "templateHash": "8878124287371755661"
                             }
                           },
                           "parameters": {
@@ -4209,14 +4584,14 @@
                             "cleanupPreference": {
                               "type": "string",
                               "defaultValue": "OnSuccess",
-                              "metadata": {
-                                "description": "When the script resource is cleaned up"
-                              },
                               "allowedValues": [
                                 "OnSuccess",
                                 "OnExpiration",
                                 "Always"
-                              ]
+                              ],
+                              "metadata": {
+                                "description": "When the script resource is cleaned up"
+                              }
                             },
                             "helmCharts": {
                               "type": "array",
@@ -4292,8 +4667,8 @@
                                   "metadata": {
                                     "_generator": {
                                       "name": "bicep",
-                                      "version": "0.18.4.5664",
-                                      "templateHash": "1004481284178649138"
+                                      "version": "0.20.4.51522",
+                                      "templateHash": "15202707389943465244"
                                     }
                                   },
                                   "parameters": {
@@ -4370,14 +4745,14 @@
                                     "cleanupPreference": {
                                       "type": "string",
                                       "defaultValue": "OnSuccess",
-                                      "metadata": {
-                                        "description": "When the script resource is cleaned up"
-                                      },
                                       "allowedValues": [
                                         "OnSuccess",
                                         "OnExpiration",
                                         "Always"
-                                      ]
+                                      ],
+                                      "metadata": {
+                                        "description": "When the script resource is cleaned up"
+                                      }
                                     },
                                     "isApp": {
                                       "type": "bool",
@@ -4526,8 +4901,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "9231073494512761698"
+                              "version": "0.20.4.51522",
+                              "templateHash": "3207878845204689517"
                             }
                           },
                           "parameters": {
@@ -4613,8 +4988,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.18.4.5664",
-                              "templateHash": "9337988228550688377"
+                              "version": "0.20.4.51522",
+                              "templateHash": "8878124287371755661"
                             }
                           },
                           "parameters": {
@@ -4668,14 +5043,14 @@
                             "cleanupPreference": {
                               "type": "string",
                               "defaultValue": "OnSuccess",
-                              "metadata": {
-                                "description": "When the script resource is cleaned up"
-                              },
                               "allowedValues": [
                                 "OnSuccess",
                                 "OnExpiration",
                                 "Always"
-                              ]
+                              ],
+                              "metadata": {
+                                "description": "When the script resource is cleaned up"
+                              }
                             },
                             "helmCharts": {
                               "type": "array",
@@ -4751,8 +5126,8 @@
                                   "metadata": {
                                     "_generator": {
                                       "name": "bicep",
-                                      "version": "0.18.4.5664",
-                                      "templateHash": "1004481284178649138"
+                                      "version": "0.20.4.51522",
+                                      "templateHash": "15202707389943465244"
                                     }
                                   },
                                   "parameters": {
@@ -4829,14 +5204,14 @@
                                     "cleanupPreference": {
                                       "type": "string",
                                       "defaultValue": "OnSuccess",
-                                      "metadata": {
-                                        "description": "When the script resource is cleaned up"
-                                      },
                                       "allowedValues": [
                                         "OnSuccess",
                                         "OnExpiration",
                                         "Always"
-                                      ]
+                                      ],
+                                      "metadata": {
+                                        "description": "When the script resource is cleaned up"
+                                      }
                                     },
                                     "isApp": {
                                       "type": "bool",
@@ -4962,6 +5337,83 @@
               "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', format('helmInstall-ddc-{0}', uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name)))]"
               ]
+            },
+            {
+              "copy": {
+                "name": "ipRecords",
+                "count": "[length(parameters('locationSpecs'))]"
+              },
+              "condition": "[parameters('useVnet')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('addIpRecords-{0}', uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "privateDnsZoneName": {
+                    "value": "[parameters('privateDnsZoneName')]"
+                  },
+                  "recordName": {
+                    "value": "[parameters('locationSpecs')[copyIndex()].regionCode]"
+                  },
+                  "ipAddress": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('findAvailableIPs-{0}-{1}', parameters('locationSpecs')[copyIndex()].regionCode, uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name))), '2022-09-01').outputs.availableIP.value]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.20.4.51522",
+                      "templateHash": "14896607531258143924"
+                    }
+                  },
+                  "parameters": {
+                    "privateDnsZoneName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "An existing Private DNS Zone resource name"
+                      }
+                    },
+                    "recordName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Name of A record to add to dnsZoneName"
+                      }
+                    },
+                    "ipAddress": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "IP Address to add as A record"
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/privateDnsZones/A",
+                      "apiVersion": "2020-06-01",
+                      "name": "[format('{0}/{1}', parameters('privateDnsZoneName'), parameters('recordName'))]",
+                      "properties": {
+                        "ttl": 3600,
+                        "aRecords": [
+                          {
+                            "ipv4Address": "[parameters('ipAddress')]"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "configAKS",
+                "[resourceId('Microsoft.Resources/deployments', format('findAvailableIPs-{0}-{1}', parameters('locationSpecs')[copyIndex()].regionCode, uniqueString(parameters('locationSpecs')[copyIndex()].location, resourceGroup().id, deployment().name)))]"
+              ]
             }
           ]
         }
@@ -4997,8 +5449,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.18.4.5664",
-              "templateHash": "16046993926434974127"
+              "version": "0.20.4.51522",
+              "templateHash": "548997878853567947"
             }
           },
           "parameters": {

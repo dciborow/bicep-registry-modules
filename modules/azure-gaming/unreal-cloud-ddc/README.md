@@ -2,7 +2,7 @@
 
 Unreal Cloud DDC for Unreal Engine game development.
 
-## Description
+## Details
 
 Unreal Cloud DDC is a centralized cloud-based cache designed to be used in conjunction with Epic Game's Unreal Cloud DDC to reduce build times and improve overall build performance. Unreal Cloud DDC enables you and your entire development team to connect and use Epic Game's Unreal Cloud DDC service.
 
@@ -18,16 +18,21 @@ In Unreal Engine 5 (UE5), ‘Unreal Cloud DDC’ is an optional service which us
 | :----------------------------------------------- | :------------: | :------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `location`                                       | `string`       | Yes      | Deployment Location                                                                                                                                            |
 | `secondaryLocations`                             | `array`        | No       | Secondary Deployment Locations                                                                                                                                 |
-| `newOrExistingKubernetes`                        | `string`       | No       | New or Existing Kubernetes Resources                                                                                                                          |
+| `newOrExistingKubernetes`                        | `string`       | No       | New or Existing Kubernetes Resources, none to skip.                                                                                                            |
 | `aksName`                                        | `string`       | No       | Name of Kubernetes Resource                                                                                                                                    |
 | `agentPoolCount`                                 | `int`          | No       | Number of Kubernetes Nodes                                                                                                                                     |
+| `enableLocalPVProvisioner`                       | `bool`         | No       | Whether to use a local ephemeral Persistent Volume provisioner for the cluster                                                                                 |
+| `mainReplicaCount`                               | `int`          | No       | Number of pod replicas for the main Kubernetes Deployment                                                                                                      |
 | `agentPoolName`                                  | `string`       | No       | Name of Kubernetes Agent Pool                                                                                                                                  |
 | `vmSize`                                         | `string`       | No       | Virtual Machine Skew for Kubernetes                                                                                                                            |
+| `kubernetesVersion`                              | `string`       | No       | Kubernetes version should be supported in all requested regions                                                                                                |
 | `useVnet`                                        | `bool`         | No       | Whether to create a common vnet for the AKS cluster and related resources. If false, the cluster will create and manage the vnet and subnet internally         |
 | `vnetNamePrefix`                                 | `string`       | No       | Prefix to use for virtual network name, will be appended with the region code.                                                                                 |
 | `vnetOverallAddrPrefix`                          | `string`       | Yes      | Overall address prefix/range for all vnets                                                                                                                     |
 | `vnetRegionAddrRange`                            | `int`          | Yes      | Address range for a vnet in a given region                                                                                                                     |
 | `vnetVmSubnetName`                               | `string`       | No       | Name of subnet to use for virtual machines                                                                                                                     |
+| `vnetLoadBalancerSubnetName`                     | `string`       | No       | Name of subnet to use for internal load balancers                                                                                                              |
+| `privateDnsZoneName`                             | `string`       | Yes      | Name of private DNS zone if useVnet is true                                                                                                                    |
 | `hostname`                                       | `string`       | No       | Hostname of Deployment                                                                                                                                         |
 | `dnsZoneName`                                    | `string`       | No       | If not empty, use the given existing DNS Zone for DNS entries and use shortHostname instead of hostname.                                                       |
 | `dnsZoneResourceGroupName`                       | `string`       | No       | If dnsZoneName is specified, its resource group must specified as well, since it is not expected to be part of the deployment resource group.                  |
@@ -43,7 +48,7 @@ In Unreal Engine 5 (UE5), ‘Unreal Cloud DDC’ is an optional service which us
 | `newOrExistingKeyVault`                          | `string`       | No       | Create new or use existing Key Vault                                                                                                                           |
 | `keyVaultName`                                   | `string`       | No       | Name of Key Vault resource                                                                                                                                     |
 | `newOrExistingPublicIp`                          | `string`       | No       | Create new or use existing Public IP resource                                                                                                                  |
-| `publicIpName`                                   | `string`       | No       | Name of Public IP Resource                                                                                                                                     |
+| `publicIpName`                                   | `string`       | No       | Name of Public IP Resource, will be suffixed with the location.                                                                                                |
 | `newOrExistingTrafficManager`                    | `string`       | No       | Create new or use existing Traffic Manager Profile.                                                                                                            |
 | `trafficManagerName`                             | `string`       | No       | New or existing Traffic Manager Profile.                                                                                                                       |
 | `trafficManagerDnsName`                          | `string`       | No       | Relative DNS name for the traffic manager profile, must be globally unique.                                                                                    |
@@ -65,7 +70,7 @@ In Unreal Engine 5 (UE5), ‘Unreal Cloud DDC’ is an optional service which us
 | `containerImageRepo`                             | `string`       | Yes      | Reference to the container registry repo with the cloud DDC container image                                                                                    |
 | `containerImageVersion`                          | `string`       | No       | The cloud DDC container image version to use                                                                                                                   |
 | `helmChart`                                      | `string`       | Yes      | Reference to the container registry repo with the cloud DDC helm chart                                                                                         |
-| `helmVersion`                                    | `string`       | No       | Helm Chart Version                                                                                                                                             |
+| `helmVersion`                                    | `string`       | Yes      | Helm Chart Version                                                                                                                                             |
 | `helmName`                                       | `string`       | No       | Name of the Helm release                                                                                                                                       |
 | `helmNamespace`                                  | `string`       | No       | Namespace of the Helm release                                                                                                                                  |
 | `siteNamePrefix`                                 | `string`       | No       | This is prefixed to each location when naming the site for the location                                                                                        |
