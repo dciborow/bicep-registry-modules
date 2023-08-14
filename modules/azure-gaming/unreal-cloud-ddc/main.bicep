@@ -49,6 +49,9 @@ param vnetOverallAddrPrefix string
 @description('Address range for a vnet in a given region')
 param vnetRegionAddrRange int
 
+@description('Subnet address range for use by K8S VMs')
+param vnetVmSubnetAddrRange int
+
 @description('Name of subnet to use for virtual machines')
 param vnetVmSubnetName string = 'vmsubnet'
 
@@ -321,6 +324,7 @@ module vnets 'modules/network/vnets.bicep' = if (useVnet) {
     overallAddrPrefix: vnetOverallAddrPrefix
     regionAddrRange: vnetRegionAddrRange
     vmSubnetName: vnetVmSubnetName
+    subnetAddrRange: vnetVmSubnetAddrRange
     loadBalancerSubnetName: vnetLoadBalancerSubnetName
     privateDnsZoneName: privateDnsZoneName
   }

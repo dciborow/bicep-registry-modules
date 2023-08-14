@@ -3,7 +3,7 @@ param vnetSpecs array
 
 param overallAddrPrefix string
 param regionAddrRange int
-param subnetAddrRange int = 24
+param subnetAddrRange int
 param vmSubnetName string
 param loadBalancerSubnetName string
 param privateDnsZoneName string
