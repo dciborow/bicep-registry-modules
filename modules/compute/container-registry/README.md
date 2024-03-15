@@ -1,8 +1,14 @@
+<h1 style="color: steelblue;">⚠️ Upcoming changes ⚠️</h1>
+
+This module has been replaced by the following equivalent module in Azure Verified Modules (AVM): [avm/res/container-registry/registry](https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/container-registry/registry).
+
+For more information, see the informational notice [here](https://github.com/Azure/bicep-registry-modules?tab=readme-ov-file#%EF%B8%8F-upcoming-changes-%EF%B8%8F).
+
 # Container Registry
 
 This module deploys Container Registry (Microsoft.ContainerRegistry/registries) and optionally available integrations.
 
-## Description
+## Details
 
 [Azure Container Registry (ACR)](http://aka.ms/acr) is a hosted registry for Docker and Open Container Initiative (OCI) artifacts. This module provides an Infrastructure as Code alternative for management of Container Registry using Bicep, and is intended to mirror the available functionality of provisioning with Azure Portal or CLI.
 
@@ -41,15 +47,16 @@ This module deploys Container Registry (Microsoft.ContainerRegistry/registries) 
 | `diagnosticEventHubName`                | `string` | No       | Name of the diagnostic event hub within the namespace to which logs are streamed. Without this, an event hub is created for each log category.                                                                                                                                                                                                                                                                                  |
 | `logsToEnable`                          | `array`  | No       | The name of logs that will be streamed.                                                                                                                                                                                                                                                                                                                                                                                         |
 | `metricsToEnable`                       | `array`  | No       | The name of metrics that will be streamed.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `tasks`                                 | `array`  | No       | Optional. The list of ACR tasks to create.                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## Outputs
 
-| Name              | Type   | Description                                                        |
-| :---------------- | :----: | :----------------------------------------------------------------- |
-| resourceGroupName | string | The resource group the Azure Container Registry was deployed into. |
-| resourceId        | string | The resource ID of the Azure Container Registry.                   |
-| name              | string | The name of the Azure Container Registry.                          |
-| loginServer       | string | The login server URL of the Azure Container Registry.              |
+| Name                | Type     | Description                                                        |
+| :------------------ | :------: | :----------------------------------------------------------------- |
+| `resourceGroupName` | `string` | The resource group the Azure Container Registry was deployed into. |
+| `resourceId`        | `string` | The resource ID of the Azure Container Registry.                   |
+| `name`              | `string` | The name of the Azure Container Registry.                          |
+| `loginServer`       | `string` | The login server URL of the Azure Container Registry.              |
 
 ## Examples
 
@@ -58,7 +65,7 @@ This module deploys Container Registry (Microsoft.ContainerRegistry/registries) 
 An example of how to deploy Azure Container Registry using the minimum required parameters.
 
 ```bicep
-module containerRegistry 'br/public:compute/container-registry:1.0.1' = {
+module containerRegistry 'br/public:compute/container-registry:1.1.1' = {
   name: '${uniqueString(deployment().name, 'eastus')}-container-registry'
   params: {
     name: 'acr${uniqueString(deployment().name, location)}'
@@ -75,7 +82,7 @@ An example of how to deploy a 'Premium' SKU instance of Azure Container Registry
 param subnetId string
 param privateDnsZoneId string
 
-module containerRegistry 'br/public:compute/container-registry:1.0.1' = {
+module containerRegistry 'br/public:compute/container-registry:1.1.1' = {
   name: '${uniqueString(deployment().name, 'eastus')}-container-registry'
   params: {
     name: 'acr${uniqueString(deployment().name, location)}'
@@ -88,6 +95,34 @@ module containerRegistry 'br/public:compute/container-registry:1.0.1' = {
         privateDnsZoneId: privateDnsZoneId
       }
     ]
+    tasks: [ {
+        taskName: 'task1'
+        status: 'Enabled'
+        platform: {
+          os: 'Linux'
+          architecture: 'Amd64'
+        }
+        agentConfiguration: {
+          cpu: 2
+        }
+        trigger: {
+          timerTriggers: [
+            {
+              name: 'trigger1'
+              status: 'Enabled'
+              schedule: '*/1 * * * Mon-Fri'
+            }
+          ]
+        }
+        step: {
+          type: 'EncodedTask'
+          encodedTaskContent: loadFileAsBase64('task.yaml')
+        }
+        identity: {
+          type: 'SystemAssigned'
+        }
+      }
+    ]
   }
 }
 ```
@@ -97,7 +132,7 @@ module containerRegistry 'br/public:compute/container-registry:1.0.1' = {
 An example of how to deploy a 'Premium' SKU instance of Azure Container Registry with replication to multiple Azure Locations.
 
 ```bicep
-module containerRegistry 'br/public:compute/container-registry:1.0.1' = {
+module containerRegistry 'br/public:compute/container-registry:1.1.1' = {
   name: '${uniqueString(deployment().name, 'eastus')}-container-registry'
   params: {
     name: 'acr${uniqueString(deployment().name, location)}'

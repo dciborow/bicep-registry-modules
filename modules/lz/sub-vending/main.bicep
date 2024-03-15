@@ -1,10 +1,14 @@
+metadata owner = 'jtracey93'
+
 targetScope = 'managementGroup'
 
 // METADATA - Used by PSDocs
 
-metadata name = '`main.bicep` Parameters'
+metadata name = 'Bicep Landing Zone (Subscription) Vending Module'
 
-metadata description = '''These are the input parameters for the Bicep module: [`main.bicep`](./main.bicep)
+metadata description = 'This module is designed to accelerate deployment of landing zones (aka Subscriptions) within an Azure AD Tenant.'
+
+metadata details = '''These are the input parameters for the Bicep module: [`main.bicep`](./main.bicep)
 
 This is the orchestration module that is used and called by a consumer of the module to deploy a Landing Zone Subscription and its associated resources, based on the parameter input values that are provided to it at deployment time.
 
@@ -81,6 +85,30 @@ param subscriptionBillingScope string = ''
 - Default value: `Production`
 ''')
 param subscriptionWorkload string = 'Production'
+
+@metadata({
+  example: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+})
+@maxLength(36)
+@sys.description('''The Azure Active Directory Tenant ID (GUID) to which the Subscription should be attached to.
+
+> **Leave blank unless following this scenario only [Programmatically create MCA subscriptions across Azure Active Directory tenants](https://learn.microsoft.com/azure/cost-management-billing/manage/programmatically-create-subscription-microsoft-customer-agreement-across-tenants).**
+
+- Default value: `''` *(empty string)*
+''')
+param subscriptionTenantId string = ''
+
+@metadata({
+  example: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+})
+@maxLength(36)
+@sys.description('''The Azure Active Directory principals object ID (GUID) to whom should be the Subscription Owner.
+
+> **Leave blank unless following this scenario only [Programmatically create MCA subscriptions across Azure Active Directory tenants](https://learn.microsoft.com/azure/cost-management-billing/manage/programmatically-create-subscription-microsoft-customer-agreement-across-tenants).**
+
+- Default value: `''` *(empty string)*
+''')
+param subscriptionOwnerId string = ''
 
 @metadata({
   example: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
@@ -338,6 +366,14 @@ param virtualNetworkVwanPropagatedRouteTablesResourceIds array = []
 param virtualNetworkVwanPropagatedLabels array = []
 
 @metadata({
+  example: false
+})
+@sys.description('''Indicates whether routing intent is enabled on the Virtual Hub within the Virtual WAN.
+- Type: Boolean
+''')
+param vHubRoutingIntentEnabled bool = false
+
+@metadata({
   example: true
 })
 @sys.description('''Whether to create role assignments or not. If true, supply the array of role assignment objects in the parameter called `roleAssignments`.
@@ -394,6 +430,164 @@ For more information on the telemetry collected by this module, that is controll
 ''')
 param disableTelemetry bool = false
 
+@sys.description('Guid for the deployment script resources names based on subscription Id.')
+var deploymentScriptResourcesSubGuid = substring((subscriptionAliasEnabled && empty(existingSubscriptionId)) ? createSubscription.outputs.subscriptionId : existingSubscriptionId, 0, 8)
+
+@sys.description('The name of the resource group to create the deployment script for resource providers registration.')
+param deploymentScriptResourceGroupName string = 'rsg-${deployment().location}-ds'
+
+@sys.description('The name of the deployment script to register resource providers')
+param deploymentScriptName string = 'ds-${deployment().location}'
+
+@sys.description('The name of the user managed identity for the resource providers registration deployment script.')
+param deploymentScriptManagedIdentityName string = 'id-${deployment().location}'
+
+@metadata({
+  example: {
+    'Microsoft.Compute': [ 'InGuestHotPatchVMPreview' ]
+    'Microsoft.Storage': []
+  }
+
+})
+@sys.description('''
+An object of resource providers and resource providers features to register. If left blank/empty, a list of most common resource providers will be registered.
+- Type: `{}` Object
+- Default value: `{
+  'Microsoft.ApiManagement'             : []
+    'Microsoft.AppPlatform'             : []
+    'Microsoft.Authorization'           : []
+    'Microsoft.Automation'              : []
+    'Microsoft.AVS'                     : []
+    'Microsoft.Blueprint'               : []
+    'Microsoft.BotService'              : []
+    'Microsoft.Cache'                   : []
+    'Microsoft.Cdn'                     : []
+    'Microsoft.CognitiveServices'       : []
+    'Microsoft.Compute'                 : []
+    'Microsoft.ContainerInstance'       : []
+    'Microsoft.ContainerRegistry'       : []
+    'Microsoft.ContainerService'        : []
+    'Microsoft.CostManagement'          : []
+    'Microsoft.CustomProviders'         : []
+    'Microsoft.Databricks'              : []
+    'Microsoft.DataLakeAnalytics'       : []
+    'Microsoft.DataLakeStore'           : []
+    'Microsoft.DataMigration'           : []
+    'Microsoft.DataProtection'          : []
+    'Microsoft.DBforMariaDB'            : []
+    'Microsoft.DBforMySQL'              : []
+    'Microsoft.DBforPostgreSQL'         : []
+    'Microsoft.DesktopVirtualization'   : []
+    'Microsoft.Devices'                 : []
+    'Microsoft.DevTestLab'              : []
+    'Microsoft.DocumentDB'              : []
+    'Microsoft.EventGrid'               : []
+    'Microsoft.EventHub'                : []
+    'Microsoft.HDInsight'               : []
+    'Microsoft.HealthcareApis'          : []
+    'Microsoft.GuestConfiguration'      : []
+    'Microsoft.KeyVault'                : []
+    'Microsoft.Kusto'                   : []
+    'microsoft.insights'                : []
+    'Microsoft.Logic'                   : []
+    'Microsoft.MachineLearningServices' : []
+    'Microsoft.Maintenance'             : []
+    'Microsoft.ManagedIdentity'         : []
+    'Microsoft.ManagedServices'         : []
+    'Microsoft.Management'              : []
+    'Microsoft.Maps'                    : []
+    'Microsoft.MarketplaceOrdering'     : []
+    'Microsoft.Media'                   : []
+    'Microsoft.MixedReality'            : []
+    'Microsoft.Network'                 : []
+    'Microsoft.NotificationHubs'        : []
+    'Microsoft.OperationalInsights'     : []
+    'Microsoft.OperationsManagement'    : []
+    'Microsoft.PolicyInsights'          : []
+    'Microsoft.PowerBIDedicated'        : []
+    'Microsoft.Relay'                   : []
+    'Microsoft.RecoveryServices'        : []
+    'Microsoft.Resources'               : []
+    'Microsoft.Search'                  : []
+    'Microsoft.Security'                : []
+    'Microsoft.SecurityInsights'        : []
+    'Microsoft.ServiceBus'              : []
+    'Microsoft.ServiceFabric'           : []
+    'Microsoft.Sql'                     : []
+    'Microsoft.Storage'                 : []
+    'Microsoft.StreamAnalytics'         : []
+    'Microsoft.TimeSeriesInsights'      : []
+    'Microsoft.Web'                     : []
+}`
+''')
+param resourceProviders object = {
+  'Microsoft.ApiManagement': []
+  'Microsoft.AppPlatform': []
+  'Microsoft.Authorization': []
+  'Microsoft.Automation': []
+  'Microsoft.AVS': []
+  'Microsoft.Blueprint': []
+  'Microsoft.BotService': []
+  'Microsoft.Cache': []
+  'Microsoft.Cdn': []
+  'Microsoft.CognitiveServices': []
+  'Microsoft.Compute': []
+  'Microsoft.ContainerInstance': []
+  'Microsoft.ContainerRegistry': []
+  'Microsoft.ContainerService': []
+  'Microsoft.CostManagement': []
+  'Microsoft.CustomProviders': []
+  'Microsoft.Databricks': []
+  'Microsoft.DataLakeAnalytics': []
+  'Microsoft.DataLakeStore': []
+  'Microsoft.DataMigration': []
+  'Microsoft.DataProtection': []
+  'Microsoft.DBforMariaDB': []
+  'Microsoft.DBforMySQL': []
+  'Microsoft.DBforPostgreSQL': []
+  'Microsoft.DesktopVirtualization': []
+  'Microsoft.Devices': []
+  'Microsoft.DevTestLab': []
+  'Microsoft.DocumentDB': []
+  'Microsoft.EventGrid': []
+  'Microsoft.EventHub': []
+  'Microsoft.HDInsight': []
+  'Microsoft.HealthcareApis': []
+  'Microsoft.GuestConfiguration': []
+  'Microsoft.KeyVault': []
+  'Microsoft.Kusto': []
+  'microsoft.insights': []
+  'Microsoft.Logic': []
+  'Microsoft.MachineLearningServices': []
+  'Microsoft.Maintenance': []
+  'Microsoft.ManagedIdentity': []
+  'Microsoft.ManagedServices': []
+  'Microsoft.Management': []
+  'Microsoft.Maps': []
+  'Microsoft.MarketplaceOrdering': []
+  'Microsoft.Media': []
+  'Microsoft.MixedReality': []
+  'Microsoft.Network': []
+  'Microsoft.NotificationHubs': []
+  'Microsoft.OperationalInsights': []
+  'Microsoft.OperationsManagement': []
+  'Microsoft.PolicyInsights': []
+  'Microsoft.PowerBIDedicated': []
+  'Microsoft.Relay': []
+  'Microsoft.RecoveryServices': []
+  'Microsoft.Resources': []
+  'Microsoft.Search': []
+  'Microsoft.Security': []
+  'Microsoft.SecurityInsights': []
+  'Microsoft.ServiceBus': []
+  'Microsoft.ServiceFabric': []
+  'Microsoft.Sql': []
+  'Microsoft.Storage': []
+  'Microsoft.StreamAnalytics': []
+  'Microsoft.TimeSeriesInsights': []
+  'Microsoft.Web': []
+}
+
 // VARIABLES
 
 var existingSubscriptionIDEmptyCheck = empty(existingSubscriptionId) ? 'No Subscription ID Provided' : existingSubscriptionId
@@ -422,13 +616,15 @@ resource moduleTelemetry 'Microsoft.Resources/deployments@2021-04-01' = if (!dis
 }
 
 module createSubscription 'src/self/Microsoft.Subscription/aliases/deploy.bicep' = if (subscriptionAliasEnabled && empty(existingSubscriptionId)) {
-  scope: tenant()
+  scope: managementGroup()
   name: deploymentNames.createSubscription
   params: {
     subscriptionBillingScope: subscriptionBillingScope
     subscriptionAliasName: subscriptionAliasName
     subscriptionDisplayName: subscriptionDisplayName
     subscriptionWorkload: subscriptionWorkload
+    subscriptionTenantId: subscriptionTenantId
+    subscriptionOwnerId: subscriptionOwnerId
   }
 }
 
@@ -456,9 +652,14 @@ module createSubscriptionResources 'src/self/subResourceWrapper/deploy.bicep' = 
     virtualNetworkVwanAssociatedRouteTableResourceId: virtualNetworkVwanAssociatedRouteTableResourceId
     virtualNetworkVwanPropagatedRouteTablesResourceIds: virtualNetworkVwanPropagatedRouteTablesResourceIds
     virtualNetworkVwanPropagatedLabels: virtualNetworkVwanPropagatedLabels
+    vHubRoutingIntentEnabled: vHubRoutingIntentEnabled
     roleAssignmentEnabled: roleAssignmentEnabled
     roleAssignments: roleAssignments
     disableTelemetry: disableTelemetry
+    deploymentScriptResourceGroupName: '${deploymentScriptResourceGroupName}-${deploymentScriptResourcesSubGuid}'
+    deploymentScriptName: '${deploymentScriptName}-${deploymentScriptResourcesSubGuid}'
+    deploymentScriptManagedIdentityName: '${deploymentScriptManagedIdentityName}-${deploymentScriptResourcesSubGuid}'
+    resourceProviders: resourceProviders
   }
 }
 
@@ -469,3 +670,15 @@ output subscriptionId string = (subscriptionAliasEnabled && empty(existingSubscr
 
 @sys.description('The Subscription Resource ID that has been created or provided.')
 output subscriptionResourceId string = (subscriptionAliasEnabled && empty(existingSubscriptionId)) ? createSubscription.outputs.subscriptionResourceId : contains(existingSubscriptionIDEmptyCheck, 'No Subscription ID Provided') ? existingSubscriptionIDEmptyCheck : '/subscriptions/${existingSubscriptionId}'
+
+@sys.description('The Subscription Owner State. Only used when creating MCA Subscriptions across tenants')
+output subscriptionAcceptOwnershipState string = (subscriptionAliasEnabled && empty(existingSubscriptionId) && !empty(subscriptionTenantId) && !empty(subscriptionOwnerId)) ? createSubscription.outputs.subscriptionAcceptOwnershipState : 'N/A'
+
+@sys.description('The Subscription Ownership URL. Only used when creating MCA Subscriptions across tenants')
+output subscriptionAcceptOwnershipUrl string = (subscriptionAliasEnabled && empty(existingSubscriptionId) && !empty(subscriptionTenantId) && !empty(subscriptionOwnerId)) ? createSubscription.outputs.subscriptionAcceptOwnershipUrl : 'N/A'
+
+@sys.description('The resource providers that failed to register')
+output failedResourceProviders string = !empty(resourceProviders) ? createSubscriptionResources.outputs.failedProviders : ''
+
+@sys.description('The resource providers features that failed to register')
+output failedResourceProvidersFeatures string = !empty(resourceProviders) ? createSubscriptionResources.outputs.failedFeatures : ''

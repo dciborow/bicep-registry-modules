@@ -1,8 +1,14 @@
+<h1 style="color: steelblue;">⚠️ Upcoming changes ⚠️</h1>
+
+This module has been replaced by the following equivalent module in Azure Verified Modules (AVM): [avm/res/managed-identity/user-assigned-identity](https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/managed-identity/user-assigned-identity).
+
+For more information, see the informational notice [here](https://github.com/Azure/bicep-registry-modules?tab=readme-ov-file#%EF%B8%8F-upcoming-changes-%EF%B8%8F).
+
 # Managed Identity
 
 Azure managed identities provide an easy way for applications to access resources securely in Azure.
 
-## Description
+## Details
 
 Azure managed identities provide an easy way for applications to access resources securely in Azure. It enables you to authenticate to Azure Active Directory without the need to manage credentials.
 Ref: [https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview)
@@ -20,13 +26,13 @@ Ref: [https://learn.microsoft.com/en-us/azure/active-directory/managed-identitie
 
 ## Outputs
 
-| Name        | Type   | Description                                                                             |
-| :---------- | :----: | :-------------------------------------------------------------------------------------- |
-| id          | string | Id of the User Assigned Identity created.                                               |
-| name        | string | Name of the User Assigned Identity created.                                             |
-| principalId | string | The id of the service principal object associated with the created identity.            |
-| tenantId    | string | The id of the tenant which the identity belongs to.                                     |
-| clientId    | string | The id of the app associated with the identity. This is a random generated UUID by MSI. |
+| Name          | Type     | Description                                                                             |
+| :------------ | :------: | :-------------------------------------------------------------------------------------- |
+| `id`          | `string` | Id of the User Assigned Identity created.                                               |
+| `name`        | `string` | Name of the User Assigned Identity created.                                             |
+| `principalId` | `string` | The id of the service principal object associated with the created identity.            |
+| `tenantId`    | `string` | The id of the tenant which the identity belongs to.                                     |
+| `clientId`    | `string` | The id of the app associated with the identity. This is a random generated UUID by MSI. |
 
 ## Examples
 
@@ -34,7 +40,7 @@ Ref: [https://learn.microsoft.com/en-us/azure/active-directory/managed-identitie
 
 ```bicep
 @description('Simple example, only creates Managed Identity.')
-module managedIdentity 'br/public:identity/user-assigned-identity:1.0.1' = {
+module managedIdentity 'br/public:identity/user-assigned-identity:1.0.2' = {
   name: 'test-${name}'
   params: {
     name: 'my-managedIdentity-1'
@@ -51,7 +57,7 @@ module managedIdentity 'br/public:identity/user-assigned-identity:1.0.1' = {
 In example, It will create Managed Identity, assign given role assignments at resource Group level,
 lastly also creates Federated credentials as per given input list of federatedCredentials array param.
 ''')
-module managedIdentity 'br/public:identity/user-assigned-identity:1.0.1' = {
+module managedIdentity 'br/public:identity/user-assigned-identity:1.0.2' = {
   name: 'test-${name}'
   params: {
     name: 'my-managedIdentity-2'

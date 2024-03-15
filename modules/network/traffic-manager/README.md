@@ -1,8 +1,14 @@
+<h1 style="color: steelblue;">⚠️ Upcoming changes ⚠️</h1>
+
+This module has been replaced by the following equivalent module in Azure Verified Modules (AVM): [avm/res/network/trafficmanagerprofile](https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/network/trafficmanagerprofile).
+
+For more information, see the informational notice [here](https://github.com/Azure/bicep-registry-modules?tab=readme-ov-file#%EF%B8%8F-upcoming-changes-%EF%B8%8F).
+
 # Azure Traffic Manager
 
 Bicep module for creating a Azure Traffic Manager Profile with endpoints and monitor configurations.
 
-## Description
+## Details
 
 Azure Traffic Manager is a traffic management solution that enables the distribution of incoming traffic across multiple endpoints.
 This can help to improve the performance and availability of applications by directing traffic to the most optimal endpoint based on routing methods such as geographic proximity or performance.
@@ -36,10 +42,10 @@ The module also allows for the configuration of monitor settings such as protoco
 
 ## Outputs
 
-| Name | Type   | Description                           |
-| :--- | :----: | :------------------------------------ |
-| id   | string | Traffic Manager Profile Resource ID   |
-| name | string | Traffic Manager Profile Resource Name |
+| Name   | Type     | Description                           |
+| :----- | :------: | :------------------------------------ |
+| `id`   | `string` | Traffic Manager Profile Resource ID   |
+| `name` | `string` | Traffic Manager Profile Resource Name |
 
 ## Examples
 
@@ -51,7 +57,7 @@ This example creates a new Traffic Manager profile with the name "my-traffic-man
 param name string = 'my-traffic-manager'
 param dnsName string = 'my-traffic-manager-dns'
 
-module trafficManager 'br/public:network/traffic-manager:2.3.2' = {
+module trafficManager 'br/public:network/traffic-manager:2.3.3' = {
   name: 'myTrafficManager'
   params: {
     name: name
@@ -82,7 +88,7 @@ param endpoints array = [
   }
 ]
 
-module trafficManagerProfile 'br/public:network/traffic-manager:2.3.2' = {
+module trafficManagerProfile 'br/public:network/traffic-manager:2.3.3' = {
   name: 'trafficManagerProfile'
   params: {
     name: name

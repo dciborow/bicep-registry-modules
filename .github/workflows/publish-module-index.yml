@@ -1,5 +1,9 @@
+# This publishes the list of all public bicep modules to an index file that the Bicep vscode extension can read for intellisense
+#   and also a human-readable HTML version.
 name: Publish module index
 on:
+  schedule:
+    - cron: 45 11 * * * # Run daily at 3:45 AM PST
   workflow_dispatch:
 
 permissions:
@@ -18,33 +22,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 // Needed to fetch all history and tags
 
       - name: Install packages
         run: npm ci
 
       - name: Generate moduleIndex.json
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const script = require("./scripts/github-actions/generate-module-index-data.js")
-            await script({ require, core })
+            await script({ require, github, context, core })
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: moduleIndex.json
           path: moduleIndex.json
 
       - name: Log in to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.PUBLISH_CLIENT_ID }}
           tenant-id: ${{ secrets.PUBLISH_TENANT_ID }}
           subscription-id: ${{ secrets.PUBLISH_SUBSCRIPTION_ID }}
 
       - name: Upload to blob storage
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           inlineScript: |
             az storage blob upload --account-name biceplivedatasaprod --container-name bicep-cdn-live-data-container --name module-index --file moduleIndex.json --auth-mode login --overwrite
@@ -54,22 +60,28 @@ jobs:
     needs: upload-index-data
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install packages
         run: npm ci
 
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: moduleIndex.json
 
       - name: Generate index.md
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const script = require("./scripts/github-actions/generate-module-index-md.js")
             await script({ require, github, context, core })
+
+      - name: Upload Markdown artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./docs/jekyll/index.md
+          name: index.md
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -81,7 +93,7 @@ jobs:
 
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v2
+        uses: actions/configure-pages@v4
 
       - name: Build with Jekyll
         working-directory: ./docs/jekyll
@@ -90,7 +102,7 @@ jobs:
           JEKYLL_ENV: production
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs/jekyll/_site
 
@@ -103,4 +115,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4

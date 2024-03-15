@@ -1,8 +1,14 @@
+<h1 style="color: steelblue;">⚠️ Upcoming changes ⚠️</h1>
+
+This module has been replaced by the following equivalent module in Azure Verified Modules (AVM): [avm/res/network/nat-gateway](https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/network/nat-gateway).
+
+For more information, see the informational notice [here](https://github.com/Azure/bicep-registry-modules?tab=readme-ov-file#%EF%B8%8F-upcoming-changes-%EF%B8%8F).
+
 # NAT gateways
 
 A bicep module for simplified deployment for NAT gateways and available configuration options.
 
-## Description
+## Details
 
 NAT gateway provides outbound internet connectivity for one or more subnets of a virtual network.
 The module creates a NAT Gateway resource using the Microsoft.Network/natGateways provider, with a standard SKU and the specified properties, including idle timeout, public IP addresses, public IP prefixes, and availability zones.
@@ -25,10 +31,10 @@ The module creates a NAT Gateway resource using the Microsoft.Network/natGateway
 
 ## Outputs
 
-| Name | Type   | Description                             |
-| :--- | :----: | :-------------------------------------- |
-| id   | string | Id of the NAT Gateway resource created. |
-| name | string | Name of the NAT Gateway Resource.       |
+| Name   | Type     | Description                             |
+| :----- | :------: | :-------------------------------------- |
+| `id`   | `string` | Id of the NAT Gateway resource created. |
+| `name` | `string` | Name of the NAT Gateway Resource.       |
 
 ## Examples
 
@@ -38,7 +44,7 @@ The module creates a NAT Gateway resource using the Microsoft.Network/natGateway
 param name string = 'my-natGateway-01'
 param location = 'eastus'
 
-module natGateway 'br/public:network/nat-gateway:1.0.1' = {
+module natGateway 'br/public:network/nat-gateway:1.0.4' = {
   name: 'my-natGateway-01'
   params: {
     name: name
@@ -53,7 +59,7 @@ module natGateway 'br/public:network/nat-gateway:1.0.1' = {
 param name string = 'my-natGateway-02'
 param location = 'eastus'
 
-module natGateway 'br/public:network/nat-gateway:1.0.1' = {
+module natGateway 'br/public:network/nat-gateway:1.0.4' = {
   name: 'my-natGateway-02'
   params: {
     name: name

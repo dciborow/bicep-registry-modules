@@ -1,8 +1,14 @@
+<h1 style="color: steelblue;">⚠️ Upcoming changes ⚠️</h1>
+
+This module has been replaced by the following equivalent module in Azure Verified Modules (AVM): [avm/res/network/virtual-network](https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/network/virtual-network).
+
+For more information, see the informational notice [here](https://github.com/Azure/bicep-registry-modules?tab=readme-ov-file#%EF%B8%8F-upcoming-changes-%EF%B8%8F).
+
 # Virtual Networks
 
 This module deploys Microsoft.Network Virtual Networks and optionally available children or extensions
 
-## Description
+## Details
 
 Use this module within other Bicep templates to simpllfy the usage of a Virtual Network, with resources like Virtual Machines, or Virtual Machine Scale Sets.
 
@@ -32,13 +38,13 @@ Use this module within other Bicep templates to simpllfy the usage of a Virtual 
 
 ## Outputs
 
-| Name              | Type   | Description                                              |
-| :---------------- | :----: | :------------------------------------------------------- |
-| resourceGroupName | string | The resource group the virtual network was deployed into |
-| resourceId        | string | The resource ID of the virtual network                   |
-| name              | string | The name of the virtual network                          |
-| subnetNames       | array  | The names of the deployed subnets                        |
-| subnetResourceIds | array  | The resource IDs of the deployed subnets                 |
+| Name                | Type     | Description                                              |
+| :------------------ | :------: | :------------------------------------------------------- |
+| `resourceGroupName` | `string` | The resource group the virtual network was deployed into |
+| `resourceId`        | `string` | The resource ID of the virtual network                   |
+| `name`              | `string` | The name of the virtual network                          |
+| `subnetNames`       | `array`  | The names of the deployed subnets                        |
+| `subnetResourceIds` | `array`  | The resource IDs of the deployed subnets                 |
 
 ## Examples
 
@@ -47,7 +53,7 @@ Use this module within other Bicep templates to simpllfy the usage of a Virtual 
 An example of how to deploy a virtual network using the minimum required parameters.
 
 ```bicep
-module minvnet 'br/public:network/virtual-network:1.0' = {
+module minvnet 'br/public:network/virtual-network:1.1.3' = {
   name: '${uniqueString(deployment().name, 'WestEurope')}-minvnet'
   params: {
     name: 'carml-az-vnet-min-01'
@@ -63,7 +69,7 @@ module minvnet 'br/public:network/virtual-network:1.0' = {
 An example of how to deploy a virtual network with multiple subnets, role assignment and diagnostic settings.
 
 ```bicep
-module genvnet 'br/public:network/virtual-network:1.0' = {
+module genvnet 'br/public:network/virtual-network:1.1.3' = {
   name: '${uniqueString(deployment().name, 'WestEurope')}-genvnet'
   params: {
     name: 'carml-az-vnet-gen-01'
@@ -132,7 +138,7 @@ module genvnet 'br/public:network/virtual-network:1.0' = {
 An example that deploys a virtual network with one subnet including a bi-directional peering to another virtual network.
 
 ```bicep
-module peervnet 'br/public:network/virtual-network:1.0' = {
+module peervnet 'br/public:network/virtual-network:1.1.3' = {
   name: '${uniqueString(deployment().name, 'WestEurope')}-peervnet'
   params: {
     name: 'carml-az-vnet-peer-01'
