@@ -1,0 +1,6 @@
+{
+  "$schema": "https://aka.ms/bicep-registry-module-metadata-file-schema-v2#",
+  "name": "Common Azure Resources",
+  "summary": "Easily deploy common Azure resources such as storage accounts, and Cosmos DB into the same resource group.",
+  "owner": "dciborow"
+}

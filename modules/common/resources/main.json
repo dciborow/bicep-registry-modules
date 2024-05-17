@@ -1,0 +1,114 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.16.2.56959",
+      "templateHash": "6580980145914175689"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Deployment Location"
+      }
+    },
+    "isZoneRedundant": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Toggle to enable or disable zone redudance."
+      }
+    },
+    "enableVirtualNetwork": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Toggle to enable or disable virtual networks."
+      }
+    },
+    "newOrExistingStorageAccount": {
+      "type": "string",
+      "defaultValue": "none",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "storageAccountPrefix": {
+      "type": "string",
+      "defaultValue": "store"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[take(format('{0}{1}', parameters('storageAccountPrefix'), uniqueString(resourceGroup().id, subscription().id)), 24)]",
+      "maxLength": 24
+    },
+    "storageResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "storageProperties": {
+      "type": "object",
+      "defaultValue": {}
+    },
+    "newOrExistingCosmosDB": {
+      "type": "string",
+      "defaultValue": "none",
+      "allowedValues": [
+        "new",
+        "existing",
+        "none"
+      ]
+    },
+    "cosmosDBPrefix": {
+      "type": "string",
+      "defaultValue": "cosmos"
+    },
+    "cosmosDBName": {
+      "type": "string",
+      "defaultValue": "[take(format('{0}{1}', parameters('cosmosDBPrefix'), uniqueString(resourceGroup().id, subscription().id)), 64)]",
+      "maxLength": 64
+    },
+    "cosmosDBResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "cosmosDBProperties": {
+      "type": "object",
+      "defaultValue": {}
+    }
+  },
+  "variables": {
+    "newOrExisting": {
+      "new": "new",
+      "existing": "existing"
+    },
+    "enableStorage": "[not(equals(parameters('newOrExistingStorageAccount'), 'none'))]",
+    "enableCosmos": "[not(equals(parameters('newOrExistingCosmosDB'), 'none'))]",
+    "noAvailabilityZones": [
+      "northcentralus",
+      "westus",
+      "jioindiawest",
+      "westcentralus",
+      "australiacentral",
+      "australiacentral2",
+      "australiasoutheast",
+      "japanwest",
+      "jioindiacentral",
+      "koreasouth",
+      "southindia",
+      "francesouth",
+      "germanynorth",
+      "norwayeast",
+      "switzerlandwest",
+      "ukwest",
+      "uaecentral",
+      "brazilsoutheast"
+    ]
+  },
+  "resources": []
+}
