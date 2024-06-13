@@ -75,6 +75,25 @@ jobs:
           REGEX=$(echo "s|($MODULE:)([0-9]+(\.[0-9]+){0,2})?|\1$NEW_VERSION|")
           sed -ri "$REGEX" "README.md" || exit 1
 
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_prefix: "${{ needs.get-module-to-validate.outputs.module_dir }}/"
+          dry_run: true
+          default_bump: false
+
+      - name: Update Version
+        if: steps.tag_version.outputs.release_type
+        shell: bash
+        env:
+          OLD_VERSION: ${{ steps.tag_version.outputs.previous_version }}
+          VERSION: ${{ steps.tag_version.outputs.new_version }}
+        run: |
+          cd $SAMPLEFOLDER_PATH
+          sed -ri "s/$OLD_VERSION/$VERSION/" "README.md" || exit 1
+
       - name: Run brm generate
         env:
           SAMPLEFOLDER_PATH: ${{ needs.get-module-to-validate.outputs.module_dir }}
